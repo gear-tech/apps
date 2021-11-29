@@ -1,17 +1,17 @@
-# Gear dApps
+# Gear Apps
 
 [![Build][build_badge]][build_href]
 [![License][lic_badge]][lic_href]
 
-[build_badge]: https://github.com/gear-tech/gear-dapps/workflows/Build/badge.svg
-[build_href]: https://github.com/gear-tech/gear-dapps/actions/workflows/build.yml
+[build_badge]: https://github.com/gear-tech/apps/workflows/Build/badge.svg
+[build_href]: https://github.com/gear-tech/apps/actions/workflows/build.yml
 
 [lic_badge]: https://img.shields.io/badge/License-GPL%203.0-success
-[lic_href]: https://github.com/gear-tech/gear-dapps/blob/master/LICENSE
+[lic_href]: https://github.com/gear-tech/apps/blob/master/LICENSE
 
 ## Prebuilt Binaries
 
-Raw, optimized, and meta WASM binaries can be found in the [Releases section](https://github.com/gear-tech/gear-dapps/releases/tag/build).
+Raw, optimized, and meta WASM binaries can be found in the [Releases section](https://github.com/gear-tech/apps/releases/tag/build).
 
 ## Building Locally
 
