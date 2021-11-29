@@ -24,6 +24,12 @@ jobs:
       - name: Prepare
         run: make prepare
 
+      - name: Check fmt
+        run: make fmt-check
+
+      - name: Run linter
+        run: make linter
+
       - name: Build
         run: make
 
