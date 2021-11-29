@@ -21,6 +21,13 @@ jobs:
       - name: Artifact cache
         uses: Swatinem/rust-cache@v1
 
+      - name:  Install nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          components: clippy, rustfmt
+          target: wasm32-unknown-unknown
+
       - name: Prepare
         run: make prepare
 
