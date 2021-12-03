@@ -246,11 +246,11 @@ enum Event {
 
 gstd::metadata! {
     title: "FungibleToken",
-        init:
-            input : InitConfig,
-        handle:
-            input : Action,
-            output : Event,
+    init:
+        input: InitConfig,
+    handle:
+        input: Action,
+        output: Event,
 }
 
 #[no_mangle]

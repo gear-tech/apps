@@ -40,6 +40,9 @@ jobs:
       - name: Build
         run: make
 
+      - name: Run gtest
+        run: make gtest
+
       - name: Upload artifacts
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v2

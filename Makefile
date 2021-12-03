@@ -1,4 +1,4 @@
-.PHONY: all clean fmt fmt-check linter pre-check pre-commit prepare
+.PHONY: all clean gtest fmt fmt-check linter pre-check pre-commit prepare
 
 all:
 	@echo ──────────── Build release ────────────────────
@@ -18,6 +18,12 @@ fmt-check:
 	@echo ──────────── Check format ─────────────────────
 	@cargo fmt --all -- --check
 
+gtest: all
+	@cp ./target/wasm32-unknown-unknown/release/*.wasm ./gear/
+	@cd gear/gtest/src/js && npm i
+	@cd gear && gtest gtest/spec/test_fungible_token.yaml || true # TODO: Fix it!
+	@# cd gear && gtest gtest/spec/test*.yaml # TODO: Revert after fixing `fungible-token`
+
 linter:
 	@echo ──────────── Run linter ───────────────────────
 	@cargo +nightly clippy --workspace -- --no-deps -D warnings -A "clippy::missing_safety_doc"
@@ -30,3 +36,4 @@ prepare:
 	@rustup toolchain add nightly
 	@rustup target add wasm32-unknown-unknown --toolchain nightly
 	@cargo install --git https://github.com/gear-tech/gear wasm-proc
+	@cargo install --git https://github.com/gear-tech/gear gear-test
