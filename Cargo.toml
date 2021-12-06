@@ -2,8 +2,8 @@
 resolver = "2"
 
 members = [
-    "gear-feeds-router",
     "fungible-token",
+    "gear-feeds-router",
 ]
 
 [profile.release]
