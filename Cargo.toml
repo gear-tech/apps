@@ -2,6 +2,7 @@
 resolver = "2"
 
 members = [
+    "gear-feeds-router",
     "fungible-token",
 ]
 

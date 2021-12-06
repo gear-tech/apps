@@ -155,6 +155,16 @@ version = "0.1.0"
 source = "git+https://github.com/gear-tech/gear.git#76e71d332a6a117089515f8b965a3ad27bb7ec78"
 
 [[package]]
+name = "gear-feeds-router"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
 name = "gstd"
 version = "0.1.0"
 source = "git+https://github.com/gear-tech/gear.git#76e71d332a6a117089515f8b965a3ad27bb7ec78"
