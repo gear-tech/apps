@@ -30,9 +30,9 @@ jobs:
 
       - name: Prepare
         run: |
-          wget -O wasm-proc -P ~/.cargo/bin https://github.com/gear-tech/gear/releases/download/build/wasm-proc
+          wget -O ~/.cargo/bin/wasm-proc https://github.com/gear-tech/gear/releases/download/build/wasm-proc
           chmod +x ~/.cargo/bin/wasm-proc
-          wget -O gtest -P ~/.cargo/bin https://github.com/gear-tech/gear/releases/download/build/gtest
+          wget -O ~/.cargo/bin/gtest https://github.com/gear-tech/gear/releases/download/build/gtest
           chmod +x ~/.cargo/bin/gtest
 
       - name: Check fmt
