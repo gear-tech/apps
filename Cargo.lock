@@ -237,6 +237,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "non-fungible-token"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "hex",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
 name = "parity-scale-codec"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
