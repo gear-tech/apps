@@ -5,7 +5,6 @@ edition = "2021"
 license = "GPL-3.0"
 authors = ["Gear Technologies"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 crate-type = ["cdylib"]
 
