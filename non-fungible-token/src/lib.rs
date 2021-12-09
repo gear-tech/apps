@@ -156,7 +156,7 @@ impl NonFungibleToken {
             return true;
         }
 
-        return false;
+        false
     }
 
     fn mint(&mut self, account: &ActorId) {
@@ -221,7 +221,7 @@ impl NonFungibleToken {
     }
 
     fn token_uri(&self, token_id: U256) {
-        let token_uri = format!("{}/{}", self.base_uri, token_id.to_string());
+        let token_uri = format!("{}/{}", self.base_uri, token_id);
 
         msg::reply(
             Event::TokenURI(token_uri),
