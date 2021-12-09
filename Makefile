@@ -35,5 +35,5 @@ pre-commit: fmt linter
 prepare:
 	@rustup toolchain add nightly
 	@rustup target add wasm32-unknown-unknown --toolchain nightly
-	@cargo install --git https://github.com/gear-tech/gear wasm-proc
-	@cargo install --git https://github.com/gear-tech/gear gear-test
+	@cargo install --locked --git https://github.com/gear-tech/gear wasm-proc
+	@cargo install --locked --git https://github.com/gear-tech/gear gear-test
