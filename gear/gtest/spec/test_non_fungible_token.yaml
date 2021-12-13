@@ -12,114 +12,272 @@ programs:
 
 fixtures:
   - title: mint/burn
-
     messages:
-      - destination: 1
+      - &mint
+        destination: 1
+        source: &source
+          kind: id
+          value: 6
         payload:
           kind: custom
           value:
             mint:
-              account: 0x0300000000000000000000000000000000000000000000000000000000000000
-      - destination: 1
+              account: &user_1 0x0200000000000000000000000000000000000000000000000000000000000000
+      - *mint
+      - <<: *mint
+        destination: 1
+        source: *source
         payload:
           kind: custom
           value:
             mint:
-              account: 0x0300000000000000000000000000000000000000000000000000000000000000
-      - destination: 1
+              account: &zero 0x0000000000000000000000000000000000000000000000000000000000000000
+      - &token_uri
+        destination: 1
+        source: *source
         payload:
           kind: custom
           value:
             tokenURI: 1
-      - destination: 1
+      - &burn
+        destination: 1
+        source: *source
         payload:
           kind: custom
           value:
             burn:
-              account: 0x0300000000000000000000000000000000000000000000000000000000000000
+              account: *user_1
               token_id: 1
-      - destination: 1
+      - *burn
+      - <<: *burn
+        destination: 1
+        source: *source
         payload:
           kind: custom
           value:
             burn:
-              account: 0x0300000000000000000000000000000000000000000000000000000000000000
-              token_id: 1
-      - destination: 1
+              account: &user_2 0x0300000000000000000000000000000000000000000000000000000000000000
+              token_id: 0
+      - <<: *burn
+        destination: 1
+        source: *source
         payload:
           kind: custom
           value:
             burn:
-              account: 0x0000000000000000000000000000000000000000000000000000000000000000
+              account: *zero
               token_id: 0
 
     expected:
       - log:
-        - payload:
+        - &mint_success
+          destination: 6
+          payload:
             kind: custom
             value:
               transfer:
-                from: 0x0000000000000000000000000000000000000000000000000000000000000000
-                to: 0x0300000000000000000000000000000000000000000000000000000000000000
+                from: *zero 
+                to: *user_1
                 token_id: 0
-          destination: 0
-        - payload:
+        - <<: *mint_success
+          destination: 6
+          payload:
             kind: custom
             value:
               transfer:
-                from: 0x0000000000000000000000000000000000000000000000000000000000000000
-                to: 0x0300000000000000000000000000000000000000000000000000000000000000
+                from: *zero 
+                to: *user_1 
                 token_id: 1
-          destination: 0
-        - payload:
+        - destination: 6
+          exitCode: 1
+        - &token_uri_sucess
+          destination: 6
+          payload:
             kind: custom
             value:
               tokenURI: "foo.com/1"
-          destination: 0
-        - payload:
+        - &burn_success
+          destination: 6
+          payload:
             kind: custom
             value:
               transfer:
-                from: 0x0300000000000000000000000000000000000000000000000000000000000000
-                to: 0x0000000000000000000000000000000000000000000000000000000000000000
+                from: *user_1 
+                to: *zero 
                 token_id: 1
-          destination: 0
-        - destination: 0
+        - destination: 6
           exitCode: 1
-        - destination: 0
+        - destination: 6
+          exitCode: 1
+        - destination: 6
           exitCode: 1
 
-  - title: transfer/approval
-
+  - title: transfer
     messages:
-      - destination: 1
+      - *mint
+      - *mint
+      - *mint
+      - &balance_of
+        destination: 1
+        source: *source
         payload:
           kind: custom
           value:
-            mint:
-              account: 0x0500000000000000000000000000000000000000000000000000000000000000
-      - destination: 1
-        source:
-          kind: id
-          value: 5
-        payload:
-          kind: custom
-          value:
-            transferFrom:
-              from: 0x0500000000000000000000000000000000000000000000000000000000000000
-              to: 0x0200000000000000000000000000000000000000000000000000000000000000
-              token_id: 0
-      - destination: 1
-        payload:
-          kind: custom
-          value:
-            balanceOf: 0x0500000000000000000000000000000000000000000000000000000000000000
-      - destination: 1
+            balanceOf: *user_1
+      - &owner_of
+        destination: 1
+        source: *source
         payload:
           kind: custom
           value:
             ownerOf: 0
-      - destination: 1
+      - &transfer
+        destination: 1
+        source:
+          kind: id
+          value: 2
+        payload:
+          kind: custom
+          value:
+            transferFrom:
+              from: *user_1
+              to: *user_2
+              token_id: 0
+      - *balance_of
+      - *owner_of
+      - <<: *balance_of
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            balanceOf: *user_2        
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 2
+        payload:
+          kind: custom
+          value:
+            transferFrom:
+              from: *user_2
+              to: *zero
+              token_id: 1
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            transferFrom:
+              from: *user_1
+              to: *user_2
+              token_id: 1
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 2
+        payload:
+          kind: custom
+          value:
+            transferFrom:
+              from: *user_1
+              to: *user_2
+              token_id: 10
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 2
+        payload:
+          kind: custom
+          value:
+            transferFrom:
+              from: *user_1
+              to: *user_1
+              token_id: 1
+      
+
+    expected:
+      - log:
+        - *mint_success
+        - <<: *mint_success
+          destination: 6
+          payload:
+            kind: custom
+            value:
+              transfer:
+                from: *zero 
+                to: *user_1
+                token_id: 1
+        - <<: *mint_success
+          destination: 6
+          payload:
+            kind: custom
+            value:
+              transfer:
+                from: *zero 
+                to: *user_1
+                token_id: 2
+        - &balance
+          destination: 6
+          payload:
+            kind: custom
+            value:
+              balance: 3  
+        - &owner 
+          destination: 6
+          payload:
+            kind: custom
+            value:
+              owner: *user_1     
+        - &transfer_success
+          destination: 2
+          payload:
+            kind: custom
+            value:
+              transfer:
+                from: *user_1
+                to: *user_2
+                token_id: 0
+        - <<: *balance
+          destination: 6
+          payload:
+            kind: custom
+            value:
+              balance: 2
+        - <<: *owner
+          destination: 6
+          payload:
+            kind: custom
+            value:
+              owner: *user_2
+        - <<: *balance
+          destination: 6
+          payload:
+            kind: custom
+            value:
+              balance: 1   
+        - destination: 2
+          exitCode: 1
+        - destination: 3
+          exitCode: 1
+        - destination: 2
+          exitCode: 1
+        - destination: 2
+          exitCode: 1
+
+  - title: approve/transfer_from
+    messages:
+      - *mint
+      - *mint
+      - *mint
+      - &approve
+        destination: 1
         source:
           kind: id
           value: 2
@@ -127,126 +285,330 @@ fixtures:
           kind: custom
           value:
             approval:
-              spender: 0x0800000000000000000000000000000000000000000000000000000000000000
+              spender: &user_3 0x0400000000000000000000000000000000000000000000000000000000000000
               token_id: 0
-      - destination: 1
+      - &approve
+        destination: 1
         source:
           kind: id
-          value: 8
+          value: 2
+        payload:
+          kind: custom
+          value:
+            approval:
+              spender: *zero
+              token_id: 0
+      - &approve
+        destination: 1
+        source:
+          kind: id
+          value: 2
+        payload:
+          kind: custom
+          value:
+            approval:
+              spender: *user_1
+              token_id: 0
+      - &approve
+        destination: 1
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            approval:
+              spender: *user_3
+              token_id: 0
+      - &get_approved
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            getApproved: 0
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 4
         payload:
           kind: custom
           value:
             transferFrom:
-              from: 0x0200000000000000000000000000000000000000000000000000000000000000
-              to: 0x0500000000000000000000000000000000000000000000000000000000000000
+              from: *user_1
+              to: *user_2
               token_id: 0
 
     expected:
       - log:
-        - payload:
-            kind: custom
-            value:
-              transfer:
-                from: 0x0000000000000000000000000000000000000000000000000000000000000000
-                to: 0x0500000000000000000000000000000000000000000000000000000000000000
-                token_id: 0
-          destination: 0
-        - destination: 5
+        - *mint_success
+        - <<: *mint_success
+          destination: 6
           payload:
             kind: custom
             value:
               transfer:
-                from: 0x0500000000000000000000000000000000000000000000000000000000000000
-                to: 0x0200000000000000000000000000000000000000000000000000000000000000
-                token_id: 0
-        - payload:
+                from: *zero 
+                to: *user_1
+                token_id: 1
+        - <<: *mint_success
+          destination: 6
+          payload:
             kind: custom
             value:
-              balance: 0
-          destination: 0
-        - payload:
-            kind: custom
-            value:
-              owner: 0x0200000000000000000000000000000000000000000000000000000000000000
-          destination: 0
-        - destination: 2
+              transfer:
+                from: *zero 
+                to: *user_1
+                token_id: 2
+        - &approve_success
+          destination: 2
           payload:
             kind: custom
             value:
               approval:
-                owner: 0x0200000000000000000000000000000000000000000000000000000000000000
-                spender: 0x0800000000000000000000000000000000000000000000000000000000000000
+                owner: *user_1
+                spender: *user_3
                 token_id: 0
-        - destination: 8
+        - destination: 2
+          exitCode: 1
+        - destination: 2
+          exitCode: 1
+        - destination: 3
+          exitCode: 1
+        - &get_approved_address
+          destination: 6
+          payload:
+            kind: custom
+            value:
+              approvedAddress: *user_3
+        - &transfer_success
+          destination: 4
           payload:
             kind: custom
             value:
               transfer:
-                from: 0x0200000000000000000000000000000000000000000000000000000000000000
-                to: 0x0500000000000000000000000000000000000000000000000000000000000000
+                from: *user_1
+                to: *user_2
                 token_id: 0
-
-  - title: operator
-
+  - title: operator (set_approval_for_all)
     messages:
-      - destination: 1
-        payload:
-          kind: custom
-          value:
-            mint:
-              account: 0x0500000000000000000000000000000000000000000000000000000000000000
-      - destination: 1
-        payload:
-          kind: custom
-          value:
-            mint:
-              account: 0x0500000000000000000000000000000000000000000000000000000000000000
-      - destination: 1
+      - *mint
+      - *mint
+      - *mint
+      - &set_approval_for_all
+        destination: 1
         source:
           kind: id
-          value: 5
+          value: 2
         payload:
           kind: custom
           value:
             setApprovalForAll:
-              operator: 0x0900000000000000000000000000000000000000000000000000000000000000
+              operator: *user_3
               approved: true
-      - destination: 1
+      - &is_approved_for_all
+        destination: 1
+        source: *source
         payload:
           kind: custom
           value:
             isApprovedForAll:
-              owner: 0x0500000000000000000000000000000000000000000000000000000000000000
-              operator: 0x0900000000000000000000000000000000000000000000000000000000000000
-
+              owner: *user_1
+              operator: *user_3
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 4
+        payload:
+          kind: custom
+          value:
+            transferFrom:
+              from: *user_1
+              to: *user_2
+              token_id: 0
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 4
+        payload:
+          kind: custom
+          value:
+            transferFrom:
+              from: *user_1
+              to: *user_2
+              token_id: 1
+      - &set_approval_for_all
+        destination: 1
+        source:
+          kind: id
+          value: 2
+        payload:
+          kind: custom
+          value:
+            setApprovalForAll:
+              operator: *user_3
+              approved: false
+      - &is_approved_for_all
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            isApprovedForAll:
+              owner: *user_1
+              operator: *user_3
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 4
+        payload:
+          kind: custom
+          value:
+            transferFrom:
+              from: *user_1
+              to: *user_2
+              token_id: 2
+        
+      
+      
     expected:
       - log:
-        - payload:
+        - *mint_success
+        - <<: *mint_success
+          destination: 6
+          payload:
             kind: custom
             value:
               transfer:
-                from: 0x0000000000000000000000000000000000000000000000000000000000000000
-                to: 0x0500000000000000000000000000000000000000000000000000000000000000
-                token_id: 0
-          destination: 0
-        - payload:
-            kind: custom
-            value:
-              transfer:
-                from: 0x0000000000000000000000000000000000000000000000000000000000000000
-                to: 0x0500000000000000000000000000000000000000000000000000000000000000
+                from: *zero 
+                to: *user_1
                 token_id: 1
-          destination: 0
-        - payload:
+        - <<: *mint_success
+          destination: 6
+          payload:
+            kind: custom
+            value:
+              transfer:
+                from: *zero 
+                to: *user_1
+                token_id: 2
+        - &set_approval_for_all_success
+          destination: 2
+          payload:
             kind: custom
             value:
               ApprovalForAll:
-                owner: 0x0500000000000000000000000000000000000000000000000000000000000000
-                operator: 0x0900000000000000000000000000000000000000000000000000000000000000
+                owner: *user_1
+                operator: *user_3
                 approved: true
-          destination: 5
-        - payload:
+        - &is_approved_for_all
+          destination: 6
+          payload:
             kind: custom
             value:
               isApproved: true
-          destination: 0
+        - &transfer_success
+          destination: 4
+          payload:
+            kind: custom
+            value:
+              transfer:
+                from: *user_1
+                to: *user_2
+                token_id: 0
+        - &transfer_success
+          destination: 4
+          payload:
+            kind: custom
+            value:
+              transfer:
+                from: *user_1
+                to: *user_2
+                token_id: 1
+        - &set_approval_for_all_success
+          destination: 2
+          payload:
+            kind: custom
+            value:
+              ApprovalForAll:
+                owner: *user_1
+                operator: *user_3
+                approved: false
+        - &is_approved_for_all
+          destination: 6
+          payload:
+            kind: custom
+            value:
+              isApproved: false
+        - destination: 4
+          exitCode: 1
+        
+
+  # - title: operator
+
+  #   messages:
+  #     - destination: 1
+  #       payload:
+  #         kind: custom
+  #         value:
+  #           mint:
+  #             account: 0x0500000000000000000000000000000000000000000000000000000000000000
+  #     - destination: 1
+  #       payload:
+  #         kind: custom
+  #         value:
+  #           mint:
+  #             account: 0x0500000000000000000000000000000000000000000000000000000000000000
+  #     - destination: 1
+  #       source:
+  #         kind: id
+  #         value: 5
+  #       payload:
+  #         kind: custom
+  #         value:
+  #           setApprovalForAll:
+  #             operator: 0x0900000000000000000000000000000000000000000000000000000000000000
+  #             approved: true
+  #     - destination: 1
+  #       payload:
+  #         kind: custom
+  #         value:
+  #           isApprovedForAll:
+  #             owner: 0x0500000000000000000000000000000000000000000000000000000000000000
+  #             operator: 0x0900000000000000000000000000000000000000000000000000000000000000
+
+  #   expected:
+  #     - log:
+  #       - payload:
+  #           kind: custom
+  #           value:
+  #             transfer:
+  #               from: 0x0000000000000000000000000000000000000000000000000000000000000000
+  #               to: 0x0500000000000000000000000000000000000000000000000000000000000000
+  #               token_id: 0
+  #         destination: 0
+  #       - payload:
+  #           kind: custom
+  #           value:
+  #             transfer:
+  #               from: 0x0000000000000000000000000000000000000000000000000000000000000000
+  #               to: 0x0500000000000000000000000000000000000000000000000000000000000000
+  #               token_id: 1
+  #         destination: 0
+  #       - payload:
+  #           kind: custom
+  #           value:
+  #             ApprovalForAll:
+  #               owner: 0x0500000000000000000000000000000000000000000000000000000000000000
+  #               operator: 0x0900000000000000000000000000000000000000000000000000000000000000
+  #               approved: true
+  #         destination: 5
+  #       - payload:
+  #           kind: custom
+  #           value:
+  #             isApproved: true
+  #         destination: 0
