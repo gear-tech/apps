@@ -476,7 +476,7 @@ fixtures:
         destination: 1
         source:
           kind: id
-          value: 2
+          value: 4
         payload:
           kind: custom
           value:
@@ -555,6 +555,8 @@ fixtures:
             kind: custom
             value:
               isApproved: false
+        - destination: 4
+          exitCode: 1
         - destination: 4
           exitCode: 1
   
