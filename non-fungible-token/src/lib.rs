@@ -276,21 +276,19 @@ impl NonFungibleToken {
         if !self.is_token_owner(token_id, owner) {
 =======
     fn transfer_from(&mut self, from: &ActorId, to: &ActorId, token_id: U256) {
-        debug!("TRANSFER, {:?} {}", self.exists(token_id), token_id);
+        let source = msg::source();
 
         if !self.exists(token_id) {
             panic!("NonFungibleToken: token does not exist");
-        } 
+        }
 
         if from == to {
             panic!("NonFungibleToken: Transfer to current owner");
         }
-        let source = msg::source();
 
         if !self.is_authorized_source(token_id, &source) {
             panic!("NonFungibleToken: is not an authorized source");
         }
-        debug!("AUTH, {:?}", !self.is_authorized_source(token_id, &source));
         self.transfer(from, to, token_id);
         self.token_approvals.remove(&token_id);
     }
