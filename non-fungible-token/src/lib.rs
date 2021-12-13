@@ -70,23 +70,22 @@ impl NonFungibleToken {
 
     fn is_authorized_source(&self, token_id: U256, account: &ActorId) -> bool {
         let zero = ActorId::new(H256::zero().to_fixed_bytes());
-
         let owner = self.token_owner.get(&token_id).unwrap_or(&zero);
 
         if owner == account {
             return true;
         }
 
-        if self.token_approvals.get(&token_id).unwrap() == account {
+        if self.token_approvals.get(&token_id).unwrap_or(&zero) == account {
             return true;
         }
 
         if *self
             .operator_approval
             .get(owner)
-            .unwrap()
+            .unwrap_or(&BTreeMap::<ActorId, bool>::default())
             .get(account)
-            .unwrap()
+            .unwrap_or(&false)
         {
             return true;
         }
@@ -99,7 +98,6 @@ impl NonFungibleToken {
         if account == &zero {
             panic!("NonFungibleToken: Mint to zero address.");
         }
-
         self.token_owner.insert(self.token_id, *account);
 
         let zero = U256::zero();
@@ -168,10 +166,6 @@ impl NonFungibleToken {
     fn transfer(&mut self, from: &ActorId, to: &ActorId, token_id: U256) {
         let zero = ActorId::new(H256::zero().to_fixed_bytes());
 
-        if from == &zero {
-            panic!("NonFungibleToken: Transfer from zero address.");
-        }
-
         if to == &zero {
             panic!("NonFungibleToken: Transfer to zero address.");
         }
@@ -202,16 +196,21 @@ impl NonFungibleToken {
     }
 
     fn transfer_from(&mut self, from: &ActorId, to: &ActorId, token_id: U256) {
+        debug!("TRANSFER, {:?} {}", self.exists(token_id), token_id);
+
         if !self.exists(token_id) {
             panic!("NonFungibleToken: token does not exist");
-        }
+        } 
 
+        if from == to {
+            panic!("NonFungibleToken: Transfer to current owner");
+        }
         let source = msg::source();
 
         if !self.is_authorized_source(token_id, &source) {
             panic!("NonFungibleToken: is not an authorized source");
         }
-
+        debug!("AUTH, {:?}", !self.is_authorized_source(token_id, &source));
         self.transfer(from, to, token_id);
         self.token_approvals.remove(&token_id);
     }
@@ -435,7 +434,6 @@ gstd::metadata! {
 #[no_mangle]
 pub unsafe extern "C" fn handle() {
     let action: Action = msg::load().expect("Could not load Action");
-
     match action {
         Action::Mint(mint_input) => {
             let to = ActorId::new(mint_input.account.to_fixed_bytes());
