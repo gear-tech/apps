@@ -76,7 +76,7 @@ fixtures:
             kind: custom
             value:
               transfer:
-                from: *zero 
+                from: *zero
                 to: *user_1
                 token_id: 0
         - <<: *mint_success
@@ -85,8 +85,8 @@ fixtures:
             kind: custom
             value:
               transfer:
-                from: *zero 
-                to: *user_1 
+                from: *zero
+                to: *user_1
                 token_id: 1
         - destination: 6
           exitCode: 1
@@ -102,8 +102,8 @@ fixtures:
             kind: custom
             value:
               transfer:
-                from: *user_1 
-                to: *zero 
+                from: *user_1
+                to: *zero
                 token_id: 1
         - destination: 6
           exitCode: 1
@@ -151,7 +151,7 @@ fixtures:
         payload:
           kind: custom
           value:
-            balanceOf: *user_2        
+            balanceOf: *user_2
       - <<: *transfer
         destination: 1
         source:
@@ -200,7 +200,6 @@ fixtures:
               from: *user_1
               to: *user_1
               token_id: 1
-      
 
     expected:
       - log:
@@ -211,7 +210,7 @@ fixtures:
             kind: custom
             value:
               transfer:
-                from: *zero 
+                from: *zero
                 to: *user_1
                 token_id: 1
         - <<: *mint_success
@@ -220,7 +219,7 @@ fixtures:
             kind: custom
             value:
               transfer:
-                from: *zero 
+                from: *zero
                 to: *user_1
                 token_id: 2
         - &balance
@@ -228,13 +227,13 @@ fixtures:
           payload:
             kind: custom
             value:
-              balance: 3  
-        - &owner 
+              balance: 3
+        - &owner
           destination: 6
           payload:
             kind: custom
             value:
-              owner: *user_1     
+              owner: *user_1
         - &transfer_success
           destination: 2
           payload:
@@ -261,7 +260,7 @@ fixtures:
           payload:
             kind: custom
             value:
-              balance: 1   
+              balance: 1
         - destination: 2
           exitCode: 1
         - destination: 3
@@ -349,7 +348,7 @@ fixtures:
             kind: custom
             value:
               transfer:
-                from: *zero 
+                from: *zero
                 to: *user_1
                 token_id: 1
         - <<: *mint_success
@@ -358,7 +357,7 @@ fixtures:
             kind: custom
             value:
               transfer:
-                from: *zero 
+                from: *zero
                 to: *user_1
                 token_id: 2
         - &approve_success
@@ -391,6 +390,7 @@ fixtures:
                 from: *user_1
                 to: *user_2
                 token_id: 0
+
   - title: operator (set_approval_for_all)
     messages:
       - *mint
@@ -483,9 +483,7 @@ fixtures:
             setApprovalForAll:
               operator: *zero
               approved: true
-        
-      
-      
+
     expected:
       - log:
         - *mint_success
@@ -495,7 +493,7 @@ fixtures:
             kind: custom
             value:
               transfer:
-                from: *zero 
+                from: *zero
                 to: *user_1
                 token_id: 1
         - <<: *mint_success
@@ -504,7 +502,7 @@ fixtures:
             kind: custom
             value:
               transfer:
-                from: *zero 
+                from: *zero
                 to: *user_1
                 token_id: 2
         - &set_approval_for_all_success
@@ -559,4 +557,3 @@ fixtures:
           exitCode: 1
         - destination: 4
           exitCode: 1
-  
