@@ -21,16 +21,15 @@ fmt-check:
 gtest: all
 	@cp ./target/wasm32-unknown-unknown/release/*.wasm ./gear/
 	@cd gear/gtest/src/js && npm i
-	@cd gear && gtest gtest/spec/test_fungible_token.yaml || true # TODO: Fix it!
-	@# cd gear && gtest gtest/spec/test*.yaml # TODO: Revert after fixing `fungible-token`
+	@cd gear && gtest gtest/spec/test*.yaml
 
 linter:
 	@echo ──────────── Run linter ───────────────────────
 	@cargo +nightly clippy --workspace -- --no-deps -D warnings -A "clippy::missing_safety_doc"
 
-pre-check: fmt-check linter
+pre-check: fmt-check linter gtest
 
-pre-commit: fmt linter
+pre-commit: fmt linter gtest
 
 prepare:
 	@rustup toolchain add nightly
