@@ -1,0 +1,12 @@
+[package]
+name = "demo-ping"
+version = "0.1.0"
+authors = ["Gear Technologies"]
+edition = "2018"
+license = "GPL-3.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+gstd = {git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
