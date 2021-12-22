@@ -1,0 +1,243 @@
+title: curve_amm_test
+
+programs:
+  - id: 1
+    path: fungible_token.wasm
+    init_message:
+      kind: custom
+      value:
+        name: USDC Stable Coin
+        symbol: USDC
+  - id: 2
+    path: fungible_token.wasm
+    init_message:
+      kind: custom
+      value:
+        name: USDT Stable Coin
+        symbol: USDT
+  - id: 3
+    path: fungible_token.wasm
+    init_message:
+      kind: custom
+      value:
+        name: LP Token
+        symbol: LPT
+  - id: 4
+    path: curve_amm.wasm
+    init_message:
+      kind: custom
+      value:
+          owner: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+          token_accounts: "{1},{2},{3}"
+          amplification_coefficient : 10000
+          fee: 0
+
+fixtures:
+  - title: curve_amm
+    messages:
+      # add 100000 USDC to account 1 
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: &ALICE 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+              amount: 100000
+      # add 100000 USDC to account 2 
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: &BOB 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty
+              amount: 100000
+      # add 100000 USDT to account 1 
+      - destination: 2
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: *ALICE
+              amount: 100000
+      # add 100000 USDT to account 2
+      - destination: 2
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: *BOB 
+              amount: 100000
+      # add 5500 USDC to account 3 
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: &CHARLIE 5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y
+              amount: 5500
+      # check lp token balance of account 1
+      - destination: 3
+        payload:
+          kind: custom
+          value:
+            balanceOf: *ALICE
+      # check lp token balance of account 2
+      - destination: 3
+        payload:
+          kind: custom
+          value:
+            balanceOf: *BOB
+      # add USDT, USDC liquidity from account 1 to pool
+      - destination: 4
+        payload:
+          kind: custom
+          value:
+            addLiquidity:
+              who: *ALICE
+              pool_id : 0
+              amounts : [10000, 10000]
+      # add USDT, USDC liquidity from account 2 to pool
+      - destination: 4
+        payload:
+          kind: custom
+          value:
+            addLiquidity:
+              who: *BOB
+              pool_id : 0
+              amounts : [10000, 10000]
+      # exchange USDC for USDT from account 3
+      - destination: 4
+        payload:
+          kind: custom
+          value:
+            exchange:
+              who: *CHARLIE
+              pool_id: 0
+              i: 0
+              j: 1
+              dx_amount: 100
+      # redeem some LP Tokens from account 1
+      - destination: 4
+        payload:
+          kind: custom
+          value:
+            removeLiquidity:
+              who: *ALICE
+              pool_id : 0
+              amount : 200
+      # redeem some LP Tokens from account 2
+      - destination: 4
+        payload:
+          kind: custom
+          value:
+            removeLiquidity:
+              who: *BOB
+              pool_id : 0
+              amount : 200
+
+    expected:
+      - log:
+         # check 100000 USDC minted to account 1
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: &zero 0x0000000000000000000000000000000000000000000000000000000000000000
+                  to: *ALICE
+                  amount: 100000
+         # check 100000 USDC minted to account 2
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *BOB
+                  amount: 100000
+         # check 100000 USDT minted to account 1
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *ALICE
+                  amount: 100000
+         # check 100000 USDT minted to account 2
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *BOB
+                  amount: 100000
+         # check 5500 USDC minted to account 3
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *CHARLIE
+                  amount: 5500
+         # check lp token balance of account 1 (expected value 0)
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                balance: 0
+         # check lp token balance of account 2 (expected value 0)
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                balance: 0
+         # check liquidity added from account 1
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                addLiquidity:
+                  who: *ALICE 
+                  pool_id: 0
+                  mint_amount: 20000
+         # check liquidity added from account 2
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                addLiquidity:
+                  who: *BOB
+                  pool_id: 0
+                  mint_amount: 20000
+          # check exchange reply (expected dy_amount is ~100)
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                exchange:
+                  who: *CHARLIE
+                  pool_id: 0
+                  i: 0
+                  j: 1
+                  dy_amount: 99 
+          # check removeLiquidity reply
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                removeLiquidity:
+                  who: *ALICE
+                  pool_id: 0
+                  amounts: [100, 99]
+          # check removeLiquidity reply
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                removeLiquidity:
+                  who: *BOB
+                  pool_id: 0
+                  amounts: [100, 99]

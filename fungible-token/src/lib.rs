@@ -4,11 +4,9 @@
 #![no_std]
 #![feature(const_btree_new)]
 
-// use codec::{Decode, Encode};
+use fungible_token_messages::{Action, ApproveData, Event, InitConfig, TransferData};
 use gstd::{debug, exec, msg, prelude::*, ActorId};
 use primitive_types::H256;
-// use sp_arithmetic::traits::One;
-use fungible_token_messages::{Action, ApproveData, Event, InitConfig, TransferData};
 
 const GAS_RESERVE: u64 = 500_000_000;
 
@@ -201,11 +199,11 @@ impl FungibleToken {
 
 gstd::metadata! {
     title: "FungibleToken",
-        init:
-            input : InitConfig,
-        handle:
-            input : Action,
-            output : Event,
+    init:
+        input: InitConfig,
+    handle:
+        input: Action,
+        output: Event,
 }
 
 #[no_mangle]
