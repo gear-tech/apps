@@ -1,0 +1,20 @@
+{
+  "name": "dao1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc src"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^4.5.4"
+  },
+  "dependencies": {
+    "@gear-js/api": "^0.8.16",
+    "@polkadot/api": "^6.12.1",
+    "dotenv": "^10.0.0"
+  }
+}
