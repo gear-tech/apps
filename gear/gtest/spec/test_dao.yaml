@@ -1,0 +1,852 @@
+title: dao test
+
+messages:
+  - &mint_message
+    destination: 1
+    source: &source
+      kind: id
+      value: 6
+    payload: &payload
+      kind: custom
+      value: &value
+        mint:
+          account: &user 0x0600000000000000000000000000000000000000000000000000000000000000
+          amount: 10000
+  - &approve_message
+    destination: 1
+    source: 
+      kind: id
+      value: 6
+    payload: &payload_approve
+      kind: custom
+      value:
+        approve:
+          owner: *user
+          spender: &dao_id 0x0200000000000000000000000000000000000000000000000000000000000000
+          amount: 10000
+  - &submit_proposal_message
+    destination: 2
+    source: &source_admin
+      kind: id
+      value: 3
+    payload: &payload_submit_message
+      kind: custom
+      value:
+        submitProposal:
+          applicant: *user
+          token_tribute: 500
+          shares_requested: 500
+          quorum: 60
+          detailes: "description"
+  - &submit_vote_message_yes
+    destination: 2
+    source:
+      kind: id
+      value: 3
+    payload: &payload_submit_vote
+      kind: custom
+      value:
+        submitVote:
+          proposal_id: 0
+          vote: yes
+  - &process_proposal
+    destination: 2
+    source:
+      kind: id
+      value: 3
+    payload: &payload_process_proposal
+      kind: custom
+      value:
+        processProposal:
+          proposal_id: 0
+  - &transfer_tokens
+    destination: 1
+    source: 
+      kind: id
+      value: 2
+    payload:
+      kind: custom
+      value:
+        transfer:
+          from: *user
+          to: &guild_bank_id 0x0400000000000000000000000000000000000000000000000000000000000000
+          amount: 500
+  - &ragequit
+    destination: 2
+    source: 
+      kind: id
+      value: 7
+    payload:
+      kind: custom
+      value:
+        rageQuit: 700
+
+logs:
+  - &mint_success
+    destination: 6
+    payload:
+      kind: custom
+      value:
+        transfer:
+          from: &zero 0x0000000000000000000000000000000000000000000000000000000000000000
+          to: *user
+          amount: 10000
+  - &approval_success
+    destination: 6
+    payload:
+      kind: custom
+      value:
+        approval:
+          owner: *user
+          spender: *dao_id
+          amount: 10000
+  - &submit_proposal_success
+    destination: 3
+    payload:
+      kind: custom
+      value:
+        submitProposal:
+          proposer: &admin 0x0300000000000000000000000000000000000000000000000000000000000000
+          applicant: *user
+          proposal_id: 0
+          token_tribute: 500
+  
+
+programs:
+  - id: 1
+    path: target/wasm32-unknown-unknown/release/fungible_token.wasm
+    init_message:
+      kind: custom
+      value:
+          name: GearToken
+          symbol: GRT
+  - id: 2
+    path: target/wasm32-unknown-unknown/release/dao.wasm
+    init_message:
+      kind: custom
+      value:
+          admin: *admin
+          approved_token_program_id: &token_id 0x0100000000000000000000000000000000000000000000000000000000000000
+          guild_bank_id: *guild_bank_id 
+          period_duration: 1000
+          voting_period_length: 100000
+          grace_period_length: 100000
+          dilution_bound: 3
+          abort_window: 1000
+
+
+fixtures:
+  - title: submit_proposal
+    messages:
+      - *mint_message
+      - *approve_message
+      - *submit_proposal_message
+    
+    expected:
+      - step: 1
+        messages:
+          - *approve_message
+          - *submit_proposal_message
+        log:
+          - *mint_success
+
+      - step: 2
+        messages:
+          - *submit_proposal_message
+        log:
+          - *mint_success
+          - *approval_success
+      - step: 3
+        messages:
+          - *transfer_tokens
+        log:
+          - *mint_success
+          - *approval_success
+      - step: 4
+        messages: 
+          - destination: 2
+            source: 
+              kind: id
+              value: 1
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *user
+                  to: *guild_bank_id
+                  amount: 500
+        log:
+          - *mint_success
+          - *approval_success
+      - step: 5
+        messages:
+          - *submit_proposal_message
+        log:
+          - *mint_success
+          - *approval_success
+      - step: 6
+        messages: []
+        log:
+          - *mint_success
+          - *approval_success
+          - *submit_proposal_success
+      
+  - title: submit_proposal_fail
+    messages:
+      - destination: 2
+        source: 
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            submitProposal:
+              applicant: *zero
+              token_tribute: 500
+              shares_requested: 500
+              detailes: "description"
+      - destination: 2
+        source: 
+          kind: id
+          value: 8
+        payload:
+          kind: custom
+          value:
+            submitProposal:
+              applicant: *user
+              token_tribute: 500
+              shares_requested: 500
+              detailes: "description"
+    expected:
+      - log:
+        - &error_message_to_admin
+          destination: 3
+          exitCode: 1
+        - destination: 8
+          exitCode: 1  
+
+  - title: vote_on_proposal 
+    messages:
+      - *mint_message
+      - *approve_message
+      - *submit_proposal_message
+      - *submit_vote_message_yes
+        
+    expected:
+      - messages: []
+        log:
+        - *mint_success
+        - *approval_success
+        - *submit_proposal_success
+        - &submit_vote_success_yes
+          destination: 3
+          payload:
+            kind: custom
+            value:
+              submitVote:
+                account: *admin
+                proposal_id: 0
+                vote: yes
+
+  - title: vote_on_proposal_fail
+    messages:
+    - destination: 2
+      source: 
+        kind: id
+        value: 3
+      payload:
+        kind: custom
+        value:
+          submitVote:
+            proposal_id: 0
+            vote: yes
+    # - *mint_message
+    # - *approve_message
+    # - *submit_proposal_message
+    # - *submit_vote_message_yes
+    # - *submit_vote_message_yes
+    # - destination: 2
+    #   source:
+    #     kind: id
+    #     value: 8
+    #   payload:
+    #     kind: custom
+    #     value:
+    #       submitVote:
+    #         proposal_id: 0
+    #         vote: yes
+    
+    expected:
+      - log:
+        - destination: 3
+          exitCode: 1 
+        # - *mint_success
+        # - *approval_success
+        # - *submit_proposal_success
+        # - *submit_vote_success_yes
+        # - destination: 3
+        #   exitCode: 1
+        # - destination: 8
+        #   exitCode: 1
+        # - destination: 3
+        #   payload:
+        #       kind: custom
+        #       value:
+        #         submitVote:
+        #           account: *admin
+        #           proposal_id: 0
+        #           vote: yes
+
+  - title: process_proposal - admin creates proposal, adds user to the dao members and user is able to create proposals
+    messages:
+      - *mint_message
+      - *approve_message
+      - *submit_proposal_message
+      - *submit_vote_message_yes
+      - *process_proposal
+      - <<: *submit_proposal_message
+        destination: 2
+        source:
+          kind: id
+          value: 6
+        payload:
+          kind: custom
+          value:
+            submitProposal:
+              applicant: *user
+              token_tribute: 500
+              shares_requested: 500
+              quorum: 60
+              detailes: "description"
+
+    expected:
+      - messages: []
+        log:
+        - *mint_success
+        - *approval_success
+        - *submit_proposal_success
+        - *submit_vote_success_yes
+        - &process_proposal_success
+          destination: 3
+          payload:
+            kind: custom
+            value:
+              processProposal:
+                applicant: *user
+                proposal_id: 0
+                token_tribute: 500
+                shares_requested: 500
+                did_pass: true
+        - destination: 6
+          payload:
+            kind: custom
+            value:
+              submitProposal:
+                proposer: *user
+                applicant: *user
+                proposal_id: 1
+                token_tribute: 500
+  - title: cancel proposal - admin creates proposal and cancells it
+    messages:
+      - *mint_message
+      - *approve_message
+      - *submit_proposal_message
+      - &cancel_proposal_message
+        destination: 2
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            cancelProposal: 0
+    expected:
+      - messages: []
+        log:
+        - *mint_success
+        - *approval_success
+        - *submit_proposal_success
+        - &cancel_proposal_success
+          destination: 3
+          payload:
+            kind: custom
+            value:
+              cancel:
+                member: *admin
+                proposal_id: 0
+                amount: 500
+  - title: cancel proposal - admin cannot cancel proposal because there are YES votes on it 
+    messages:
+      - *mint_message
+      - *approve_message
+      - *submit_proposal_message
+      - *submit_vote_message_yes
+      - *cancel_proposal_message
+    expected:
+      - messages: []
+        log:
+        - *mint_success
+        - *approval_success
+        - *submit_proposal_success
+        - *submit_vote_success_yes
+        - *error_message_to_admin
+
+  - title: abort proposal - admin creates proposal and applicant aborts it
+    messages:
+      - *mint_message
+      - *approve_message
+      - *submit_proposal_message
+      - &abort_proposal_message
+        destination: 2
+        source:
+          kind: id
+          value: 6
+        payload:
+          kind: custom
+          value:
+            abort: 0
+    expected:
+      - messages: []
+        log:
+        - *mint_success
+        - *approval_success
+        - *submit_proposal_success
+        - &abort_proposal_success
+          destination: 6
+          payload:
+            kind: custom
+            value:
+              abort:
+                member: *user
+                proposal_id: 0
+                amount: 500
+  - title: ragequit - admin adds new members to the dao
+    messages:
+      - <<: *mint_message
+        destination: 1
+        source: *source
+        payload: 
+          <<: *payload
+          kind: custom
+          value:
+            mint:
+              account: &user_6 0x0600000000000000000000000000000000000000000000000000000000000000
+              amount: 10000
+      - <<: *mint_message
+        destination: 1
+        source: 
+          <<: *source
+          kind: id
+          value: 7
+        payload: 
+          <<: *payload
+          kind: custom
+          value:
+            mint:
+              account: &user_7 0x0700000000000000000000000000000000000000000000000000000000000000
+              amount: 10000
+      - <<: *mint_message
+        destination: 1
+        source: 
+          <<: *source
+          kind: id
+          value: 8
+        payload: 
+          <<: *payload
+          kind: custom
+          value:
+            mint:
+              account: &user_8 0x0800000000000000000000000000000000000000000000000000000000000000
+              amount: 10000
+      - <<: *approve_message
+        destination: 1
+        source: *source
+        payload: *payload_approve
+      - <<: *approve_message
+        destination: 1
+        source:
+          <<: *source
+          kind: id
+          value: 7
+        payload:
+          <<: *payload_approve
+          kind: custom
+          value:
+            approve:
+              owner: *user_7
+              spender: *dao_id 
+              amount: 10000
+      - <<: *approve_message
+        destination: 1
+        source:
+          <<: *source
+          kind: id
+          value: 8
+        payload:
+          <<: *payload_approve
+          kind: custom
+          value:
+            approve:
+              owner: *user_8
+              spender: *dao_id 
+              amount: 10000
+      - <<: *submit_proposal_message
+        destination: 2
+        source: *source_admin
+        payload:
+          <<: *payload_submit_message
+          kind: custom
+          value:
+            submitProposal:
+              applicant: *user_6
+              token_tribute: 600
+              shares_requested: 600
+              quorum: 10
+              detailes: "description"
+      - <<: *submit_proposal_message
+        destination: 2
+        source: *source_admin
+        payload:
+          <<: *payload_submit_message
+          kind: custom
+          value:
+            submitProposal:
+              applicant: *user_7
+              token_tribute: 700
+              shares_requested: 700
+              quorum: 0
+              detailes: "description"
+      - <<: *submit_proposal_message
+        destination: 2
+        source: *source_admin
+        payload:
+          <<: *payload_submit_message
+          kind: custom
+          value:
+            submitProposal:
+              applicant: *user_8
+              token_tribute: 800
+              shares_requested: 800
+              quorum: 0
+              detailes: "description"
+      - <<: *submit_vote_message_yes
+        destination: 2
+        source:
+          kind: id
+          value: 3
+        payload:
+          <<: *payload_submit_message
+          kind: custom
+          value:
+            submitVote:
+              proposal_id: 0
+              vote: yes
+      - <<: *submit_vote_message_yes
+        destination: 2
+        source:
+          kind: id
+          value: 3
+        payload:
+          <<: *payload_submit_message
+          kind: custom
+          value:
+            submitVote:
+              proposal_id: 1
+              vote: yes
+      - <<: *submit_vote_message_yes
+        destination: 2
+        source:
+          kind: id
+          value: 3
+        payload:
+          <<: *payload_submit_message
+          kind: custom
+          value:
+            submitVote:
+              proposal_id: 2
+              vote: yes
+      - *process_proposal 
+      - <<: *process_proposal
+        destination: 2
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            processProposal:
+              proposal_id: 1
+      - <<: *submit_vote_message_yes
+        destination: 2
+        source:
+          kind: id
+          value: 6
+        payload:
+          <<: *payload_submit_message
+          kind: custom
+          value:
+            submitVote:
+              proposal_id: 2
+              vote: yes
+      - <<: *submit_vote_message_yes
+        destination: 2
+        source:
+          kind: id
+          value: 7
+        payload:
+          <<: *payload_submit_message
+          kind: custom
+          value:
+            submitVote:
+              proposal_id: 2
+              vote: yes
+      - <<: *process_proposal
+        destination: 2
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            processProposal:
+              proposal_id: 2
+      - <<: *submit_proposal_message
+        destination: 2
+        source: *source
+        payload:
+          <<: *payload_submit_message
+          kind: custom
+          value:
+            submitProposal:
+              applicant: *user_6
+              token_tribute: 800
+              shares_requested: 800
+              quorum: 0
+              detailes: "description"
+      - <<: *submit_vote_message_yes
+        destination: 2
+        source:
+          kind: id
+          value: 6
+        payload:
+          <<: *payload_submit_message
+          kind: custom
+          value:
+            submitVote:
+              proposal_id: 3
+              vote: yes
+      - *ragequit
+      - <<: *ragequit
+        destination: 2
+        source:
+          kind: id
+          value: 8
+        payload:
+          kind: custom
+          value:
+            rageQuit: 800
+      - <<: *process_proposal
+        destination: 2
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            processProposal:
+              proposal_id: 3      
+    expected:
+      - messages: []
+        log:
+        - destination: 6
+          payload:
+            kind: custom
+            value:
+              transfer:
+                from: *zero
+                to: *user_6
+                amount: 10000
+        - destination: 7
+          payload:
+            kind: custom
+            value:
+              transfer:
+                from: *zero
+                to: *user_7
+                amount: 10000
+        - destination: 8
+          payload:
+            kind: custom
+            value:
+              transfer:
+                from: *zero
+                to: *user_8
+                amount: 10000
+        - destination: 6
+          payload:
+            kind: custom
+            value:
+              approval:
+                owner: *user_6
+                spender: *dao_id
+                amount: 10000
+        - destination: 7
+          payload:
+            kind: custom
+            value:
+              approval:
+                owner: *user_7
+                spender: *dao_id
+                amount: 10000
+        - destination: 8
+          payload:
+            kind: custom
+            value:
+              approval:
+                owner: *user_8
+                spender: *dao_id
+                amount: 10000
+        - destination: 3
+          payload:
+            kind: custom
+            value:
+              submitProposal:
+                proposer: *admin
+                applicant: *user_6
+                proposal_id: 0
+                token_tribute: 600
+        - destination: 3
+          payload:
+            kind: custom
+            value:
+              submitProposal:
+                proposer: *admin
+                applicant: *user_7
+                proposal_id: 1
+                token_tribute: 700
+        - destination: 3
+          payload:
+            kind: custom
+            value:
+              submitProposal:
+                proposer: *admin
+                applicant: *user_8
+                proposal_id: 2
+                token_tribute: 800
+        - destination: 3
+          payload:
+            kind: custom
+            value:
+              submitVote:
+                account: *admin
+                proposal_id: 0
+                vote: yes
+        - destination: 3
+          payload:
+            kind: custom
+            value:
+              submitVote:
+                account: *admin
+                proposal_id: 1
+                vote: yes
+        - destination: 3
+          payload:
+            kind: custom
+            value:
+              submitVote:
+                account: *admin
+                proposal_id: 2
+                vote: yes
+        - destination: 3
+          payload:
+            kind: custom
+            value:
+              processProposal:
+                applicant: *user_6
+                proposal_id: 0
+                token_tribute: 600
+                shares_requested: 600
+                did_pass: true
+        - destination: 3
+          payload:
+            kind: custom
+            value:
+              processProposal:
+                applicant: *user_7
+                proposal_id: 1
+                token_tribute: 700
+                shares_requested: 700
+                did_pass: true
+        - destination: 6
+          payload:
+            kind: custom
+            value:
+              submitVote:
+                account: *user_6
+                proposal_id: 2
+                vote: yes
+        - destination: 7
+          payload:
+            kind: custom
+            value:
+              submitVote:
+                account: *user_7
+                proposal_id: 2
+                vote: yes
+        - destination: 3
+          payload:
+            kind: custom
+            value:
+              processProposal:
+                applicant: *user_8
+                proposal_id: 2
+                token_tribute: 800
+                shares_requested: 800
+                did_pass: true
+        - destination: 6
+          payload:
+            kind: custom
+            value:
+              submitProposal:
+                proposer: *user_6
+                applicant: *user_6
+                proposal_id: 3
+                token_tribute: 800
+        - destination: 6
+          payload:
+            kind: custom
+            value:
+              submitVote:
+                account: *user_6
+                proposal_id: 3
+                vote: yes
+        - destination: 7
+          payload:
+            kind: custom
+            value:
+              rageQuit:
+                member: *user_7
+                amount: 700
+        - destination: 8
+          payload:
+            kind: custom
+            value:
+              rageQuit:
+                member: *user_8
+                amount: 800
+        - destination: 3
+          payload:
+            kind: custom
+            value:
+              processProposal:
+                applicant: *user_6
+                proposal_id: 3
+                token_tribute: 800
+                shares_requested: 800
+                did_pass: false
+      
+        
+
+  
+       
+        
