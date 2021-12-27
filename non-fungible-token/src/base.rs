@@ -15,6 +15,7 @@ pub trait NonFungibleTokenBase {
     /// * `to`: the valid ActorId, the account to which the token will be sent
     /// Contract must panic if `from` is neither the token owner nor the approved actor for the token. It also must panic if `to` is a zero ID
     fn transfer(&mut self, rom: &ActorId, to: &ActorId, token_id: U256);
+
     /// Gives a right to the actor to manage the specific token
     /// Arguments:
     /// * `token_id`: the token ID

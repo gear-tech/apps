@@ -358,7 +358,6 @@ fixtures:
             transfer:
               to: *user_3
               token_id: 0
- 
 
     expected:
       - log:
@@ -373,7 +372,7 @@ fixtures:
                 to: *user_1
                 token_id: 1
         - *approve_success
-        - &transfer_success
+        - <<: *transfer_success
           destination: 3
           payload:
             kind: custom
@@ -382,12 +381,6 @@ fixtures:
                 from: *user_2
                 to: *user_3
                 token_id: 0
-        # - destination: 2
-        #   exitCode: 1
-        # - destination: 2
-        #   exitCode: 1
-        # - destination: 3
-        #   exitCode: 1
 
   - title: operator (set_approval_for_all)
     messages:
@@ -434,7 +427,7 @@ fixtures:
             approveForAll:
               to: *user_2
               approve: false
-      - &set_approval_for_all
+      - <<: *set_approval_for_all
         destination: 1
         source: *source
         payload:
@@ -485,7 +478,7 @@ fixtures:
                 owner: *user_1
                 operator: *user_2
                 approved: true
-        - &transfer_success
+        - <<: *transfer_success
           destination: 3
           payload:
             kind: custom
@@ -494,7 +487,7 @@ fixtures:
                 from: *user_2
                 to: *user_3
                 token_id: 0
-        - &transfer_success
+        - <<: *transfer_success
           destination: 3
           payload:
             kind: custom
@@ -503,7 +496,7 @@ fixtures:
                 from: *user_2
                 to: *user_3
                 token_id: 1
-        - &set_approval_for_all_success
+        - <<: *set_approval_for_all_success
           destination: 2
           payload:
             kind: custom
