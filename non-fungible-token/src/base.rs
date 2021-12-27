@@ -8,7 +8,6 @@ pub trait NonFungibleTokenBase {
     /// * `symbol`: An abbreviated name for NFTs in this contract
     /// * `base_uri`: The URI of the NFT. This could be a website link, an API call, something on IPFS, some other unique identifier, etc
     fn init(&mut self, name: String, symbol: String, base_uri: String);
-
     /// Transfer an NFT item from current owner to the new one
     /// Arguments:
     /// * `token_id`: the ID of the token to transfer
@@ -16,7 +15,6 @@ pub trait NonFungibleTokenBase {
     /// * `to`: the valid ActorId, the account to which the token will be sent
     /// Contract must panic if `from` is neither the token owner nor the approved actor for the token. It also must panic if `to` is a zero ID
     fn transfer(&mut self, rom: &ActorId, to: &ActorId, token_id: U256);
-
     /// Gives a right to the actor to manage the specific token
     /// Arguments:
     /// * `token_id`: the token ID

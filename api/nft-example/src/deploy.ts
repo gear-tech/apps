@@ -6,7 +6,7 @@ require('dotenv').config();
 async function deploy() {
  // const gearApi = await GearApi.create({providerAddress: "wss://rpc-node.gear-tech.io:443"});
   const gearApi = await GearApi.create();
-  const account = GearKeyring.fromMnemonic(process.env.MNEMONIC || "");
+  const account = GearKeyring.fromMnemonic(process.env.MNEMONIC1 || "");
  
   console.log("start deploying NFT");
 

@@ -237,6 +237,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "nft-example"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "non-fungible-token",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
 name = "non-fungible-token"
 version = "0.1.0"
 dependencies = [

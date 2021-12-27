@@ -1,7 +1,7 @@
-use scale_info::TypeInfo;
-use primitive_types::{H256, U256};
 use codec::{Decode, Encode};
-use gstd::{String};
+use gstd::String;
+use primitive_types::{H256, U256};
+use scale_info::TypeInfo;
 
 #[derive(Debug, Decode, TypeInfo)]
 pub struct InitConfig {
@@ -12,7 +12,6 @@ pub struct InitConfig {
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub struct TransferInput {
-    pub from: H256,
     pub to: H256,
     pub token_id: U256,
 }

@@ -12,7 +12,7 @@ export const balance = async (
     }
     console.log(payload);
     
-    await readState(
+    return await readState(
         api,
         process.env.NFT_ID,
         process.env.META_NFT,
@@ -28,13 +28,12 @@ export const tokenOwner = async (
             TokenOwner: token_id
           }
           
-        await readState(
-            api,
-            process.env.NFT_ID,
-            process.env.META_NFT,
-            payload
-        )
-       
+        return await readState(
+                api,
+                process.env.NFT_ID,
+                process.env.META_NFT,
+                payload
+            )    
     };
 
 export const IsTokenOwner = async (
@@ -47,12 +46,12 @@ export const IsTokenOwner = async (
             user: GearKeyring.decodeAddress(account.address)
         }
             
-        await readState(
-            api,
-            process.env.NFT_ID,
-            process.env.META_NFT,
-            payload
-        )    
+        return await readState(
+                api,
+                process.env.NFT_ID,
+                process.env.META_NFT,
+                payload
+            )    
     };
 
 export const getApproved = async (

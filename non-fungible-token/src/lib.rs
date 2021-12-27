@@ -3,14 +3,20 @@
 
 use codec::{Decode, Encode};
 use gstd::{exec, msg, prelude::*, ActorId};
+<<<<<<< HEAD
 pub mod base;
 use base::NonFungibleTokenBase;
 pub mod token;
 use token::TokenMetadata;
 
 use gstd::{debug, exec, msg, prelude::*, ActorId};
+=======
+>>>>>>> created nft-example using nft-library and nft-example test
 pub mod base;
-use base::{NonFungibleTokenBase};
+use base::NonFungibleTokenBase;
+pub mod token;
+use token::TokenMetadata;
+
 use primitive_types::{H256, U256};
 use scale_info::TypeInfo;
 
@@ -127,7 +133,41 @@ impl NonFungibleTokenBase for NonFungibleToken {
             0,
         );
     }
+<<<<<<< HEAD
 }
+
+impl NonFungibleToken {
+    pub fn is_token_owner(&self, token_id: U256, account: &ActorId) -> bool {
+        account == self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID)
+    }
+
+    pub fn authorized_actor(&self, token_id: U256, account: &ActorId) -> AuthAccount {
+        let owner = self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID);
+        if owner == account {
+            return AuthAccount::Owner;
+        }
+        if self.token_approvals.get(&token_id).unwrap_or(&ZERO_ID) == account {
+            return AuthAccount::ApprovedActor;
+        }
+        if *self
+            .operator_approval
+            .get(owner)
+            .unwrap_or(&BTreeMap::<ActorId, bool>::default())
+            .get(account)
+            .unwrap_or(&false)
+        {
+            return AuthAccount::Operator;
+        }
+        AuthAccount::None
+    }
+
+    pub fn exists(&self, token_id: U256) -> bool {
+        self.owner_by_id.contains_key(&token_id)
+    }
+=======
+>>>>>>> created nft-example using nft-library and nft-example test
+}
+
 
 impl NonFungibleToken {
     pub fn is_token_owner(&self, token_id: U256, account: &ActorId) -> bool {
@@ -159,44 +199,6 @@ impl NonFungibleToken {
     }
 }
 
-
-impl NonFungibleToken {
-    fn is_token_owner(&self, token_id: U256, account: &ActorId) -> bool {
-        let zero = ActorId::new(H256::zero().to_fixed_bytes());
-        account == self.token_owner.get(&token_id).unwrap_or(&zero)
-    }
-    
-    fn is_authorized_source(&self, token_id: U256, account: &ActorId) -> bool {
-        let zero = ActorId::new(H256::zero().to_fixed_bytes());
-        let owner = self.token_owner.get(&token_id).unwrap_or(&zero);
-
-        if owner == account {
-            return true;
-        }
-
-        if self.token_approvals.get(&token_id).unwrap_or(&zero) == account {
-            return true;
-        }
-
-        if *self
-            .operator_approval
-            .get(owner)
-            .unwrap_or(&BTreeMap::<ActorId, bool>::default())
-            .get(account)
-            .unwrap_or(&false)
-        {
-            return true;
-        }
-
-        false
-    }
-
-    fn exists(&self, token_id: U256) -> bool {
-        self.token_owner.contains_key(&token_id)
-    }
-
-}
-
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct Approve {
     owner: H256,
@@ -204,11 +206,14 @@ pub struct Approve {
     token_id: U256,
 }
 
+<<<<<<< HEAD
 struct ApproveForAllInput {
     operator: H256,
     approved: bool,
 }
 
+=======
+>>>>>>> created nft-example using nft-library and nft-example test
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct ApproveForAll {
     owner: H256,
@@ -221,6 +226,7 @@ pub struct Transfer {
     pub from: H256,
     pub to: H256,
     pub token_id: U256,
+<<<<<<< HEAD
 }
 
 #[derive(Debug, Encode, TypeInfo, Decode)]
@@ -243,17 +249,20 @@ pub struct Transfer {
     from: H256,
     to: H256,
     token_id: U256,
+=======
+>>>>>>> created nft-example using nft-library and nft-example test
 }
-
-
 
 #[derive(Debug, Encode, TypeInfo, Decode)]
 pub enum NftEvent {
     Transfer(Transfer),
     Approval(Approve),
     ApprovalForAll(ApproveForAll),
+    OwnerOf(H256),
+    BalanceOf(U256),
 }
 
+<<<<<<< HEAD
 
 #[no_mangle]
 pub unsafe extern "C" fn handle() {
@@ -314,4 +323,12 @@ pub unsafe extern "C" fn init() {
         NON_FUNGIBLE_TOKEN.symbol(),
         NON_FUNGIBLE_TOKEN.base_uri()
     );
+=======
+#[derive(Debug, Encode, TypeInfo, Decode)]
+pub enum AuthAccount {
+    Owner,
+    ApprovedActor,
+    Operator,
+    None,
+>>>>>>> created nft-example using nft-library and nft-example test
 }

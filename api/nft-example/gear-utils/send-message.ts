@@ -25,7 +25,7 @@ export const sendMessage = async (
     }
     try {
         await api.message.signAndSend(account, (data) => {
-        console.log(data);
+            //console.log(data);
         });
     } catch (error: any) {
         console.error(`${error.name}: ${error.message}`);

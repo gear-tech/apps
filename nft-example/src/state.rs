@@ -1,8 +1,7 @@
 use codec::{Decode, Encode};
-use scale_info::TypeInfo;
+use gstd::prelude::*;
 use primitive_types::{H256, U256};
-use gstd::{String,prelude::*};
-
+use scale_info::TypeInfo;
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum State {
@@ -25,5 +24,3 @@ pub struct TokenAndUser {
     pub token_id: U256,
     pub user: H256,
 }
-
-
