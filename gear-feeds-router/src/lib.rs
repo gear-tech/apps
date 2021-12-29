@@ -1,6 +1,6 @@
 #![no_std]
 
-use gstd::{debug, exec, msg, prelude::*};
+use gstd::{debug, msg, prelude::*};
 
 use codec::{Decode, Encode};
 use primitive_types::H256;
@@ -60,14 +60,10 @@ async fn main() {
 
     debug!("ROUTER: Starting registering {:?}", register.address);
 
-    let ChannelOutput::Metadata(meta) = msg::send_and_wait_for_reply(
-        register.address.into(),
-        ChannelAction::Meta,
-        exec::gas_available() - 100_000_000,
-        0,
-    )
-    .await
-    .expect("ROUTER: Error processing async message");
+    let ChannelOutput::Metadata(meta) =
+        msg::send_and_wait_for_reply(register.address.into(), ChannelAction::Meta, 500_000_000, 0)
+            .await
+            .expect("ROUTER: Error processing async message");
 
     msg::reply(Channel::new(register.address, meta.clone()), 0, 0);
 
