@@ -1,6 +1,6 @@
 #![no_std]
 
-use gstd::{debug, exec, msg, prelude::*};
+use gstd::{debug, msg, prelude::*};
 
 use codec::{Decode, Encode};
 use primitive_types::H256;
@@ -63,7 +63,7 @@ async fn main() {
     let ChannelOutput::Metadata(meta) = msg::send_and_wait_for_reply(
         register.address.into(),
         ChannelAction::Meta,
-        exec::gas_available() - 100_000_000,
+        500_000_000,
         0,
     )
     .await
