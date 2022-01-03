@@ -6,6 +6,7 @@ members = [
     "gear-feeds-router",
     "ping",
     "fungible-token-messages",
+    "non-fungible-token",
 ]
 
 [profile.release]
