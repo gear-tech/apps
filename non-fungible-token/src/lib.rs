@@ -3,15 +3,6 @@
 
 use codec::{Decode, Encode};
 use gstd::{exec, msg, prelude::*, ActorId};
-<<<<<<< HEAD
-pub mod base;
-use base::NonFungibleTokenBase;
-pub mod token;
-use token::TokenMetadata;
-
-use gstd::{debug, exec, msg, prelude::*, ActorId};
-=======
->>>>>>> created nft-example using nft-library and nft-example test
 pub mod base;
 use base::NonFungibleTokenBase;
 pub mod token;
@@ -133,41 +124,7 @@ impl NonFungibleTokenBase for NonFungibleToken {
             0,
         );
     }
-<<<<<<< HEAD
 }
-
-impl NonFungibleToken {
-    pub fn is_token_owner(&self, token_id: U256, account: &ActorId) -> bool {
-        account == self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID)
-    }
-
-    pub fn authorized_actor(&self, token_id: U256, account: &ActorId) -> AuthAccount {
-        let owner = self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID);
-        if owner == account {
-            return AuthAccount::Owner;
-        }
-        if self.token_approvals.get(&token_id).unwrap_or(&ZERO_ID) == account {
-            return AuthAccount::ApprovedActor;
-        }
-        if *self
-            .operator_approval
-            .get(owner)
-            .unwrap_or(&BTreeMap::<ActorId, bool>::default())
-            .get(account)
-            .unwrap_or(&false)
-        {
-            return AuthAccount::Operator;
-        }
-        AuthAccount::None
-    }
-
-    pub fn exists(&self, token_id: U256) -> bool {
-        self.owner_by_id.contains_key(&token_id)
-    }
-=======
->>>>>>> created nft-example using nft-library and nft-example test
-}
-
 
 impl NonFungibleToken {
     pub fn is_token_owner(&self, token_id: U256, account: &ActorId) -> bool {
@@ -206,14 +163,6 @@ pub struct Approve {
     token_id: U256,
 }
 
-<<<<<<< HEAD
-struct ApproveForAllInput {
-    operator: H256,
-    approved: bool,
-}
-
-=======
->>>>>>> created nft-example using nft-library and nft-example test
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct ApproveForAll {
     owner: H256,
@@ -226,7 +175,6 @@ pub struct Transfer {
     pub from: H256,
     pub to: H256,
     pub token_id: U256,
-<<<<<<< HEAD
 }
 
 #[derive(Debug, Encode, TypeInfo, Decode)]
@@ -244,91 +192,4 @@ pub enum AuthAccount {
     ApprovedActor,
     Operator,
     None,
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct Transfer {
-    from: H256,
-    to: H256,
-    token_id: U256,
-=======
->>>>>>> created nft-example using nft-library and nft-example test
-}
-
-#[derive(Debug, Encode, TypeInfo, Decode)]
-pub enum NftEvent {
-    Transfer(Transfer),
-    Approval(Approve),
-    ApprovalForAll(ApproveForAll),
-    OwnerOf(H256),
-    BalanceOf(U256),
-}
-
-<<<<<<< HEAD
-
-#[no_mangle]
-pub unsafe extern "C" fn handle() {
-    let action: Action = msg::load().expect("Could not load Action");
-    match action {
-        Action::Mint(mint_input) => {
-            let to = ActorId::new(mint_input.account.to_fixed_bytes());
-            NON_FUNGIBLE_TOKEN.mint(&to);
-        }
-        Action::Burn(burn_input) => {
-            let from = ActorId::new(burn_input.account.to_fixed_bytes());
-            NON_FUNGIBLE_TOKEN.burn(&from, burn_input.token_id);
-        }
-        Action::TokenURI(token_id) => {
-            NON_FUNGIBLE_TOKEN.token_uri(token_id);
-        }
-        Action::Approval(approve) => {
-            let spender = ActorId::new(approve.spender.to_fixed_bytes());
-            NON_FUNGIBLE_TOKEN.approve(&spender, approve.token_id);
-        }
-        Action::SetApprovalForAll(approve) => {
-            let operator = ActorId::new(approve.operator.to_fixed_bytes());
-            NON_FUNGIBLE_TOKEN.approve_for_all(&operator, approve.approved);
-        }
-        Action::IsApprovedForAll(is_approved) => {
-            let owner = ActorId::new(is_approved.owner.to_fixed_bytes());
-            let operator = ActorId::new(is_approved.operator.to_fixed_bytes());
-            NON_FUNGIBLE_TOKEN.is_approved_for_all(&owner, &operator);
-        }
-        Action::GetApproved(token_id) => {
-            NON_FUNGIBLE_TOKEN.get_approved(token_id);
-        }
-        Action::TransferFrom(transfer) => {
-            let from = ActorId::new(transfer.from.to_fixed_bytes());
-            let to = ActorId::new(transfer.to.to_fixed_bytes());
-            NON_FUNGIBLE_TOKEN.transfer_from(&from, &to, transfer.token_id);
-        }
-        Action::OwnerOf(token_id) => {
-            NON_FUNGIBLE_TOKEN.owner_of(token_id);
-        }
-        Action::BalanceOf(account) => {
-            let account_id = ActorId::new(account.to_fixed_bytes());
-            NON_FUNGIBLE_TOKEN.balance_of(account_id);
-        }
-    }
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn init() {
-    let config: InitConfig = msg::load().expect("Unable to decode InitConfig");
-    debug!("NON_FUNGIBLE_TOKEN {:?}", config);
-    NON_FUNGIBLE_TOKEN.set_name(config.name);
-    NON_FUNGIBLE_TOKEN.set_symbol(config.symbol);
-    NON_FUNGIBLE_TOKEN.set_base_uri(config.base_uri);
-    debug!(
-        "NON_FUNGIBLE_TOKEN {} SYMBOL {} BASE_URI {} created",
-        NON_FUNGIBLE_TOKEN.name(),
-        NON_FUNGIBLE_TOKEN.symbol(),
-        NON_FUNGIBLE_TOKEN.base_uri()
-    );
-=======
-#[derive(Debug, Encode, TypeInfo, Decode)]
-pub enum AuthAccount {
-    Owner,
-    ApprovedActor,
-    Operator,
-    None,
->>>>>>> created nft-example using nft-library and nft-example test
 }
