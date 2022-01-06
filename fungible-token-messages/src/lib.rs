@@ -56,6 +56,8 @@ pub enum Action {
     DecreaseAllowance(ApproveData),
     TotalIssuance,
     BalanceOf(H256),
+    AddAdmin(H256),
+    RemoveAdmin(H256),
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
@@ -64,4 +66,6 @@ pub enum Event {
     Approval(ApproveData),
     TotalIssuance(u128),
     Balance(u128),
+    AdminAdded(H256),
+    AdminRemoved(H256),
 }

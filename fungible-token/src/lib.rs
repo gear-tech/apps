@@ -12,11 +12,20 @@ const GAS_RESERVE: u64 = 500_000_000;
 
 #[derive(Debug)]
 struct FungibleToken {
+    /// name of the token.
     name: String,
+    /// symbol of the token.
     symbol: String,
+    /// total supply of the token.
     total_supply: u128,
+    /// map to hold balances of token holders.
     balances: BTreeMap<ActorId, u128>,
+    /// map to hold allowance information of token holders.
     allowances: BTreeMap<ActorId, BTreeMap<ActorId, u128>>,
+    /// owner/creater of the token.
+    owner: ActorId,
+    /// owner/creater approved set of admins, who can do mint/burn, approve
+    admins: BTreeSet<ActorId>,
 }
 
 static mut FUNGIBLE_TOKEN: FungibleToken = FungibleToken {
@@ -25,6 +34,8 @@ static mut FUNGIBLE_TOKEN: FungibleToken = FungibleToken {
     total_supply: 0,
     balances: BTreeMap::new(),
     allowances: BTreeMap::new(),
+    owner: ActorId::new(H256::zero().to_fixed_bytes()),
+    admins: BTreeSet::new(),
 };
 
 impl FungibleToken {
@@ -39,6 +50,38 @@ impl FungibleToken {
     }
     fn symbol(&self) -> &str {
         &self.symbol
+    }
+    fn add_admin(&mut self, account: &ActorId) {
+        unsafe {
+            let source = msg::source();
+            if FUNGIBLE_TOKEN.owner != source {
+                panic!("fungibletoken: only token creater can add admin.");
+            }
+            if *account != FUNGIBLE_TOKEN.owner {
+                self.admins.insert(*account);
+            }
+            msg::reply(
+                Event::AdminAdded(H256::from_slice(account.as_ref())),
+                exec::gas_available() - GAS_RESERVE,
+                0,
+            );
+        }
+    }
+    fn remove_admin(&mut self, account: &ActorId) {
+        unsafe {
+            let source = msg::source();
+            if FUNGIBLE_TOKEN.owner != source {
+                panic!("FungibleToken: Only token creater can remove admin.");
+            }
+            if *account != FUNGIBLE_TOKEN.owner {
+                self.admins.remove(account);
+            }
+            msg::reply(
+                Event::AdminRemoved(H256::from_slice(account.as_ref())),
+                exec::gas_available() - GAS_RESERVE,
+                0,
+            );
+        }
     }
     fn total_supply(&self) {
         msg::reply(
@@ -72,6 +115,12 @@ impl FungibleToken {
         );
     }
     fn mint(&mut self, account: &ActorId, amount: u128) {
+        unsafe {
+            let source = msg::source();
+            if FUNGIBLE_TOKEN.owner != source && !FUNGIBLE_TOKEN.admins.contains(&source) {
+                panic!("FungibleToken: Only token creater or designated admins can mint tokens.");
+            }
+        }
         let zero = ActorId::new(H256::zero().to_fixed_bytes());
         if account == &zero {
             panic!("FungibleToken: Mint to zero address.");
@@ -93,6 +142,12 @@ impl FungibleToken {
         );
     }
     fn burn(&mut self, account: &ActorId, amount: u128) {
+        unsafe {
+            let source = msg::source();
+            if FUNGIBLE_TOKEN.owner != source && !FUNGIBLE_TOKEN.admins.contains(&source) {
+                panic!("FungibleToken: Only token creater or designated admins can burn tokens.");
+            }
+        }
         let zero = ActorId::new(H256::zero().to_fixed_bytes());
         if account == &zero {
             panic!("FungibleToken: Burn from zero address.");
@@ -252,6 +307,14 @@ pub unsafe extern "C" fn handle() {
             let account = ActorId::new(acc.to_fixed_bytes());
             FUNGIBLE_TOKEN.balance_of(&account);
         }
+        Action::AddAdmin(acc) => {
+            let account = ActorId::new(acc.to_fixed_bytes());
+            FUNGIBLE_TOKEN.add_admin(&account);
+        }
+        Action::RemoveAdmin(acc) => {
+            let account = ActorId::new(acc.to_fixed_bytes());
+            FUNGIBLE_TOKEN.remove_admin(&account);
+        }
     }
 }
 
@@ -261,6 +324,7 @@ pub unsafe extern "C" fn init() {
     debug!("FUNGIBLE_TOKEN {:?}", config);
     FUNGIBLE_TOKEN.set_name(config.name);
     FUNGIBLE_TOKEN.set_symbol(config.symbol);
+    FUNGIBLE_TOKEN.owner = msg::source();
     debug!(
         "FUNGIBLE_TOKEN {} SYMBOL {} created",
         FUNGIBLE_TOKEN.name(),

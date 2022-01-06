@@ -35,6 +35,12 @@ programs:
 fixtures:
   - title: curve_amm
     messages:
+      # add curve_amm program as admin to LP-Token program
+      - destination: 3
+        payload:
+          kind: custom
+          value:
+            addAdmin: 0x0400000000000000000000000000000000000000000000000000000000000000
       # add 100000 USDC to account 1 
       - destination: 1
         payload:
@@ -137,6 +143,12 @@ fixtures:
 
     expected:
       - log:
+         # check curve_amm program is added as admin to LP-Token program.
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                adminAdded: 0x0400000000000000000000000000000000000000000000000000000000000000
          # check 100000 USDC minted to account 1
           - destination: 1000001
             payload:
