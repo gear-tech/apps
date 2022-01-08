@@ -24,23 +24,34 @@ pub struct BurnInput {
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct ApproveData {
+pub struct ApproveInput {
+    pub spender: H256,
+    pub amount: u128,
+}
+
+#[derive(Debug, Encode, Decode, TypeInfo)]
+pub struct ApproveReply {
     pub owner: H256,
     pub spender: H256,
     pub amount: u128,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct TransferData {
+pub struct TransferInput {
+    pub to: H256,
+    pub amount: u128,
+}
+
+#[derive(Debug, Decode, Encode, TypeInfo)]
+pub struct TransferReply {
     pub from: H256,
     pub to: H256,
     pub amount: u128,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct TransferFromData {
+pub struct TransferFromInput {
     pub owner: H256,
-    pub from: H256,
     pub to: H256,
     pub amount: u128,
 }
@@ -49,11 +60,11 @@ pub struct TransferFromData {
 pub enum Action {
     Mint(MintInput),
     Burn(BurnInput),
-    Transfer(TransferData),
-    TransferFrom(TransferFromData),
-    Approve(ApproveData),
-    IncreaseAllowance(ApproveData),
-    DecreaseAllowance(ApproveData),
+    Transfer(TransferInput),
+    TransferFrom(TransferFromInput),
+    Approve(ApproveInput),
+    IncreaseAllowance(ApproveInput),
+    DecreaseAllowance(ApproveInput),
     TotalIssuance,
     BalanceOf(H256),
     AddAdmin(H256),
@@ -62,8 +73,8 @@ pub enum Action {
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum Event {
-    Transfer(TransferData),
-    Approval(ApproveData),
+    Transfer(TransferReply),
+    Approval(ApproveReply),
     TotalIssuance(u128),
     Balance(u128),
     AdminAdded(H256),

@@ -14,7 +14,7 @@ use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::{vec, vec::Vec};
 use codec::{Decode, Encode};
 use core::num::ParseIntError;
-use fungible_token_messages::{Action, BurnInput, Event, MintInput, TransferData};
+use fungible_token_messages::{Action, BurnInput, Event, MintInput, TransferInput, TransferFromInput};
 use gstd::{errors::ContractError, exec, lock::mutex::Mutex, msg, prelude::*, ActorId, ToString};
 use primitive_types::H256;
 use scale_info::TypeInfo;
@@ -464,8 +464,8 @@ impl CurveAmm {
                 let amount_u = amount.into_inner() / FixedU128::DIV;
                 let _reply: Event = msg::send_and_wait_for_reply(
                     assets[i],
-                    &Action::Transfer(TransferData {
-                        from: H256::from_slice(who.as_ref()),
+                    &Action::Transfer(TransferFromInput {
+                        owner: H256::from_slice(who.as_ref()),
                         to: H256::from_slice(exec::program_id().as_ref()),
                         amount: amount_u,
                     }),
@@ -485,8 +485,8 @@ impl CurveAmm {
                 let amount: u128 = Self::fixed_to_u128(amount);
                 let _reply: Event = msg::send_and_wait_for_reply(
                     assets[i],
-                    &Action::Transfer(TransferData {
-                        from: H256::from_slice(exec::program_id().as_ref()),
+                    &Action::Transfer(TransferInput {
+                        // from: H256::from_slice(exec::program_id().as_ref()),
                         to: H256::from_slice(who.as_ref()),
                         amount,
                     }),
@@ -953,8 +953,8 @@ impl CurveAmm {
         }
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.assets[i],
-            &Action::Transfer(TransferData {
-                from: H256::from_slice(who.as_ref()),
+            &Action::Transfer(TransferFromInput {
+                owner: H256::from_slice(who.as_ref()),
                 to: H256::from_slice(exec::program_id().as_ref()),
                 amount,
             }),
@@ -972,8 +972,8 @@ impl CurveAmm {
         let amount: u128 = Self::fixed_to_u128(&dy);
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.assets[j],
-            &Action::Transfer(TransferData {
-                from: H256::from_slice(exec::program_id().as_ref()),
+            &Action::Transfer(TransferInput {
+                // from: H256::from_slice(exec::program_id().as_ref()),
                 to: H256::from_slice(who.as_ref()),
                 amount,
             }),

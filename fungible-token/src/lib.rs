@@ -4,7 +4,7 @@
 #![no_std]
 #![feature(const_btree_new)]
 
-use fungible_token_messages::{Action, ApproveData, Event, InitConfig, TransferData};
+use fungible_token_messages::{Action, ApproveReply, Event, InitConfig, TransferReply};
 use gstd::{debug, exec, msg, prelude::*, ActorId};
 use primitive_types::H256;
 
@@ -22,9 +22,9 @@ struct FungibleToken {
     balances: BTreeMap<ActorId, u128>,
     /// map to hold allowance information of token holders.
     allowances: BTreeMap<ActorId, BTreeMap<ActorId, u128>>,
-    /// owner/creater of the token.
-    owner: ActorId,
-    /// owner/creater approved set of admins, who can do mint/burn, approve
+    /// creater of the token.
+    creator: ActorId,
+    /// creater approved set of admins, who can do mint/burn.
     admins: BTreeSet<ActorId>,
 }
 
@@ -34,7 +34,7 @@ static mut FUNGIBLE_TOKEN: FungibleToken = FungibleToken {
     total_supply: 0,
     balances: BTreeMap::new(),
     allowances: BTreeMap::new(),
-    owner: ActorId::new(H256::zero().to_fixed_bytes()),
+    creator: ActorId::new(H256::zero().to_fixed_bytes()),
     admins: BTreeSet::new(),
 };
 
@@ -54,10 +54,10 @@ impl FungibleToken {
     fn add_admin(&mut self, account: &ActorId) {
         unsafe {
             let source = msg::source();
-            if FUNGIBLE_TOKEN.owner != source {
+            if FUNGIBLE_TOKEN.creator != source {
                 panic!("fungibletoken: only token creater can add admin.");
             }
-            if *account != FUNGIBLE_TOKEN.owner {
+            if *account != FUNGIBLE_TOKEN.creator {
                 self.admins.insert(*account);
             }
             msg::reply(
@@ -70,10 +70,10 @@ impl FungibleToken {
     fn remove_admin(&mut self, account: &ActorId) {
         unsafe {
             let source = msg::source();
-            if FUNGIBLE_TOKEN.owner != source {
+            if FUNGIBLE_TOKEN.creator != source {
                 panic!("FungibleToken: Only token creater can remove admin.");
             }
-            if *account != FUNGIBLE_TOKEN.owner {
+            if *account != FUNGIBLE_TOKEN.creator {
                 self.admins.remove(account);
             }
             msg::reply(
@@ -117,7 +117,7 @@ impl FungibleToken {
     fn mint(&mut self, account: &ActorId, amount: u128) {
         unsafe {
             let source = msg::source();
-            if FUNGIBLE_TOKEN.owner != source && !FUNGIBLE_TOKEN.admins.contains(&source) {
+            if FUNGIBLE_TOKEN.creator != source && !FUNGIBLE_TOKEN.admins.contains(&source) {
                 panic!("FungibleToken: Only token creater or designated admins can mint tokens.");
             }
         }
@@ -130,7 +130,7 @@ impl FungibleToken {
             let old_balance = FUNGIBLE_TOKEN.get_balance(account);
             self.set_balance(account, old_balance.saturating_add(amount));
         }
-        let transfer_data = TransferData {
+        let transfer_data = TransferReply {
             from: H256::zero(),
             to: H256::from_slice(account.as_ref()),
             amount,
@@ -144,7 +144,7 @@ impl FungibleToken {
     fn burn(&mut self, account: &ActorId, amount: u128) {
         unsafe {
             let source = msg::source();
-            if FUNGIBLE_TOKEN.owner != source && !FUNGIBLE_TOKEN.admins.contains(&source) {
+            if FUNGIBLE_TOKEN.creator != source && !FUNGIBLE_TOKEN.admins.contains(&source) {
                 panic!("FungibleToken: Only token creater or designated admins can burn tokens.");
             }
         }
@@ -157,7 +157,7 @@ impl FungibleToken {
             let old_balance = FUNGIBLE_TOKEN.get_balance(account);
             self.set_balance(account, old_balance.saturating_sub(amount));
         }
-        let transfer_data = TransferData {
+        let transfer_data = TransferReply {
             from: H256::from_slice(account.as_ref()),
             to: H256::zero(),
             amount,
@@ -183,7 +183,7 @@ impl FungibleToken {
         self.set_balance(sender, sender_balance.saturating_sub(amount));
         let recipient_balance = self.get_balance(recipient);
         self.set_balance(recipient, recipient_balance.saturating_add(amount));
-        let transfer_data = TransferData {
+        let transfer_data = TransferReply {
             from: H256::from_slice(sender.as_ref()),
             to: H256::from_slice(recipient.as_ref()),
             amount,
@@ -196,18 +196,14 @@ impl FungibleToken {
     }
     fn approve(&mut self, owner: &ActorId, spender: &ActorId, amount: u128) {
         let zero = ActorId::new(H256::zero().to_fixed_bytes());
-        if owner == &zero {
-            panic!("FungibleToken: Approve from zero address.");
-        }
         if spender == &zero {
             panic!("FungibleToken: Approve to zero address.");
         }
-
         self.allowances
             .entry(*owner)
             .or_default()
             .insert(*spender, amount);
-        let approve_data = ApproveData {
+        let approve_data = ApproveReply {
             owner: H256::from_slice(owner.as_ref()),
             spender: H256::from_slice(spender.as_ref()),
             amount,
@@ -247,7 +243,7 @@ impl FungibleToken {
         if current_allowance < amount {
             panic!("FungibleToken: Transfer amount exceeds allowance");
         }
-        self.transfer(sender, recipient, amount);
+        self.transfer(owner, recipient, amount);
         self.approve(owner, sender, current_allowance - amount);
     }
 }
@@ -275,30 +271,30 @@ pub unsafe extern "C" fn handle() {
             FUNGIBLE_TOKEN.burn(&from, burn_input.amount);
         }
         Action::Transfer(transfer_data) => {
-            let from = ActorId::new(transfer_data.from.to_fixed_bytes());
+            let from = msg::source();
             let to = ActorId::new(transfer_data.to.to_fixed_bytes());
             FUNGIBLE_TOKEN.transfer(&from, &to, transfer_data.amount);
         }
         Action::Approve(approve_data) => {
-            let owner = ActorId::new(approve_data.owner.to_fixed_bytes());
+            let approver = msg::source();
             let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
-            FUNGIBLE_TOKEN.approve(&owner, &spender, approve_data.amount);
+            FUNGIBLE_TOKEN.approve(&approver, &spender, approve_data.amount);
         }
         Action::TransferFrom(transfer_data) => {
             let owner = ActorId::new(transfer_data.owner.to_fixed_bytes());
-            let from = ActorId::new(transfer_data.from.to_fixed_bytes());
+            let from = msg::source();
             let to = ActorId::new(transfer_data.to.to_fixed_bytes());
             FUNGIBLE_TOKEN.transfer_from(&owner, &from, &to, transfer_data.amount);
         }
         Action::IncreaseAllowance(approve_data) => {
-            let owner = ActorId::new(approve_data.owner.to_fixed_bytes());
+            let approver = msg::source();
             let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
-            FUNGIBLE_TOKEN.increase_allowance(&owner, &spender, approve_data.amount);
+            FUNGIBLE_TOKEN.increase_allowance(&approver, &spender, approve_data.amount);
         }
         Action::DecreaseAllowance(approve_data) => {
-            let owner = ActorId::new(approve_data.owner.to_fixed_bytes());
+            let approver = msg::source();
             let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
-            FUNGIBLE_TOKEN.decrease_allowance(&owner, &spender, approve_data.amount)
+            FUNGIBLE_TOKEN.decrease_allowance(&approver, &spender, approve_data.amount)
         }
         Action::TotalIssuance => {
             FUNGIBLE_TOKEN.total_supply();
@@ -324,7 +320,7 @@ pub unsafe extern "C" fn init() {
     debug!("FUNGIBLE_TOKEN {:?}", config);
     FUNGIBLE_TOKEN.set_name(config.name);
     FUNGIBLE_TOKEN.set_symbol(config.symbol);
-    FUNGIBLE_TOKEN.owner = msg::source();
+    FUNGIBLE_TOKEN.creator = msg::source();
     debug!(
         "FUNGIBLE_TOKEN {} SYMBOL {} created",
         FUNGIBLE_TOKEN.name(),
