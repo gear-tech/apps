@@ -148,7 +148,7 @@ fixtures:
             payload:
               kind: custom
               value:
-                approveReply:
+                approval:
                   owner: *ALICE
                   spender: *BOB
                   amount: 200
@@ -170,8 +170,7 @@ fixtures:
             payload:
               kind: custom
               value:
-                approveReply:
+                approval:
                   owner: *ALICE
                   spender: *BOB
                   amount: 100
-

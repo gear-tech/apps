@@ -55,8 +55,6 @@ macro_rules! ensure {
     }};
 }
 
-const GAS_RESERVE: u64 = 500_000_000;
-
 #[derive(Debug, Encode, Decode, TypeInfo)]
 struct CurveAmmInitConfig {
     /// token accounts
@@ -434,7 +432,7 @@ impl CurveAmm {
             let reply: Event = msg::send_and_wait_for_reply(
                 *asset,
                 &Action::BalanceOf(exec::program_id()),
-                1_000_000_000,
+                100_000_000_000,
                 0,
             )
             .await
@@ -462,7 +460,7 @@ impl CurveAmm {
                         to: exec::program_id(),
                         amount: amount_u,
                     }),
-                    1_000_000_000,
+                    100_000_000_000,
                     0,
                 )
                 .await
@@ -483,7 +481,7 @@ impl CurveAmm {
                         to: *who,
                         amount,
                     }),
-                    1_000_000_000,
+                    100_000_000_000,
                     0,
                 )
                 .await
@@ -499,7 +497,7 @@ impl CurveAmm {
     pub async fn get_lp_token_suppy(&self, pool_id: &PoolId) -> FixedU128 {
         let pool = self.get_pool(pool_id);
         let reply: Event =
-            msg::send_and_wait_for_reply(pool.pool_asset, &Action::TotalIssuance, 1_000_000_000, 0)
+            msg::send_and_wait_for_reply(pool.pool_asset, &Action::TotalIssuance, 100_000_000_000, 0)
                 .await
                 .expect("Error in async message");
         let token_supply = match reply {
@@ -694,7 +692,7 @@ impl CurveAmm {
             let reply: Event = msg::send_and_wait_for_reply(
                 pool.assets[i],
                 &Action::BalanceOf(*who),
-                1_000_000_000,
+                100_000_000_000,
                 0,
             )
             .await
@@ -723,7 +721,7 @@ impl CurveAmm {
                 account: *who,
                 amount: mint_amount,
             }),
-            1_000_000_000,
+            100_000_000_000,
             0,
         )
         .await;
@@ -743,7 +741,7 @@ impl CurveAmm {
 
         msg::reply(
             CurveAmmReply::AddLiquidity(add_liquidity_reply),
-            exec::gas_available() - GAS_RESERVE,
+            0,
             0,
         );
     }
@@ -781,7 +779,7 @@ impl CurveAmm {
                 account: *who,
                 amount: burn_amount,
             }),
-            1_000_000_000,
+            100_000_000_000,
             0,
         )
         .await;
@@ -796,7 +794,7 @@ impl CurveAmm {
             let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
                 pool.assets[i],
                 &Action::BalanceOf(*who),
-                1_000_000_000,
+                100_000_000_000,
                 0,
             )
             .await;
@@ -832,7 +830,7 @@ impl CurveAmm {
 
         msg::reply(
             CurveAmmReply::RemoveLiquidity(remove_liquidity_reply),
-            exec::gas_available() - GAS_RESERVE,
+            0,
             0,
         );
     }
@@ -897,7 +895,7 @@ impl CurveAmm {
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.assets[i],
             &Action::BalanceOf(*who),
-            1_000_000_000,
+            100_000_000_000,
             0,
         )
         .await;
@@ -922,7 +920,7 @@ impl CurveAmm {
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.assets[j],
             &Action::BalanceOf(*who),
-            1_000_000_000,
+            100_000_000_000,
             0,
         )
         .await;
@@ -952,7 +950,7 @@ impl CurveAmm {
                 to: exec::program_id(),
                 amount,
             }),
-            1_000_000_000,
+            100_000_000_000,
             0,
         )
         .await;
@@ -971,7 +969,7 @@ impl CurveAmm {
                 to: *who,
                 amount,
             }),
-            1_000_000_000,
+            100_000_000_000,
             0,
         )
         .await;
@@ -992,7 +990,7 @@ impl CurveAmm {
 
         msg::reply(
             CurveAmmReply::Exchange(exchange_reply),
-            exec::gas_available() - GAS_RESERVE,
+            0,
             0,
         );
     }

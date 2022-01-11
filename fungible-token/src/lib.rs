@@ -5,10 +5,10 @@
 #![feature(const_btree_new)]
 
 use fungible_token_messages::{Action, ApproveReply, Event, InitConfig, TransferReply};
-use gstd::{debug, exec, msg, prelude::*, ActorId};
+use gstd::{debug, msg, prelude::*, ActorId};
 use primitive_types::H256;
 
-const GAS_RESERVE: u64 = 500_000_000;
+const GAS_AMOUNT: u64 = 300_000_000;
 
 #[derive(Debug)]
 struct FungibleToken {
@@ -60,11 +60,7 @@ impl FungibleToken {
             if *account != FUNGIBLE_TOKEN.creator {
                 self.admins.insert(*account);
             }
-            msg::reply(
-                Event::AdminAdded(*account),
-                exec::gas_available() - GAS_RESERVE,
-                0,
-            );
+            msg::send(msg::source(), Event::AdminAdded(*account), GAS_AMOUNT, 0);
         }
     }
     fn remove_admin(&mut self, account: &ActorId) {
@@ -76,19 +72,11 @@ impl FungibleToken {
             if *account != FUNGIBLE_TOKEN.creator {
                 self.admins.remove(account);
             }
-            msg::reply(
-                Event::AdminRemoved(*account),
-                exec::gas_available() - GAS_RESERVE,
-                0,
-            );
+            msg::send(msg::source(), Event::AdminRemoved(*account), GAS_AMOUNT, 0);
         }
     }
     fn total_supply(&self) {
-        msg::reply(
-            Event::TotalIssuance(self.total_supply),
-            exec::gas_available() - GAS_RESERVE,
-            0,
-        );
+        msg::send(msg::source(), Event::TotalIssuance(self.total_supply), GAS_AMOUNT, 0);
     }
     #[allow(dead_code)]
     fn decimals(&self) -> u8 {
@@ -108,11 +96,7 @@ impl FungibleToken {
     }
     fn balance_of(&self, account: &ActorId) {
         let balance = self.get_balance(account);
-        msg::reply(
-            Event::Balance(balance),
-            exec::gas_available() - GAS_RESERVE,
-            0,
-        );
+        msg::send(msg::source(), Event::Balance(balance), GAS_AMOUNT, 0);
     }
     fn mint(&mut self, account: &ActorId, amount: u128) {
         unsafe {
@@ -136,11 +120,7 @@ impl FungibleToken {
             to: *account,
             amount,
         };
-        msg::reply(
-            Event::Transfer(transfer_data),
-            exec::gas_available() - GAS_RESERVE,
-            0,
-        );
+        msg::send(msg::source(), Event::Transfer(transfer_data), GAS_AMOUNT, 0);
     }
     fn burn(&mut self, account: &ActorId, amount: u128) {
         unsafe {
@@ -163,11 +143,7 @@ impl FungibleToken {
             to: zero,
             amount,
         };
-        msg::reply(
-            Event::Transfer(transfer_data),
-            exec::gas_available() - GAS_RESERVE,
-            0,
-        );
+        msg::send(msg::source(), Event::Transfer(transfer_data), GAS_AMOUNT, 0);
     }
     fn transfer(&mut self, sender: &ActorId, recipient: &ActorId, amount: u128) {
         let zero = ActorId::new(H256::zero().to_fixed_bytes());
@@ -192,11 +168,7 @@ impl FungibleToken {
             to: *recipient,
             amount,
         };
-        msg::reply(
-            Event::Transfer(transfer_data),
-            exec::gas_available() - GAS_RESERVE,
-            0,
-        );
+        msg::send(msg::source(), Event::Transfer(transfer_data), GAS_AMOUNT, 0);
     }
     fn approve(&mut self, owner: &ActorId, spender: &ActorId, amount: u128) {
         let zero = ActorId::new(H256::zero().to_fixed_bytes());
@@ -216,11 +188,7 @@ impl FungibleToken {
             spender: *spender,
             amount,
         };
-        msg::reply(
-            Event::Approval(approve_data),
-            exec::gas_available() - GAS_RESERVE,
-            0,
-        );
+        msg::send(msg::source(), Event::Approval(approve_data), GAS_AMOUNT, 0);
     }
     fn get_allowance(&self, owner: &ActorId, spender: &ActorId) -> u128 {
         *self
@@ -349,3 +317,6 @@ pub unsafe extern "C" fn init() {
         FUNGIBLE_TOKEN.symbol()
     );
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn handle_reply() {}
