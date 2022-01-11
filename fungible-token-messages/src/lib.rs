@@ -1,8 +1,7 @@
 #![no_std]
 
 use codec::{Decode, Encode};
-use gstd::prelude::*;
-use primitive_types::H256;
+use gstd::{prelude::*, ActorId};
 use scale_info::TypeInfo;
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -13,46 +12,46 @@ pub struct InitConfig {
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub struct MintInput {
-    pub account: H256,
+    pub account: ActorId,
     pub amount: u128,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub struct BurnInput {
-    pub account: H256,
+    pub account: ActorId,
     pub amount: u128,
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct ApproveInput {
-    pub spender: H256,
+    pub spender: ActorId,
     pub amount: u128,
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct ApproveReply {
-    pub owner: H256,
-    pub spender: H256,
+    pub owner: ActorId,
+    pub spender: ActorId,
     pub amount: u128,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub struct TransferInput {
-    pub to: H256,
+    pub to: ActorId,
     pub amount: u128,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub struct TransferReply {
-    pub from: H256,
-    pub to: H256,
+    pub from: ActorId,
+    pub to: ActorId,
     pub amount: u128,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub struct TransferFromInput {
-    pub owner: H256,
-    pub to: H256,
+    pub owner: ActorId,
+    pub to: ActorId,
     pub amount: u128,
 }
 
@@ -66,9 +65,9 @@ pub enum Action {
     IncreaseAllowance(ApproveInput),
     DecreaseAllowance(ApproveInput),
     TotalIssuance,
-    BalanceOf(H256),
-    AddAdmin(H256),
-    RemoveAdmin(H256),
+    BalanceOf(ActorId),
+    AddAdmin(ActorId),
+    RemoveAdmin(ActorId),
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
@@ -77,6 +76,6 @@ pub enum Event {
     Approval(ApproveReply),
     TotalIssuance(u128),
     Balance(u128),
-    AdminAdded(H256),
-    AdminRemoved(H256),
+    AdminAdded(ActorId),
+    AdminRemoved(ActorId),
 }

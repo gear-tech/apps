@@ -61,7 +61,7 @@ impl FungibleToken {
                 self.admins.insert(*account);
             }
             msg::reply(
-                Event::AdminAdded(H256::from_slice(account.as_ref())),
+                Event::AdminAdded(*account),
                 exec::gas_available() - GAS_RESERVE,
                 0,
             );
@@ -77,7 +77,7 @@ impl FungibleToken {
                 self.admins.remove(account);
             }
             msg::reply(
-                Event::AdminRemoved(H256::from_slice(account.as_ref())),
+                Event::AdminRemoved(*account),
                 exec::gas_available() - GAS_RESERVE,
                 0,
             );
@@ -121,6 +121,7 @@ impl FungibleToken {
                 panic!("FungibleToken: Only token creater or designated admins can mint tokens.");
             }
         }
+        // debug!("mint to account {:?}", account);
         let zero = ActorId::new(H256::zero().to_fixed_bytes());
         if account == &zero {
             panic!("FungibleToken: Mint to zero address.");
@@ -131,8 +132,8 @@ impl FungibleToken {
             self.set_balance(account, old_balance.saturating_add(amount));
         }
         let transfer_data = TransferReply {
-            from: H256::zero(),
-            to: H256::from_slice(account.as_ref()),
+            from: zero,
+            to: *account,
             amount,
         };
         msg::reply(
@@ -158,8 +159,8 @@ impl FungibleToken {
             self.set_balance(account, old_balance.saturating_sub(amount));
         }
         let transfer_data = TransferReply {
-            from: H256::from_slice(account.as_ref()),
-            to: H256::zero(),
+            from: *account,
+            to: zero,
             amount,
         };
         msg::reply(
@@ -178,14 +179,17 @@ impl FungibleToken {
         }
         let sender_balance = self.get_balance(sender);
         if amount > sender_balance {
-            panic!("FungibleToken: Transfer amount exceeds balance.");
+            panic!(
+                "FungibleToken: Transfer amount {:?} exceeds sender {:?} balance {:?}.",
+                amount, sender, sender_balance
+            );
         }
         self.set_balance(sender, sender_balance.saturating_sub(amount));
         let recipient_balance = self.get_balance(recipient);
         self.set_balance(recipient, recipient_balance.saturating_add(amount));
         let transfer_data = TransferReply {
-            from: H256::from_slice(sender.as_ref()),
-            to: H256::from_slice(recipient.as_ref()),
+            from: *sender,
+            to: *recipient,
             amount,
         };
         msg::reply(
@@ -199,13 +203,17 @@ impl FungibleToken {
         if spender == &zero {
             panic!("FungibleToken: Approve to zero address.");
         }
+        // debug!(
+        //     "{:?} approved {:?} to spend upto {:?}",
+        //     owner, spender, amount
+        // );
         self.allowances
             .entry(*owner)
             .or_default()
             .insert(*spender, amount);
         let approve_data = ApproveReply {
-            owner: H256::from_slice(owner.as_ref()),
-            spender: H256::from_slice(spender.as_ref()),
+            owner: *owner,
+            spender: *spender,
             amount,
         };
         msg::reply(
@@ -239,6 +247,10 @@ impl FungibleToken {
         recipient: &ActorId,
         amount: u128,
     ) {
+        // debug!(
+        //     "{:?} wants to send {:?} to {:?} on behalf of {:?}",
+        //     sender, amount, recipient, owner
+        // );
         let current_allowance = self.get_allowance(owner, sender);
         if current_allowance < amount {
             panic!("FungibleToken: Transfer amount exceeds allowance");
@@ -263,52 +275,62 @@ pub unsafe extern "C" fn handle() {
 
     match action {
         Action::Mint(mint_input) => {
-            let to = ActorId::new(mint_input.account.to_fixed_bytes());
-            FUNGIBLE_TOKEN.mint(&to, mint_input.amount);
+            // let to = ActorId::new(mint_input.account.to_fixed_bytes());
+            FUNGIBLE_TOKEN.mint(&mint_input.account, mint_input.amount);
         }
         Action::Burn(burn_input) => {
-            let from = ActorId::new(burn_input.account.to_fixed_bytes());
-            FUNGIBLE_TOKEN.burn(&from, burn_input.amount);
+            // let from = ActorId::new(burn_input.account.to_fixed_bytes());
+            FUNGIBLE_TOKEN.burn(&burn_input.account, burn_input.amount);
         }
         Action::Transfer(transfer_data) => {
             let from = msg::source();
-            let to = ActorId::new(transfer_data.to.to_fixed_bytes());
+            // let to = ActorId::new(transfer_data.to.to_fixed_bytes());
+            let to = transfer_data.to;
             FUNGIBLE_TOKEN.transfer(&from, &to, transfer_data.amount);
         }
         Action::Approve(approve_data) => {
             let approver = msg::source();
-            let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
-            FUNGIBLE_TOKEN.approve(&approver, &spender, approve_data.amount);
+            // let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
+            FUNGIBLE_TOKEN.approve(&approver, &approve_data.spender, approve_data.amount);
         }
         Action::TransferFrom(transfer_data) => {
-            let owner = ActorId::new(transfer_data.owner.to_fixed_bytes());
+            // let owner = ActorId::new(transfer_data.owner.to_fixed_bytes());
             let from = msg::source();
-            let to = ActorId::new(transfer_data.to.to_fixed_bytes());
-            FUNGIBLE_TOKEN.transfer_from(&owner, &from, &to, transfer_data.amount);
+            // let to = ActorId::new(transfer_data.to.to_fixed_bytes());
+            FUNGIBLE_TOKEN.transfer_from(
+                &transfer_data.owner,
+                &from,
+                &transfer_data.to,
+                transfer_data.amount,
+            );
         }
         Action::IncreaseAllowance(approve_data) => {
             let approver = msg::source();
-            let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
-            FUNGIBLE_TOKEN.increase_allowance(&approver, &spender, approve_data.amount);
+            // let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
+            FUNGIBLE_TOKEN.increase_allowance(
+                &approver,
+                &approve_data.spender,
+                approve_data.amount,
+            );
         }
         Action::DecreaseAllowance(approve_data) => {
             let approver = msg::source();
-            let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
-            FUNGIBLE_TOKEN.decrease_allowance(&approver, &spender, approve_data.amount)
+            // let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
+            FUNGIBLE_TOKEN.decrease_allowance(&approver, &approve_data.spender, approve_data.amount)
         }
         Action::TotalIssuance => {
             FUNGIBLE_TOKEN.total_supply();
         }
-        Action::BalanceOf(acc) => {
-            let account = ActorId::new(acc.to_fixed_bytes());
+        Action::BalanceOf(account) => {
+            // let account = ActorId::new(acc.to_fixed_bytes());
             FUNGIBLE_TOKEN.balance_of(&account);
         }
-        Action::AddAdmin(acc) => {
-            let account = ActorId::new(acc.to_fixed_bytes());
+        Action::AddAdmin(account) => {
+            // let account = ActorId::new(acc.to_fixed_bytes());
             FUNGIBLE_TOKEN.add_admin(&account);
         }
-        Action::RemoveAdmin(acc) => {
-            let account = ActorId::new(acc.to_fixed_bytes());
+        Action::RemoveAdmin(account) => {
+            // let account = ActorId::new(acc.to_fixed_bytes());
             FUNGIBLE_TOKEN.remove_admin(&account);
         }
     }

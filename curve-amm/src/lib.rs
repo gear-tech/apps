@@ -14,9 +14,10 @@ use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::{vec, vec::Vec};
 use codec::{Decode, Encode};
 use core::num::ParseIntError;
-use fungible_token_messages::{Action, BurnInput, Event, MintInput, TransferInput, TransferFromInput};
+use fungible_token_messages::{
+    Action, BurnInput, Event, MintInput, TransferFromInput, TransferInput,
+};
 use gstd::{errors::ContractError, exec, lock::mutex::Mutex, msg, prelude::*, ActorId, ToString};
-use primitive_types::H256;
 use scale_info::TypeInfo;
 use sp_arithmetic::{
     fixed_point::FixedU128,
@@ -58,8 +59,6 @@ const GAS_RESERVE: u64 = 500_000_000;
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 struct CurveAmmInitConfig {
-    /// ownder of the pool
-    owner: H256,
     /// token accounts
     token_accounts: Vec<u8>,
     /// amplification_coefficient
@@ -77,8 +76,6 @@ struct CurveAmmInitReply {
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 struct CurveAmmAddLiquidity {
-    /// who
-    who: H256,
     /// PoolId
     pool_id: u32,
     /// amounts
@@ -87,8 +84,6 @@ struct CurveAmmAddLiquidity {
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 struct CurveAmmRemoveLiquidity {
-    /// who
-    who: H256,
     /// PoolId
     pool_id: u32,
     /// amount
@@ -97,8 +92,6 @@ struct CurveAmmRemoveLiquidity {
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 struct CurveAmmExchange {
-    /// who
-    who: H256,
     /// PoolId
     pool_id: u32,
     /// i
@@ -119,7 +112,7 @@ enum CurveAmmAction {
 #[derive(Debug, Encode, Decode, TypeInfo)]
 struct CurveAmmAddLiquidityReply {
     /// who
-    who: H256,
+    who: ActorId,
     /// PoolId
     pool_id: u32,
     /// mint_amount
@@ -129,7 +122,7 @@ struct CurveAmmAddLiquidityReply {
 #[derive(Debug, Encode, Decode, TypeInfo)]
 struct CurveAmmRemoveLiquidityReply {
     /// who
-    who: H256,
+    who: ActorId,
     /// PoolId
     pool_id: u32,
     /// amounts
@@ -139,7 +132,7 @@ struct CurveAmmRemoveLiquidityReply {
 #[derive(Debug, Encode, Decode, TypeInfo)]
 struct CurveAmmExchangeReply {
     /// who
-    who: H256,
+    who: ActorId,
     /// PoolId
     pool_id: u32,
     /// i
@@ -440,7 +433,7 @@ impl CurveAmm {
         for asset in assets {
             let reply: Event = msg::send_and_wait_for_reply(
                 *asset,
-                &Action::BalanceOf(H256::from_slice(exec::program_id().as_ref())),
+                &Action::BalanceOf(exec::program_id()),
                 1_000_000_000,
                 0,
             )
@@ -464,9 +457,9 @@ impl CurveAmm {
                 let amount_u = amount.into_inner() / FixedU128::DIV;
                 let _reply: Event = msg::send_and_wait_for_reply(
                     assets[i],
-                    &Action::Transfer(TransferFromInput {
-                        owner: H256::from_slice(who.as_ref()),
-                        to: H256::from_slice(exec::program_id().as_ref()),
+                    &Action::TransferFrom(TransferFromInput {
+                        owner: *who,
+                        to: exec::program_id(),
                         amount: amount_u,
                     }),
                     1_000_000_000,
@@ -487,7 +480,7 @@ impl CurveAmm {
                     assets[i],
                     &Action::Transfer(TransferInput {
                         // from: H256::from_slice(exec::program_id().as_ref()),
-                        to: H256::from_slice(who.as_ref()),
+                        to: *who,
                         amount,
                     }),
                     1_000_000_000,
@@ -530,7 +523,7 @@ impl CurveAmm {
         let zero = FixedU128::zero();
         if !amounts.iter().all(|&x| x > zero) {
             gstd::mem::drop(lock);
-            panic!("add_liquidity amonuts: each amount must be grater than zero");
+            panic!("add_liquidity amounts: each amount must be grater than zero");
         }
         let pool = self.get_pool(&pool_id);
         let n_coins = pool.assets.len();
@@ -546,7 +539,7 @@ impl CurveAmm {
             Some(v) => v,
             None => {
                 gstd::mem::drop(lock);
-                panic!("all_liquidity: math error");
+                panic!("add_liquidity: math error");
             }
         };
         let old_balances = Self::get_pool_balances(&pool.assets).await;
@@ -554,7 +547,7 @@ impl CurveAmm {
             Some(v) => v,
             None => {
                 gstd::mem::drop(lock);
-                panic!("all_liquidity: math error");
+                panic!("add_liquidity: math error");
             }
         };
         let token_supply = self.get_lp_token_suppy(&pool_id).await;
@@ -564,7 +557,7 @@ impl CurveAmm {
                 Some(v) => v,
                 None => {
                     gstd::mem::drop(lock);
-                    panic!("all_liquidity: math error");
+                    panic!("add_liquidity: math error");
                 }
             };
         }
@@ -572,12 +565,12 @@ impl CurveAmm {
             Some(v) => v,
             None => {
                 gstd::mem::drop(lock);
-                panic!("all_liquidity: math error");
+                panic!("add_liquidity: math error");
             }
         };
         if d1 <= d0 {
             gstd::mem::drop(lock);
-            panic!("all_liquidity: d1 must be grater than d0");
+            panic!("add_liquidity: d1 must be grater than d0");
         }
         let mint_amount;
         let mut fees = vec![FixedU128::zero(); n_coins];
@@ -595,28 +588,28 @@ impl CurveAmm {
                 Some(v) => v,
                 None => {
                     gstd::mem::drop(lock);
-                    panic!("all_liquidity: math error");
+                    panic!("add_liquidity: math error");
                 }
             };
             let four_n_coins_1 = match four.checked_mul(&n_coins_1) {
                 Some(v) => v,
                 None => {
                     gstd::mem::drop(lock);
-                    panic!("all_liquidity: math error");
+                    panic!("add_liquidity: math error");
                 }
             };
             let pool_fees_n_coins = match fee_f.checked_mul(&n_coins_f) {
                 Some(v) => v,
                 None => {
                     gstd::mem::drop(lock);
-                    panic!("all_liquidity: math error");
+                    panic!("add_liquidity: math error");
                 }
             };
             let fee_f = match pool_fees_n_coins.checked_div(&four_n_coins_1) {
                 Some(v) => v,
                 None => {
                     gstd::mem::drop(lock);
-                    panic!("all_liquidity: math error");
+                    panic!("add_liquidity: math error");
                 }
             };
             // let admin_fee_f: FixedU128 = pool.admin_fee.into();
@@ -627,7 +620,7 @@ impl CurveAmm {
                     Some(v) => v,
                     None => {
                         gstd::mem::drop(lock);
-                        panic!("all_liquidity: math error");
+                        panic!("add_liquidity: math error");
                     }
                 };
 
@@ -641,7 +634,7 @@ impl CurveAmm {
                     Some(v) => v,
                     None => {
                         gstd::mem::drop(lock);
-                        panic!("all_liquidity: math error");
+                        panic!("add_liquidity: math error");
                     }
                 };
 
@@ -649,14 +642,14 @@ impl CurveAmm {
                     Some(v) => v,
                     None => {
                         gstd::mem::drop(lock);
-                        panic!("all_liquidity: math error");
+                        panic!("add_liquidity: math error");
                     }
                 };
                 new_balances[i] = match new_balances[i].checked_sub(&fees[i]) {
                     Some(v) => v,
                     None => {
                         gstd::mem::drop(lock);
-                        panic!("all_liquidity: math error");
+                        panic!("add_liquidity: math error");
                     }
                 };
             }
@@ -664,7 +657,7 @@ impl CurveAmm {
                 Some(v) => v,
                 None => {
                     gstd::mem::drop(lock);
-                    panic!("all_liquidity: math error");
+                    panic!("add_liquidity: math error");
                 }
             };
 
@@ -677,7 +670,7 @@ impl CurveAmm {
                 Some(v) => v,
                 None => {
                     gstd::mem::drop(lock);
-                    panic!("all_liquidity: math error");
+                    panic!("add_liquidity: math error");
                 }
             };
         } else {
@@ -685,14 +678,14 @@ impl CurveAmm {
         }
         if mint_amount < min_mint_amount {
             gstd::mem::drop(lock);
-            panic!("all_liquidity: required mint amount not reached");
+            panic!("add_liquidity: required mint amount not reached");
         }
 
         let _new_token_supply = match token_supply.checked_add(&mint_amount) {
             Some(v) => v,
             None => {
                 gstd::mem::drop(lock);
-                panic!("all_liquidity: math error");
+                panic!("add_liquidity: math error");
             }
         };
 
@@ -700,7 +693,7 @@ impl CurveAmm {
         for (i, amount) in amounts.iter().enumerate() {
             let reply: Event = msg::send_and_wait_for_reply(
                 pool.assets[i],
-                &Action::BalanceOf(H256::from_slice(who.as_ref())),
+                &Action::BalanceOf(*who),
                 1_000_000_000,
                 0,
             )
@@ -716,7 +709,7 @@ impl CurveAmm {
             let balance: FixedU128 = FixedU128::saturating_from_integer(balance);
             if balance < *amount {
                 gstd::mem::drop(lock);
-                panic!("all_liquidity: insufficient funds");
+                panic!("add_liquidity: insufficient funds");
             }
         }
         // Transfer funds to pool
@@ -726,7 +719,8 @@ impl CurveAmm {
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.pool_asset,
             &Action::Mint(MintInput {
-                account: H256::from_slice(who.as_ref()),
+                // account: H256::from_slice(who.as_ref()),
+                account: *who,
                 amount: mint_amount,
             }),
             1_000_000_000,
@@ -742,7 +736,7 @@ impl CurveAmm {
         }
 
         let add_liquidity_reply = CurveAmmAddLiquidityReply {
-            who: H256::from_slice(who.as_ref()),
+            who: *who,
             pool_id,
             mint_amount,
         };
@@ -760,7 +754,7 @@ impl CurveAmm {
         let zero = FixedU128::zero();
         if amount <= zero {
             gstd::mem::drop(lock);
-            panic!("remove_liquidity amonuts: amount must be grater than zero");
+            panic!("remove_liquidity amounts: amount must be grater than zero");
         }
         let pool = self.get_pool(&pool_id);
         let n_coins = pool.assets.len();
@@ -775,7 +769,7 @@ impl CurveAmm {
                 Some(v) => v,
                 None => {
                     gstd::mem::drop(lock);
-                    panic!("all_liquidity: math error");
+                    panic!("add_liquidity: math error");
                 }
             };
             *n_amount = value;
@@ -784,7 +778,7 @@ impl CurveAmm {
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.pool_asset,
             &Action::Burn(BurnInput {
-                account: H256::from_slice(who.as_ref()),
+                account: *who,
                 amount: burn_amount,
             }),
             1_000_000_000,
@@ -801,7 +795,7 @@ impl CurveAmm {
         for (i, n_amount) in n_amounts.iter_mut().enumerate().take(n_coins) {
             let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
                 pool.assets[i],
-                &Action::BalanceOf(H256::from_slice(who.as_ref())),
+                &Action::BalanceOf(*who),
                 1_000_000_000,
                 0,
             )
@@ -831,7 +825,7 @@ impl CurveAmm {
         Self::transfer_funds_from_pool(who, n_amounts, &pool.assets).await;
 
         let remove_liquidity_reply = CurveAmmRemoveLiquidityReply {
-            who: H256::from_slice(who.as_ref()),
+            who: *who,
             pool_id,
             amounts,
         };
@@ -902,7 +896,7 @@ impl CurveAmm {
         let pool = self.get_pool(&pool_id);
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.assets[i],
-            &Action::BalanceOf(H256::from_slice(who.as_ref())),
+            &Action::BalanceOf(*who),
             1_000_000_000,
             0,
         )
@@ -927,7 +921,7 @@ impl CurveAmm {
         }
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.assets[j],
-            &Action::BalanceOf(H256::from_slice(exec::program_id().as_ref())),
+            &Action::BalanceOf(*who),
             1_000_000_000,
             0,
         )
@@ -953,9 +947,9 @@ impl CurveAmm {
         }
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.assets[i],
-            &Action::Transfer(TransferFromInput {
-                owner: H256::from_slice(who.as_ref()),
-                to: H256::from_slice(exec::program_id().as_ref()),
+            &Action::TransferFrom(TransferFromInput {
+                owner: *who,
+                to: exec::program_id(),
                 amount,
             }),
             1_000_000_000,
@@ -974,7 +968,7 @@ impl CurveAmm {
             pool.assets[j],
             &Action::Transfer(TransferInput {
                 // from: H256::from_slice(exec::program_id().as_ref()),
-                to: H256::from_slice(who.as_ref()),
+                to: *who,
                 amount,
             }),
             1_000_000_000,
@@ -989,7 +983,7 @@ impl CurveAmm {
             }
         };
         let exchange_reply = CurveAmmExchangeReply {
-            who: H256::from_slice(who.as_ref()),
+            who: *who,
             pool_id,
             i: i_u,
             j: j_u,
@@ -1014,7 +1008,8 @@ static mut CURVE_AMM: CurveAmm = CurveAmm {
 #[no_mangle]
 pub unsafe extern "C" fn init() {
     let config: CurveAmmInitConfig = msg::load().expect("Unable to decode InitConfig");
-    let owner = ActorId::new(config.owner.to_fixed_bytes());
+    // let owner = ActorId::new(config.owner.to_fixed_bytes());
+    let owner = msg::source();
     let input = String::from_utf8(config.token_accounts).expect("Invalid message: should be utf-8");
     let dests: Vec<&str> = input.split(',').collect();
     if dests.len() != 3 {
@@ -1055,7 +1050,8 @@ async fn main() {
     let action: CurveAmmAction = msg::load().expect("Could not load Action");
     match action {
         CurveAmmAction::AddLiquidity(add_liquidity) => {
-            let sender = ActorId::new(add_liquidity.who.to_fixed_bytes());
+            // let sender = ActorId::new(add_liquidity.who.to_fixed_bytes());
+            let sender = msg::source();
             let pool_id: PoolId = add_liquidity.pool_id;
             let mut amounts_f = Vec::new();
             for amount in add_liquidity.amounts {
@@ -1068,7 +1064,8 @@ async fn main() {
             }
         }
         CurveAmmAction::RemoveLiquidity(remove_liquidity) => {
-            let sender = ActorId::new(remove_liquidity.who.to_fixed_bytes());
+            // let sender = ActorId::new(remove_liquidity.who.to_fixed_bytes());
+            let sender = msg::source();
             let pool_id: PoolId = remove_liquidity.pool_id;
             let amount_f = FixedU128::saturating_from_integer(remove_liquidity.amount);
             unsafe {
@@ -1076,7 +1073,8 @@ async fn main() {
             }
         }
         CurveAmmAction::Exchange(exchange) => {
-            let sender = ActorId::new(exchange.who.to_fixed_bytes());
+            // let sender = ActorId::new(exchange.who.to_fixed_bytes());
+            let sender = msg::source();
             let pool_id: PoolId = exchange.pool_id;
             let i = exchange.i;
             let j = exchange.j;
