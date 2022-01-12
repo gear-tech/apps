@@ -477,7 +477,6 @@ impl CurveAmm {
                 let _reply: Event = msg::send_and_wait_for_reply(
                     assets[i],
                     &Action::Transfer(TransferInput {
-                        // from: H256::from_slice(exec::program_id().as_ref()),
                         to: *who,
                         amount,
                     }),
@@ -496,10 +495,14 @@ impl CurveAmm {
 
     pub async fn get_lp_token_suppy(&self, pool_id: &PoolId) -> FixedU128 {
         let pool = self.get_pool(pool_id);
-        let reply: Event =
-            msg::send_and_wait_for_reply(pool.pool_asset, &Action::TotalIssuance, 100_000_000_000, 0)
-                .await
-                .expect("Error in async message");
+        let reply: Event = msg::send_and_wait_for_reply(
+            pool.pool_asset,
+            &Action::TotalIssuance,
+            100_000_000_000,
+            0,
+        )
+        .await
+        .expect("Error in async message");
         let token_supply = match reply {
             Event::TotalIssuance(bal) => FixedU128::saturating_from_integer(bal),
             _ => {
@@ -717,7 +720,6 @@ impl CurveAmm {
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.pool_asset,
             &Action::Mint(MintInput {
-                // account: H256::from_slice(who.as_ref()),
                 account: *who,
                 amount: mint_amount,
             }),
@@ -739,11 +741,7 @@ impl CurveAmm {
             mint_amount,
         };
 
-        msg::reply(
-            CurveAmmReply::AddLiquidity(add_liquidity_reply),
-            0,
-            0,
-        );
+        msg::reply(CurveAmmReply::AddLiquidity(add_liquidity_reply), 0, 0);
     }
 
     #[allow(dead_code)]
@@ -828,11 +826,7 @@ impl CurveAmm {
             amounts,
         };
 
-        msg::reply(
-            CurveAmmReply::RemoveLiquidity(remove_liquidity_reply),
-            0,
-            0,
-        );
+        msg::reply(CurveAmmReply::RemoveLiquidity(remove_liquidity_reply), 0, 0);
     }
 
     #[allow(dead_code)]
@@ -919,7 +913,7 @@ impl CurveAmm {
         }
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.assets[j],
-            &Action::BalanceOf(*who),
+            &Action::BalanceOf(exec::program_id()),
             100_000_000_000,
             0,
         )
@@ -965,7 +959,6 @@ impl CurveAmm {
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.assets[j],
             &Action::Transfer(TransferInput {
-                // from: H256::from_slice(exec::program_id().as_ref()),
                 to: *who,
                 amount,
             }),
@@ -988,11 +981,7 @@ impl CurveAmm {
             dy_amount: amount,
         };
 
-        msg::reply(
-            CurveAmmReply::Exchange(exchange_reply),
-            0,
-            0,
-        );
+        msg::reply(CurveAmmReply::Exchange(exchange_reply), 0, 0);
     }
 }
 
@@ -1006,7 +995,6 @@ static mut CURVE_AMM: CurveAmm = CurveAmm {
 #[no_mangle]
 pub unsafe extern "C" fn init() {
     let config: CurveAmmInitConfig = msg::load().expect("Unable to decode InitConfig");
-    // let owner = ActorId::new(config.owner.to_fixed_bytes());
     let owner = msg::source();
     let input = String::from_utf8(config.token_accounts).expect("Invalid message: should be utf-8");
     let dests: Vec<&str> = input.split(',').collect();
@@ -1048,7 +1036,6 @@ async fn main() {
     let action: CurveAmmAction = msg::load().expect("Could not load Action");
     match action {
         CurveAmmAction::AddLiquidity(add_liquidity) => {
-            // let sender = ActorId::new(add_liquidity.who.to_fixed_bytes());
             let sender = msg::source();
             let pool_id: PoolId = add_liquidity.pool_id;
             let mut amounts_f = Vec::new();
@@ -1062,7 +1049,6 @@ async fn main() {
             }
         }
         CurveAmmAction::RemoveLiquidity(remove_liquidity) => {
-            // let sender = ActorId::new(remove_liquidity.who.to_fixed_bytes());
             let sender = msg::source();
             let pool_id: PoolId = remove_liquidity.pool_id;
             let amount_f = FixedU128::saturating_from_integer(remove_liquidity.amount);
@@ -1071,7 +1057,6 @@ async fn main() {
             }
         }
         CurveAmmAction::Exchange(exchange) => {
-            // let sender = ActorId::new(exchange.who.to_fixed_bytes());
             let sender = msg::source();
             let pool_id: PoolId = exchange.pool_id;
             let i = exchange.i;

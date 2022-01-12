@@ -56,6 +56,15 @@ pub struct TransferFromInput {
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
+pub struct TransferFromReply {
+    pub owner: ActorId,
+    pub sender: ActorId,
+    pub recipient: ActorId,
+    pub amount: u128,
+    pub new_limit: u128,
+}
+
+#[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum Action {
     Mint(MintInput),
     Burn(BurnInput),
@@ -78,4 +87,5 @@ pub enum Event {
     Balance(u128),
     AdminAdded(ActorId),
     AdminRemoved(ActorId),
+    TransferFrom(TransferFromReply),
 }

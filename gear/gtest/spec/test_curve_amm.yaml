@@ -124,6 +124,28 @@ fixtures:
             approve:
               spender: *POOL
               amount: 200000
+      # Approve DEX to transfer USDC on behalf of CHARLIE
+      - destination: 1
+        source:
+          kind: account
+          value: charlie
+        payload:
+          kind: custom
+          value:
+            approve:
+              spender: *POOL
+              amount: 200000
+      # Approve DEX to transfer USDT on behalf of CHARLIE
+      - destination: 2
+        source:
+          kind: account
+          value: charlie
+        payload:
+          kind: custom
+          value:
+            approve:
+              spender: *POOL
+              amount: 200000
       # check lp token balance of ALICE
       - destination: 3
         payload:
@@ -289,6 +311,28 @@ fixtures:
               value:
                 approval:
                   owner: *BOB
+                  spender: *POOL
+                  amount: 200000
+         # check approval message
+          - destination:
+              kind: account
+              value: charlie
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *CHARLIE
+                  spender: *POOL
+                  amount: 200000
+         # check approval message
+          - destination:
+              kind: account
+              value: charlie
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *CHARLIE
                   spender: *POOL
                   amount: 200000
          # check lp token balance of ALICE (expected value 0)

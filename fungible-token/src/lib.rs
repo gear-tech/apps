@@ -4,7 +4,9 @@
 #![no_std]
 #![feature(const_btree_new)]
 
-use fungible_token_messages::{Action, ApproveReply, Event, InitConfig, TransferReply};
+use fungible_token_messages::{
+    Action, ApproveReply, Event, InitConfig, TransferFromReply, TransferReply,
+};
 use gstd::{debug, msg, prelude::*, ActorId};
 use primitive_types::H256;
 
@@ -60,7 +62,6 @@ impl FungibleToken {
             if *account != FUNGIBLE_TOKEN.creator {
                 self.admins.insert(*account);
             }
-            msg::send(msg::source(), Event::AdminAdded(*account), GAS_AMOUNT, 0);
         }
     }
     fn remove_admin(&mut self, account: &ActorId) {
@@ -72,11 +73,10 @@ impl FungibleToken {
             if *account != FUNGIBLE_TOKEN.creator {
                 self.admins.remove(account);
             }
-            msg::send(msg::source(), Event::AdminRemoved(*account), GAS_AMOUNT, 0);
         }
     }
-    fn total_supply(&self) {
-        msg::send(msg::source(), Event::TotalIssuance(self.total_supply), GAS_AMOUNT, 0);
+    fn total_supply(&self) -> u128 {
+        self.total_supply
     }
     #[allow(dead_code)]
     fn decimals(&self) -> u8 {
@@ -94,9 +94,8 @@ impl FungibleToken {
     fn get_balance(&self, account: &ActorId) -> u128 {
         *self.balances.get(account).unwrap_or(&0)
     }
-    fn balance_of(&self, account: &ActorId) {
-        let balance = self.get_balance(account);
-        msg::send(msg::source(), Event::Balance(balance), GAS_AMOUNT, 0);
+    fn balance_of(&self, account: &ActorId) -> u128 {
+        self.get_balance(account)
     }
     fn mint(&mut self, account: &ActorId, amount: u128) {
         unsafe {
@@ -115,12 +114,6 @@ impl FungibleToken {
             let old_balance = FUNGIBLE_TOKEN.get_balance(account);
             self.set_balance(account, old_balance.saturating_add(amount));
         }
-        let transfer_data = TransferReply {
-            from: zero,
-            to: *account,
-            amount,
-        };
-        msg::send(msg::source(), Event::Transfer(transfer_data), GAS_AMOUNT, 0);
     }
     fn burn(&mut self, account: &ActorId, amount: u128) {
         unsafe {
@@ -138,12 +131,6 @@ impl FungibleToken {
             let old_balance = FUNGIBLE_TOKEN.get_balance(account);
             self.set_balance(account, old_balance.saturating_sub(amount));
         }
-        let transfer_data = TransferReply {
-            from: *account,
-            to: zero,
-            amount,
-        };
-        msg::send(msg::source(), Event::Transfer(transfer_data), GAS_AMOUNT, 0);
     }
     fn transfer(&mut self, sender: &ActorId, recipient: &ActorId, amount: u128) {
         let zero = ActorId::new(H256::zero().to_fixed_bytes());
@@ -163,12 +150,6 @@ impl FungibleToken {
         self.set_balance(sender, sender_balance.saturating_sub(amount));
         let recipient_balance = self.get_balance(recipient);
         self.set_balance(recipient, recipient_balance.saturating_add(amount));
-        let transfer_data = TransferReply {
-            from: *sender,
-            to: *recipient,
-            amount,
-        };
-        msg::send(msg::source(), Event::Transfer(transfer_data), GAS_AMOUNT, 0);
     }
     fn approve(&mut self, owner: &ActorId, spender: &ActorId, amount: u128) {
         let zero = ActorId::new(H256::zero().to_fixed_bytes());
@@ -183,12 +164,6 @@ impl FungibleToken {
             .entry(*owner)
             .or_default()
             .insert(*spender, amount);
-        let approve_data = ApproveReply {
-            owner: *owner,
-            spender: *spender,
-            amount,
-        };
-        msg::send(msg::source(), Event::Approval(approve_data), GAS_AMOUNT, 0);
     }
     fn get_allowance(&self, owner: &ActorId, spender: &ActorId) -> u128 {
         *self
@@ -214,17 +189,19 @@ impl FungibleToken {
         sender: &ActorId,
         recipient: &ActorId,
         amount: u128,
-    ) {
-        // debug!(
-        //     "{:?} wants to send {:?} to {:?} on behalf of {:?}",
-        //     sender, amount, recipient, owner
-        // );
+    ) -> u128 {
+        debug!(
+            "{:?} wants to send {:?} to {:?} on behalf of {:?}",
+            sender, amount, recipient, owner
+        );
         let current_allowance = self.get_allowance(owner, sender);
         if current_allowance < amount {
             panic!("FungibleToken: Transfer amount exceeds allowance");
         }
         self.transfer(owner, recipient, amount);
-        self.approve(owner, sender, current_allowance - amount);
+        let new_limit = current_allowance - amount;
+        self.approve(owner, sender, new_limit);
+        new_limit
     }
 }
 
@@ -243,63 +220,99 @@ pub unsafe extern "C" fn handle() {
 
     match action {
         Action::Mint(mint_input) => {
-            // let to = ActorId::new(mint_input.account.to_fixed_bytes());
             FUNGIBLE_TOKEN.mint(&mint_input.account, mint_input.amount);
+            let zero = ActorId::new(H256::zero().to_fixed_bytes());
+            let transfer_data = TransferReply {
+                from: zero,
+                to: mint_input.account,
+                amount: mint_input.amount,
+            };
+            msg::reply(Event::Transfer(transfer_data), GAS_AMOUNT, 0);
         }
         Action::Burn(burn_input) => {
-            // let from = ActorId::new(burn_input.account.to_fixed_bytes());
             FUNGIBLE_TOKEN.burn(&burn_input.account, burn_input.amount);
+            let zero = ActorId::new(H256::zero().to_fixed_bytes());
+            let transfer_data = TransferReply {
+                from: burn_input.account,
+                to: zero,
+                amount: burn_input.amount,
+            };
+            msg::reply(Event::Transfer(transfer_data), GAS_AMOUNT, 0);
         }
         Action::Transfer(transfer_data) => {
             let from = msg::source();
-            // let to = ActorId::new(transfer_data.to.to_fixed_bytes());
             let to = transfer_data.to;
-            FUNGIBLE_TOKEN.transfer(&from, &to, transfer_data.amount);
+            let amount = transfer_data.amount;
+            FUNGIBLE_TOKEN.transfer(&from, &to, amount);
+            let transfer_data = TransferReply { from, to, amount };
+            msg::reply(Event::Transfer(transfer_data), GAS_AMOUNT, 0);
         }
         Action::Approve(approve_data) => {
-            let approver = msg::source();
-            // let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
-            FUNGIBLE_TOKEN.approve(&approver, &approve_data.spender, approve_data.amount);
+            let owner = msg::source();
+            let spender = approve_data.spender;
+            let amount = approve_data.amount;
+            FUNGIBLE_TOKEN.approve(&owner, &spender, amount);
+            let approve_data = ApproveReply {
+                owner,
+                spender,
+                amount,
+            };
+            msg::reply(Event::Approval(approve_data), GAS_AMOUNT, 0);
         }
         Action::TransferFrom(transfer_data) => {
-            // let owner = ActorId::new(transfer_data.owner.to_fixed_bytes());
-            let from = msg::source();
-            // let to = ActorId::new(transfer_data.to.to_fixed_bytes());
-            FUNGIBLE_TOKEN.transfer_from(
-                &transfer_data.owner,
-                &from,
-                &transfer_data.to,
-                transfer_data.amount,
-            );
+            let owner = transfer_data.owner;
+            let sender = msg::source();
+            let recipient = transfer_data.to;
+            let amount = transfer_data.amount;
+            let new_limit = FUNGIBLE_TOKEN.transfer_from(&owner, &sender, &recipient, amount);
+            let tranfer_from = TransferFromReply {
+                owner,
+                sender,
+                recipient,
+                amount,
+                new_limit,
+            };
+            msg::reply(Event::TransferFrom(tranfer_from), GAS_AMOUNT, 0);
         }
         Action::IncreaseAllowance(approve_data) => {
-            let approver = msg::source();
-            // let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
-            FUNGIBLE_TOKEN.increase_allowance(
-                &approver,
-                &approve_data.spender,
-                approve_data.amount,
-            );
+            let owner = msg::source();
+            let spender = approve_data.spender;
+            let amount = approve_data.amount;
+            FUNGIBLE_TOKEN.increase_allowance(&owner, &spender, amount);
+            let approve_data = ApproveReply {
+                owner,
+                spender,
+                amount,
+            };
+            msg::reply(Event::Approval(approve_data), GAS_AMOUNT, 0);
         }
         Action::DecreaseAllowance(approve_data) => {
-            let approver = msg::source();
-            // let spender = ActorId::new(approve_data.spender.to_fixed_bytes());
-            FUNGIBLE_TOKEN.decrease_allowance(&approver, &approve_data.spender, approve_data.amount)
+            let owner = msg::source();
+            let spender = approve_data.spender;
+            let amount = approve_data.amount;
+            FUNGIBLE_TOKEN.decrease_allowance(&owner, &spender, amount);
+            let approve_data = ApproveReply {
+                owner,
+                spender,
+                amount,
+            };
+            msg::reply(Event::Approval(approve_data), GAS_AMOUNT, 0);
         }
         Action::TotalIssuance => {
-            FUNGIBLE_TOKEN.total_supply();
+            let total_supply = FUNGIBLE_TOKEN.total_supply();
+            msg::reply(Event::TotalIssuance(total_supply), GAS_AMOUNT, 0);
         }
         Action::BalanceOf(account) => {
-            // let account = ActorId::new(acc.to_fixed_bytes());
-            FUNGIBLE_TOKEN.balance_of(&account);
+            let balance = FUNGIBLE_TOKEN.balance_of(&account);
+            msg::reply(Event::Balance(balance), GAS_AMOUNT, 0);
         }
         Action::AddAdmin(account) => {
-            // let account = ActorId::new(acc.to_fixed_bytes());
             FUNGIBLE_TOKEN.add_admin(&account);
+            msg::reply(Event::AdminAdded(account), GAS_AMOUNT, 0);
         }
         Action::RemoveAdmin(account) => {
-            // let account = ActorId::new(acc.to_fixed_bytes());
             FUNGIBLE_TOKEN.remove_admin(&account);
+            msg::reply(Event::AdminRemoved(account), GAS_AMOUNT, 0);
         }
     }
 }

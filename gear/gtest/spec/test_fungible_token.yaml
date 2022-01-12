@@ -153,16 +153,6 @@ fixtures:
                   spender: *BOB
                   amount: 200
         # BOB sends 100 GRT from ALICE to CHARLIE.
-          - destination:
-              kind: account
-              value: bob
-            payload:
-              kind: custom
-              value:
-                transfer:
-                  from: *ALICE
-                  to: *CHARLIE
-                  amount: 100
         # BOB's new limit on ALICE's fund is 100 GRT.
           - destination:
               kind: account
@@ -170,7 +160,9 @@ fixtures:
             payload:
               kind: custom
               value:
-                approval:
+                transferFrom:
                   owner: *ALICE
-                  spender: *BOB
+                  sender: *BOB
+                  recipient: *CHARLIE
                   amount: 100
+                  new_limit: 100
