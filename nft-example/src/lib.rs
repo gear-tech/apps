@@ -31,7 +31,6 @@ pub enum Action {
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum Event {
-    // Base(NftEvent),
     Transfer(Transfer),
     Approval(Approve),
     ApprovalForAll(ApproveForAll),
