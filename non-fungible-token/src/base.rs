@@ -2,7 +2,7 @@ use gstd::{prelude::*, ActorId};
 use primitive_types::U256;
 
 pub trait NonFungibleTokenBase {
-    /// called during the NFT contract deployment
+    /// Called during the NFT contract deployment
     /// Arguments:
     /// * `name`: A descriptive name for a collection of NFTs in this contract
     /// * `symbol`: An abbreviated name for NFTs in this contract
@@ -15,7 +15,7 @@ pub trait NonFungibleTokenBase {
     /// * `from`: the valid ActorId. It can the the token owner or the actor with the right to transfer the token
     /// * `to`: the valid ActorId, the account to which the token will be sent
     /// Contract must panic if `from` is neither the token owner nor the approved actor for the token. It also must panic if `to` is a zero ID
-    fn transfer(&mut self, rom: &ActorId, to: &ActorId, token_id: U256);
+    fn transfer(&mut self, from: &ActorId, to: &ActorId, token_id: U256);
 
     /// Gives a right to the actor to manage the specific token
     /// Arguments:

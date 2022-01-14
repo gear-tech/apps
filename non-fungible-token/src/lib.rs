@@ -12,7 +12,7 @@ use primitive_types::{H256, U256};
 use scale_info::TypeInfo;
 
 const GAS_RESERVE: u64 = 500_000_000;
-const ZERO_ID: ActorId = ActorId::new(H256::zero().to_fixed_bytes());
+const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug)]
 pub struct NonFungibleToken {
