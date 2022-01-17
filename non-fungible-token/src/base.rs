@@ -32,4 +32,15 @@ pub trait NonFungibleTokenBase {
     /// * `approved`: True if the operator is approved, false to revoke approval
     /// Contract must panic if `owner` is not the token owner or `operator` is a zero ID
     fn approve_for_all(&mut self, owner: &ActorId, operator: &ActorId, approved: bool);
+
+    /// Sends a message including the information about the balance of `account`
+    /// Arguments:
+    /// * `account`: the valid ActorId
+    fn balance_of(&self, account: &ActorId);
+
+    /// Sends a message including the information about the owner of `token_id`
+    /// If token does not exist, it sends the zero address
+    /// Arguments:
+    /// * `token_id`: the token ID
+    fn owner_of(&self, token_id: U256);
 }

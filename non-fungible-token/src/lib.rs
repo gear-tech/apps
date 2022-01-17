@@ -71,7 +71,7 @@ impl NonFungibleTokenBase for NonFungibleToken {
         };
 
         msg::reply(
-            NftEvent::Transfer(transfer_token),
+            Event::Transfer(transfer_token),
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -95,8 +95,9 @@ impl NonFungibleTokenBase for NonFungibleToken {
             spender: H256::from_slice(spender.as_ref()),
             token_id,
         };
+
         msg::reply(
-            NftEvent::Approval(approve_token),
+            Event::Approval(approve_token),
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -119,7 +120,25 @@ impl NonFungibleTokenBase for NonFungibleToken {
         };
 
         msg::reply(
-            NftEvent::ApprovalForAll(approve_operator),
+            Event::ApprovalForAll(approve_operator),
+            exec::gas_available() - GAS_RESERVE,
+            0,
+        );
+    }
+
+    fn balance_of(&self, account: &ActorId) {
+        let balance = *self.balances.get(account).unwrap_or(&U256::zero());
+        msg::reply(
+            Event::BalanceOf(balance),
+            exec::gas_available() - GAS_RESERVE,
+            0,
+        );
+    }
+
+    fn owner_of(&self, token_id: U256) {
+        let owner = self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID);
+        msg::reply(
+            Event::OwnerOf(H256::from_slice(owner.as_ref())),
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -178,7 +197,7 @@ pub struct Transfer {
 }
 
 #[derive(Debug, Encode, TypeInfo, Decode)]
-pub enum NftEvent {
+pub enum Event {
     Transfer(Transfer),
     Approval(Approve),
     ApprovalForAll(ApproveForAll),
@@ -186,7 +205,7 @@ pub enum NftEvent {
     BalanceOf(U256),
 }
 
-#[derive(Debug, Encode, TypeInfo, Decode)]
+#[derive(Debug, Encode, TypeInfo)]
 pub enum AuthAccount {
     Owner,
     ApprovedActor,
