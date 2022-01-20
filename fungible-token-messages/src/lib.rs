@@ -65,6 +65,19 @@ pub struct TransferFromReply {
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
+pub struct AllowanceInput {
+    pub owner: ActorId,
+    pub spender: ActorId,
+}
+
+#[derive(Debug, Decode, Encode, TypeInfo)]
+pub struct AllowanceReply {
+    pub owner: ActorId,
+    pub spender: ActorId,
+    pub limit: u128,
+}
+
+#[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum Action {
     Mint(MintInput),
     Burn(BurnInput),
@@ -73,19 +86,41 @@ pub enum Action {
     Approve(ApproveInput),
     IncreaseAllowance(ApproveInput),
     DecreaseAllowance(ApproveInput),
-    TotalIssuance,
-    BalanceOf(ActorId),
     AddAdmin(ActorId),
     RemoveAdmin(ActorId),
+    TotalSupply,
+    BalanceOf(ActorId),
+    Allowance(AllowanceInput),
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum Event {
     Transfer(TransferReply),
     Approval(ApproveReply),
-    TotalIssuance(u128),
-    Balance(u128),
     AdminAdded(ActorId),
     AdminRemoved(ActorId),
     TransferFrom(TransferFromReply),
+    TotalSupply(u128),
+    Balance(u128),
+    Allowance(AllowanceReply),
+}
+
+#[derive(Debug, Encode, Decode, TypeInfo)]
+pub enum State {
+    Name,
+    Symbol,
+    Decimals,
+    TotalSupply,
+    BalanceOf(ActorId),
+    Allowance(AllowanceInput),
+}
+
+#[derive(Debug, Encode, Decode, TypeInfo)]
+pub enum StateReply {
+    Name(String),
+    Symbol(String),
+    Decimals(u8),
+    TotalSupply(u128),
+    Balance(u128),
+    Allowance(AllowanceReply),
 }

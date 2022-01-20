@@ -5,11 +5,13 @@
 #![feature(const_btree_new)]
 
 use fungible_token_messages::{
-    Action, ApproveReply, Event, InitConfig, TransferFromReply, TransferReply,
+    Action, AllowanceReply, ApproveReply, Event, InitConfig, State, StateReply, TransferFromReply,
+    TransferReply,
 };
 use gstd::{msg, prelude::*, ActorId};
 
 const GAS_AMOUNT: u64 = 300_000_000;
+const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug)]
 struct FungibleToken {
@@ -89,8 +91,7 @@ impl FungibleToken {
                 panic!("FungibleToken: Only token creator or designated admins can mint tokens.");
             }
         }
-        let zero = ActorId::new([0u8; 32]);
-        if account == &zero {
+        if account == &ZERO_ID {
             panic!("FungibleToken: Mint to zero address.");
         }
         unsafe {
@@ -108,8 +109,7 @@ impl FungibleToken {
                 panic!("FungibleToken: Only token creator or designated admins can burn tokens.");
             }
         }
-        let zero = ActorId::new([0u8; 32]);
-        if account == &zero {
+        if account == &ZERO_ID {
             panic!("FungibleToken: Burn from zero address.");
         }
         unsafe {
@@ -121,11 +121,10 @@ impl FungibleToken {
     /// Executed on receiving `fungible-token-messages::TransferInput` or `fungible-token-messages::TransferFromInput`.
     /// Transfers `amount` tokens from `sender` account to `recipient` account.
     fn transfer(&mut self, sender: &ActorId, recipient: &ActorId, amount: u128) {
-        let zero = ActorId::new([0u8; 32]);
-        if sender == &zero {
+        if sender == &ZERO_ID {
             panic!("FungibleToken: Transfer from zero address.");
         }
-        if recipient == &zero {
+        if recipient == &ZERO_ID {
             panic!("FungibleToken: Transfer to zero address.");
         }
         let sender_balance = self.get_balance(sender);
@@ -142,8 +141,7 @@ impl FungibleToken {
     /// Executed on receiving `fungible-token-messages::ApproveInput`.
     /// Adds/Updates allowance entry for `spender` account to tranfer upto `amount` from `owner` account.
     fn approve(&mut self, owner: &ActorId, spender: &ActorId, amount: u128) {
-        let zero = ActorId::new([0u8; 32]);
-        if spender == &zero {
+        if spender == &ZERO_ID {
             panic!("FungibleToken: Approve to zero address.");
         }
         self.allowances
@@ -198,6 +196,9 @@ gstd::metadata! {
     handle:
         input: Action,
         output: Event,
+    state:
+        input: State,
+        output: StateReply,
 }
 
 #[no_mangle]
@@ -207,9 +208,8 @@ pub unsafe extern "C" fn handle() {
     match action {
         Action::Mint(mint_input) => {
             FUNGIBLE_TOKEN.mint(&mint_input.account, mint_input.amount);
-            let zero = ActorId::new([0u8; 32]);
             let transfer_data = TransferReply {
-                from: zero,
+                from: ZERO_ID,
                 to: mint_input.account,
                 amount: mint_input.amount,
             };
@@ -217,10 +217,9 @@ pub unsafe extern "C" fn handle() {
         }
         Action::Burn(burn_input) => {
             FUNGIBLE_TOKEN.burn(&burn_input.account, burn_input.amount);
-            let zero = ActorId::new([0u8; 32]);
             let transfer_data = TransferReply {
                 from: burn_input.account,
-                to: zero,
+                to: ZERO_ID,
                 amount: burn_input.amount,
             };
             msg::reply(Event::Transfer(transfer_data), GAS_AMOUNT, 0);
@@ -265,6 +264,7 @@ pub unsafe extern "C" fn handle() {
             let spender = approve_data.spender;
             let amount = approve_data.amount;
             FUNGIBLE_TOKEN.increase_allowance(&owner, &spender, amount);
+            let amount = FUNGIBLE_TOKEN.get_allowance(&owner, &spender);
             let approve_data = ApproveReply {
                 owner,
                 spender,
@@ -277,6 +277,7 @@ pub unsafe extern "C" fn handle() {
             let spender = approve_data.spender;
             let amount = approve_data.amount;
             FUNGIBLE_TOKEN.decrease_allowance(&owner, &spender, amount);
+            let amount = FUNGIBLE_TOKEN.get_allowance(&owner, &spender);
             let approve_data = ApproveReply {
                 owner,
                 spender,
@@ -284,9 +285,9 @@ pub unsafe extern "C" fn handle() {
             };
             msg::reply(Event::Approval(approve_data), GAS_AMOUNT, 0);
         }
-        Action::TotalIssuance => {
+        Action::TotalSupply => {
             let total_supply = FUNGIBLE_TOKEN.total_supply;
-            msg::reply(Event::TotalIssuance(total_supply), GAS_AMOUNT, 0);
+            msg::reply(Event::TotalSupply(total_supply), GAS_AMOUNT, 0);
         }
         Action::BalanceOf(account) => {
             let balance = FUNGIBLE_TOKEN.balance_of(&account);
@@ -300,6 +301,15 @@ pub unsafe extern "C" fn handle() {
             FUNGIBLE_TOKEN.remove_admin(&account);
             msg::reply(Event::AdminRemoved(account), GAS_AMOUNT, 0);
         }
+        Action::Allowance(allowance) => {
+            let limit = FUNGIBLE_TOKEN.get_allowance(&allowance.owner, &allowance.spender);
+            let allowance_reply = AllowanceReply {
+                owner: allowance.owner,
+                spender: allowance.spender,
+                limit,
+            };
+            msg::reply(Event::Allowance(allowance_reply), GAS_AMOUNT, 0);
+        }
     }
 }
 
@@ -309,6 +319,32 @@ pub unsafe extern "C" fn init() {
     FUNGIBLE_TOKEN.name = config.name;
     FUNGIBLE_TOKEN.symbol = config.symbol;
     FUNGIBLE_TOKEN.creator = msg::source();
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
+    let query: State = msg::load().expect("failed to decode input argument");
+    let encoded = match query {
+        State::Name => StateReply::Name(FUNGIBLE_TOKEN.name.clone()).encode(),
+        State::Symbol => StateReply::Name(FUNGIBLE_TOKEN.symbol.clone()).encode(),
+        State::Decimals => StateReply::Decimals(18).encode(),
+        State::TotalSupply => StateReply::TotalSupply(FUNGIBLE_TOKEN.total_supply).encode(),
+        State::BalanceOf(account) => {
+            StateReply::Balance(FUNGIBLE_TOKEN.balance_of(&account)).encode()
+        }
+        State::Allowance(allowance) => {
+            let limit = FUNGIBLE_TOKEN.get_allowance(&allowance.owner, &allowance.spender);
+            StateReply::Allowance(AllowanceReply {
+                owner: allowance.owner,
+                spender: allowance.spender,
+                limit,
+            })
+            .encode()
+        }
+    };
+    let result = gstd::macros::util::to_wasm_ptr(&(encoded[..]));
+    core::mem::forget(encoded);
+    result
 }
 
 #[no_mangle]
