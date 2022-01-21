@@ -26,7 +26,7 @@ pub enum Action {
     Approve(ApproveInput),
     ApproveForAll(ApproveForAllInput),
     OwnerOf(U256),
-    BalanceOf(H256),
+    BalanceOf(ActorId),
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
@@ -34,7 +34,7 @@ pub enum Event {
     Transfer(Transfer),
     Approval(Approve),
     ApprovalForAll(ApproveForAll),
-    OwnerOf(H256),
+    OwnerOf(ActorId),
     BalanceOf(U256),
 }
 
@@ -73,8 +73,8 @@ impl NFT {
             .insert(msg::source(), balance.saturating_add(U256::one()));
 
         let transfer_token = Transfer {
-            from: H256::zero(),
-            to: H256::from_slice(msg::source().as_ref()),
+            from: ZERO_ID,
+            to: msg::source(),
             token_id: self.token_id,
         };
 
@@ -106,8 +106,8 @@ impl NFT {
             .insert(msg::source(), balance.saturating_sub(U256::one()));
 
         let transfer_token = Transfer {
-            from: H256::from_slice(msg::source().as_ref()),
-            to: H256::zero(),
+            from: msg::source(),
+            to: ZERO_ID,
             token_id,
         };
         msg::reply(
@@ -165,9 +165,7 @@ pub unsafe extern "C" fn handle() {
             CONTRACT.token.owner_of(input);
         }
         Action::BalanceOf(input) => {
-            CONTRACT
-                .token
-                .balance_of(&ActorId::new(input.to_fixed_bytes()));
+            CONTRACT.token.balance_of(&input);
         }
     }
 }
@@ -187,13 +185,12 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let query: State = msg::load().expect("failed to decode input argument");
     let encoded = match query {
         State::BalanceOfUser(input) => {
-            let user = &ActorId::new(input.to_fixed_bytes());
-            StateReply::BalanceOfUser(*CONTRACT.token.balances.get(user).unwrap_or(&U256::zero()))
+            StateReply::BalanceOfUser(*CONTRACT.token.balances.get(&input).unwrap_or(&U256::zero()))
                 .encode()
         }
         State::TokenOwner(input) => {
             let user = CONTRACT.token.owner_by_id.get(&input).unwrap_or(&ZERO_ID);
-            StateReply::TokenOwner(H256::from_slice(user.as_ref())).encode()
+            StateReply::TokenOwner(*user).encode()
         }
         State::IsTokenOwner(input) => {
             let user = CONTRACT
@@ -201,7 +198,7 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
                 .owner_by_id
                 .get(&input.token_id)
                 .unwrap_or(&ZERO_ID);
-            StateReply::IsTokenOwner(user == &ActorId::new(input.user.to_fixed_bytes())).encode()
+            StateReply::IsTokenOwner(user == &input.user).encode()
         }
         State::GetApproved(input) => {
             let approved_address = CONTRACT
@@ -209,7 +206,7 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
                 .token_approvals
                 .get(&input)
                 .unwrap_or(&ZERO_ID);
-            StateReply::GetApproved(H256::from_slice(approved_address.as_ref())).encode()
+            StateReply::GetApproved(*approved_address).encode()
         }
     };
     let result = gstd::macros::util::to_wasm_ptr(&(encoded[..]));
