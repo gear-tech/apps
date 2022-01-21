@@ -8,7 +8,7 @@ use base::NonFungibleTokenBase;
 pub mod token;
 use token::TokenMetadata;
 
-use primitive_types::{H256, U256};
+use primitive_types::U256;
 use scale_info::TypeInfo;
 
 const GAS_RESERVE: u64 = 500_000_000;
@@ -23,7 +23,7 @@ pub struct NonFungibleToken {
     pub token_metadata_by_id: BTreeMap<U256, TokenMetadata>,
     pub token_approvals: BTreeMap<U256, ActorId>,
     pub balances: BTreeMap<ActorId, U256>,
-    pub operator_approval: BTreeMap<ActorId, BTreeMap<ActorId, bool>>,
+    pub operator_approval: BTreeMap<ActorId, ActorId>,
 }
 
 impl NonFungibleTokenBase for NonFungibleToken {
@@ -65,8 +65,8 @@ impl NonFungibleTokenBase for NonFungibleToken {
         self.owner_by_id.insert(token_id, *to);
 
         let transfer_token = Transfer {
-            from: H256::from_slice(from.as_ref()),
-            to: H256::from_slice(to.as_ref()),
+            from: *from,
+            to: *to,
             token_id,
         };
 
@@ -91,8 +91,8 @@ impl NonFungibleTokenBase for NonFungibleToken {
         self.token_approvals.insert(token_id, *spender);
 
         let approve_token = Approve {
-            owner: H256::from_slice(owner.as_ref()),
-            spender: H256::from_slice(spender.as_ref()),
+            owner: *owner,
+            spender: *spender,
             token_id,
         };
 
@@ -107,15 +107,14 @@ impl NonFungibleTokenBase for NonFungibleToken {
         if operator == &ZERO_ID {
             panic!("NonFungibleToken: Approval for a zero address");
         }
-
-        self.operator_approval
-            .entry(*owner)
-            .or_default()
-            .insert(*operator, approved);
+        match approved {
+            true => self.operator_approval.insert(*owner, *operator),
+            false => self.operator_approval.remove(owner),
+        };
 
         let approve_operator = ApproveForAll {
-            owner: H256::from_slice(owner.as_ref()),
-            operator: H256::from_slice(operator.as_ref()),
+            owner: *owner,
+            operator: *operator,
             approved,
         };
 
@@ -138,7 +137,7 @@ impl NonFungibleTokenBase for NonFungibleToken {
     fn owner_of(&self, token_id: U256) {
         let owner = self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID);
         msg::reply(
-            Event::OwnerOf(H256::from_slice(owner.as_ref())),
+            Event::OwnerOf(*owner),
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -158,13 +157,7 @@ impl NonFungibleToken {
         if self.token_approvals.get(&token_id).unwrap_or(&ZERO_ID) == account {
             return AuthAccount::ApprovedActor;
         }
-        if *self
-            .operator_approval
-            .get(owner)
-            .unwrap_or(&BTreeMap::<ActorId, bool>::default())
-            .get(account)
-            .unwrap_or(&false)
-        {
+        if self.operator_approval.contains_key(owner) {
             return AuthAccount::Operator;
         }
         AuthAccount::None
@@ -177,22 +170,22 @@ impl NonFungibleToken {
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct Approve {
-    owner: H256,
-    spender: H256,
+    owner: ActorId,
+    spender: ActorId,
     token_id: U256,
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct ApproveForAll {
-    owner: H256,
-    operator: H256,
+    owner: ActorId,
+    operator: ActorId,
     approved: bool,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub struct Transfer {
-    pub from: H256,
-    pub to: H256,
+    pub from: ActorId,
+    pub to: ActorId,
     pub token_id: U256,
 }
 
@@ -201,7 +194,7 @@ pub enum Event {
     Transfer(Transfer),
     Approval(Approve),
     ApprovalForAll(ApproveForAll),
-    OwnerOf(H256),
+    OwnerOf(ActorId),
     BalanceOf(U256),
 }
 

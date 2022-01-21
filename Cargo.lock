@@ -264,6 +264,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "non-fungible-token"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "hex",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
