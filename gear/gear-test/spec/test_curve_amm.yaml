@@ -1,0 +1,406 @@
+title: curve_amm_test
+
+programs:
+  - id: 1
+    path: fungible_token.wasm
+    init_message:
+      kind: custom
+      value:
+        name: USDC Stable Coin
+        symbol: USDC
+  - id: 2
+    path: fungible_token.wasm
+    init_message:
+      kind: custom
+      value:
+        name: USDT Stable Coin
+        symbol: USDT
+  - id: 3
+    path: fungible_token.wasm
+    init_message:
+      kind: custom
+      value:
+        name: LP Token
+        symbol: LPT
+  - id: 4
+    path: curve_amm.wasm
+    init_message:
+      kind: custom
+      value:
+          token_accounts: "{1},{2},{3}"
+          amplification_coefficient : 10000
+          fee: 0
+
+fixtures:
+  - title: curve_amm
+    messages:
+      # add curve_amm program as admin to LP-Token program
+      - destination: 3
+        payload:
+          kind: custom
+          value:
+            addAdmin: &POOL 0x0400000000000000000000000000000000000000000000000000000000000000
+      # add 100000 USDC to account ALICE
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: &ALICE "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+              amount: 100000
+      # add 100000 USDC to BOB
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: &BOB "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"
+              amount: 100000
+      # add 100000 USDT to account ALICE
+      - destination: 2
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: *ALICE
+              amount: 100000
+      # add 100000 USDT to BOB
+      - destination: 2
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: *BOB
+              amount: 100000
+      # add 5500 USDC to CHARLIE
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: &CHARLIE "0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22"
+              amount: 5500
+      # Approve DEX to transfer USDC on behalf of ALICE
+      - destination: 1
+        source:
+          kind: account
+          value: alice
+        payload:
+          kind: custom
+          value:
+            approve:
+              spender: *POOL
+              amount: 200000
+      # Approve DEX to transfer USDT on behalf of ALICE
+      - destination: 2
+        source:
+          kind: account
+          value: alice
+        payload:
+          kind: custom
+          value:
+            approve:
+              spender: *POOL
+              amount: 200000
+      # Approve DEX to transfer USDC on behalf of BOB
+      - destination: 1
+        source:
+          kind: account
+          value: bob
+        payload:
+          kind: custom
+          value:
+            approve:
+              spender: *POOL
+              amount: 200000
+      # Approve DEX to transfer USDT on behalf of BOB
+      - destination: 2
+        source:
+          kind: account
+          value: bob
+        payload:
+          kind: custom
+          value:
+            approve:
+              spender: *POOL
+              amount: 200000
+      # Approve DEX to transfer USDC on behalf of CHARLIE
+      - destination: 1
+        source:
+          kind: account
+          value: charlie
+        payload:
+          kind: custom
+          value:
+            approve:
+              spender: *POOL
+              amount: 200000
+      # Approve DEX to transfer USDT on behalf of CHARLIE
+      - destination: 2
+        source:
+          kind: account
+          value: charlie
+        payload:
+          kind: custom
+          value:
+            approve:
+              spender: *POOL
+              amount: 200000
+      # check lp token balance of ALICE
+      - destination: 3
+        payload:
+          kind: custom
+          value:
+            balanceOf: *ALICE
+      # check lp token balance of BOB
+      - destination: 3
+        payload:
+          kind: custom
+          value:
+            balanceOf: *BOB
+      # add USDT, USDC liquidity from ALICE to pool
+      - destination: 4
+        source:
+          kind: account
+          value: alice
+        payload:
+          kind: custom
+          value:
+            addLiquidity:
+              pool_id : 0
+              amounts : [10000, 10000]
+      # # add USDT, USDC liquidity from BOB to pool
+      # - destination: 4
+      #   source:
+      #     kind: account
+      #     value: bob
+      #   payload:
+      #     kind: custom
+      #     value:
+      #       addLiquidity:
+      #         pool_id : 0
+      #         amounts : [10000, 10000]
+      # # # exchange USDC for USDT from CHARLIE
+      # - destination: 4
+      #   source:
+      #     kind: account
+      #     value: charlie
+      #   payload:
+      #     kind: custom
+      #     value:
+      #       exchange:
+      #         pool_id: 0
+      #         i: 0
+      #         j: 1
+      #         dx_amount: 100
+      # # redeem some LP Tokens from ALICE
+      # - destination: 4
+      #   source:
+      #     kind: account
+      #     value: alice
+      #   payload:
+      #     kind: custom
+      #     value:
+      #       removeLiquidity:
+      #         pool_id : 0
+      #         amount : 200
+      # # redeem some LP Tokens from BOB
+      # - destination: 4
+      #   source:
+      #     kind: account
+      #     value: bob
+      #   payload:
+      #     kind: custom
+      #     value:
+      #       removeLiquidity:
+      #         pool_id : 0
+      #         amount : 200
+
+    expected:
+      - log:
+         # check curve_amm program is added as admin to LP-Token program.
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                adminAdded: *POOL
+         # check 100000 USDC minted to ALICE
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: &zero 0x0000000000000000000000000000000000000000000000000000000000000000
+                  to: *ALICE
+                  amount: 100000
+         # check 100000 USDC minted to BOB
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *BOB
+                  amount: 100000
+         # check 100000 USDT minted to ALICE
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *ALICE
+                  amount: 100000
+         # check 100000 USDT minted to BOB
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *BOB
+                  amount: 100000
+         # check 5500 USDC minted to CHARLIE
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *CHARLIE
+                  amount: 5500
+         # check approval message
+          - destination:
+              kind: account
+              value: alice
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *ALICE
+                  spender: *POOL
+                  amount: 200000
+         # check approval message
+          - destination:
+              kind: account
+              value: alice
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *ALICE
+                  spender: *POOL
+                  amount: 200000
+         # check approval message
+          - destination:
+              kind: account
+              value: bob
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *BOB
+                  spender: *POOL
+                  amount: 200000
+         # check approval message
+          - destination:
+              kind: account
+              value: bob
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *BOB
+                  spender: *POOL
+                  amount: 200000
+         # check approval message
+          - destination:
+              kind: account
+              value: charlie
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *CHARLIE
+                  spender: *POOL
+                  amount: 200000
+         # check approval message
+          - destination:
+              kind: account
+              value: charlie
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *CHARLIE
+                  spender: *POOL
+                  amount: 200000
+         # check lp token balance of ALICE (expected value 0)
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                balance: 0
+         # check lp token balance of BOB (expected value 0)
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                balance: 0
+         # check liquidity added from ALICE
+          - destination:
+              kind: account
+              value: alice
+            payload:
+              kind: custom
+              value:
+                addLiquidity:
+                  who: *ALICE
+                  pool_id: 0
+                  mint_amount: 20000
+         # check liquidity added from BOB
+          # - destination:
+          #     kind: account
+          #     value: bob
+          #   payload:
+          #     kind: custom
+          #     value:
+          #       addLiquidity:
+          #         who: *BOB
+          #         pool_id: 0
+          #         mint_amount: 20000
+         #  # check exchange reply (expected dy_amount is ~100)
+         #  - destination:
+         #      kind: account
+         #      value: charlie
+         #    payload:
+         #      kind: custom
+         #      value:
+         #        exchange:
+         #          who: *CHARLIE
+         #          pool_id: 0
+         #          i: 0
+         #          j: 1
+         #          dy_amount: 99
+         #  # check removeLiquidity reply
+         #  - destination:
+         #      kind: account
+         #      value: alice
+         #    payload:
+         #      kind: custom
+         #      value:
+         #        removeLiquidity:
+         #          who: *ALICE
+         #          pool_id: 0
+         #          amounts: [100, 99]
+         #  # check removeLiquidity reply
+         #  - destination:
+         #      kind: account
+         #      value: bob
+         #    payload:
+         #      kind: custom
+         #      value:
+         #        removeLiquidity:
+         #          who: *BOB
+         #          pool_id: 0
+         #          amounts: [100, 99]
