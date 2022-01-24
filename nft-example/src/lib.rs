@@ -3,39 +3,26 @@
 
 use codec::{Decode, Encode};
 use gstd::{debug, exec, msg, prelude::*, ActorId};
-use primitive_types::{H256, U256};
+use primitive_types::U256;
 use scale_info::TypeInfo;
-
-pub mod payloads;
-pub use payloads::{ApproveForAllInput, ApproveInput, InitConfig, TransferInput};
 
 pub mod state;
 pub use state::{State, StateReply};
 
+pub mod actions_events;
+pub use actions_events::{Action, Event};
+
 use non_fungible_token::base::NonFungibleTokenBase;
-use non_fungible_token::{Approve, ApproveForAll, NonFungibleToken, Transfer};
+use non_fungible_token::NonFungibleToken;
 
 const GAS_RESERVE: u64 = 500_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug, Decode, TypeInfo)]
-pub enum Action {
-    Mint,
-    Burn(U256),
-    Transfer(TransferInput),
-    Approve(ApproveInput),
-    ApproveForAll(ApproveForAllInput),
-    OwnerOf(U256),
-    BalanceOf(ActorId),
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum Event {
-    Transfer(Transfer),
-    Approval(Approve),
-    ApprovalForAll(ApproveForAll),
-    OwnerOf(ActorId),
-    BalanceOf(U256),
+pub struct InitConfig {
+    pub name: String,
+    pub symbol: String,
+    pub base_uri: String,
 }
 
 #[derive(Debug)]
@@ -46,18 +33,9 @@ pub struct NFT {
 }
 
 static mut CONTRACT: NFT = NFT {
-    token: NonFungibleToken {
-        name: String::new(),
-        symbol: String::new(),
-        base_uri: String::new(),
-        owner_by_id: BTreeMap::new(),
-        token_metadata_by_id: BTreeMap::new(),
-        token_approvals: BTreeMap::new(),
-        balances: BTreeMap::new(),
-        operator_approval: BTreeMap::new(),
-    },
+    token: NonFungibleToken::new(),
     token_id: U256::zero(),
-    owner: ActorId::new(H256::zero().to_fixed_bytes()),
+    owner: ZERO_ID,
 };
 
 impl NFT {
@@ -72,19 +50,16 @@ impl NFT {
             .balances
             .insert(msg::source(), balance.saturating_add(U256::one()));
 
-        let transfer_token = Transfer {
-            from: ZERO_ID,
-            to: msg::source(),
-            token_id: self.token_id,
-        };
-
-        self.token_id = self.token_id.saturating_add(U256::one());
-
         msg::reply(
-            Event::Transfer(transfer_token),
+            Event::Transfer {
+                from: ZERO_ID,
+                to: msg::source(),
+                token_id: self.token_id,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
+        self.token_id = self.token_id.saturating_add(U256::one());
     }
 
     fn burn(&mut self, token_id: U256) {
@@ -104,14 +79,12 @@ impl NFT {
         self.token
             .balances
             .insert(msg::source(), balance.saturating_sub(U256::one()));
-
-        let transfer_token = Transfer {
-            from: msg::source(),
-            to: ZERO_ID,
-            token_id,
-        };
         msg::reply(
-            Event::Transfer(transfer_token),
+            Event::Transfer {
+                from: msg::source(),
+                to: ZERO_ID,
+                token_id,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -137,29 +110,19 @@ pub unsafe extern "C" fn handle() {
         Action::Mint => {
             CONTRACT.mint();
         }
-        Action::Burn(input) => {
-            CONTRACT.burn(input);
+        Action::Burn(amount) => {
+            CONTRACT.burn(amount);
         }
-        Action::Transfer(input) => {
-            CONTRACT.token.transfer(
-                &msg::source(),
-                &ActorId::new(input.to.to_fixed_bytes()),
-                input.token_id,
-            );
+        Action::Transfer { to, token_id } => {
+            CONTRACT.token.transfer(&msg::source(), &to, token_id);
         }
-        Action::Approve(input) => {
-            CONTRACT.token.approve(
-                &msg::source(),
-                &ActorId::new(input.to.to_fixed_bytes()),
-                input.token_id,
-            );
+        Action::Approve { to, token_id } => {
+            CONTRACT.token.approve(&msg::source(), &to, token_id);
         }
-        Action::ApproveForAll(input) => {
-            CONTRACT.token.approve_for_all(
-                &msg::source(),
-                &ActorId::new(input.to.to_fixed_bytes()),
-                input.approve,
-            );
+        Action::ApproveForAll { to, approved } => {
+            CONTRACT
+                .token
+                .approve_for_all(&msg::source(), &to, approved);
         }
         Action::OwnerOf(input) => {
             CONTRACT.token.owner_of(input);
@@ -192,13 +155,13 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
             let user = CONTRACT.token.owner_by_id.get(&input).unwrap_or(&ZERO_ID);
             StateReply::TokenOwner(*user).encode()
         }
-        State::IsTokenOwner(input) => {
+        State::IsTokenOwner { account, token_id } => {
             let user = CONTRACT
                 .token
                 .owner_by_id
-                .get(&input.token_id)
+                .get(&token_id)
                 .unwrap_or(&ZERO_ID);
-            StateReply::IsTokenOwner(user == &input.user).encode()
+            StateReply::IsTokenOwner(user == &account).encode()
         }
         State::GetApproved(input) => {
             let approved_address = CONTRACT

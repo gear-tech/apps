@@ -64,14 +64,12 @@ impl NonFungibleTokenBase for NonFungibleToken {
 
         self.owner_by_id.insert(token_id, *to);
 
-        let transfer_token = Transfer {
-            from: *from,
-            to: *to,
-            token_id,
-        };
-
         msg::reply(
-            Event::Transfer(transfer_token),
+            Event::Transfer {
+                from: *from,
+                to: *to,
+                token_id,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -90,14 +88,12 @@ impl NonFungibleTokenBase for NonFungibleToken {
 
         self.token_approvals.insert(token_id, *spender);
 
-        let approve_token = Approve {
-            owner: *owner,
-            spender: *spender,
-            token_id,
-        };
-
         msg::reply(
-            Event::Approval(approve_token),
+            Event::Approval {
+                owner: *owner,
+                spender: *spender,
+                token_id,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -112,14 +108,12 @@ impl NonFungibleTokenBase for NonFungibleToken {
             false => self.operator_approval.remove(owner),
         };
 
-        let approve_operator = ApproveForAll {
-            owner: *owner,
-            operator: *operator,
-            approved,
-        };
-
         msg::reply(
-            Event::ApprovalForAll(approve_operator),
+            Event::ApprovalForAll {
+                owner: *owner,
+                operator: *operator,
+                approved,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -145,6 +139,19 @@ impl NonFungibleTokenBase for NonFungibleToken {
 }
 
 impl NonFungibleToken {
+    pub const fn new() -> NonFungibleToken {
+        NonFungibleToken {
+            name: String::new(),
+            symbol: String::new(),
+            base_uri: String::new(),
+            owner_by_id: BTreeMap::new(),
+            token_metadata_by_id: BTreeMap::new(),
+            token_approvals: BTreeMap::new(),
+            balances: BTreeMap::new(),
+            operator_approval: BTreeMap::new(),
+        }
+    }
+
     pub fn is_token_owner(&self, token_id: U256, account: &ActorId) -> bool {
         account == self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID)
     }
@@ -168,32 +175,23 @@ impl NonFungibleToken {
     }
 }
 
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct Approve {
-    owner: ActorId,
-    spender: ActorId,
-    token_id: U256,
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct ApproveForAll {
-    owner: ActorId,
-    operator: ActorId,
-    approved: bool,
-}
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct Transfer {
-    pub from: ActorId,
-    pub to: ActorId,
-    pub token_id: U256,
-}
-
 #[derive(Debug, Encode, TypeInfo, Decode)]
 pub enum Event {
-    Transfer(Transfer),
-    Approval(Approve),
-    ApprovalForAll(ApproveForAll),
+    Transfer {
+        from: ActorId,
+        to: ActorId,
+        token_id: U256,
+    },
+    Approval {
+        owner: ActorId,
+        spender: ActorId,
+        token_id: U256,
+    },
+    ApprovalForAll {
+        owner: ActorId,
+        operator: ActorId,
+        approved: bool,
+    },
     OwnerOf(ActorId),
     BalanceOf(U256),
 }

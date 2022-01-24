@@ -7,7 +7,7 @@ use scale_info::TypeInfo;
 pub enum State {
     BalanceOfUser(ActorId),
     TokenOwner(U256),
-    IsTokenOwner(TokenAndUser),
+    IsTokenOwner { account: ActorId, token_id: U256 },
     GetApproved(U256),
 }
 
@@ -17,10 +17,4 @@ pub enum StateReply {
     TokenOwner(ActorId),
     IsTokenOwner(bool),
     GetApproved(ActorId),
-}
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct TokenAndUser {
-    pub token_id: U256,
-    pub user: ActorId,
 }

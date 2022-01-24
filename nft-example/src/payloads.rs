@@ -16,14 +16,3 @@ pub struct TransferInput {
     pub token_id: U256,
 }
 
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct ApproveInput {
-    pub to: H256,
-    pub token_id: U256,
-}
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct ApproveForAllInput {
-    pub to: H256,
-    pub approve: bool,
-}
