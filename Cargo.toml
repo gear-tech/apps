@@ -7,6 +7,7 @@ members = [
     "ping",
     "non-fungible-token",
     "nft-example",
+    "fungible-token-messages",
 ]
 
 [profile.release]
