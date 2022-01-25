@@ -1,0 +1,572 @@
+title: Test NFT-example
+
+programs:
+  - id: 1
+    path: nft_example.wasm
+    init_message:
+      kind: custom
+      value:
+        name: "NFT collection"
+        symbol: "NFT"
+        base_uri: "https://"
+
+fixtures:
+  - title: mint/burn
+    messages:
+      # Mints the first token, expects successfull reply
+      - &mint
+        destination: 1
+        source: &source
+          kind: id
+          value: 2
+        payload: &payload_mint
+          kind: custom
+          value:
+            mint: 
+      # Mints the second token, expects successfull reply
+      - *mint
+      # Burns the second token, expects successfull reply
+      - &burn
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            burn: 1
+      # Retries to burn the second token, must fail
+      - *burn
+      # Not owner tries to burn the first token, must fail
+      - &burn
+        destination: 1
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            burn: 0
+
+    expected:
+      - allowError: true
+        log:
+          # successfull reply of mint
+          - &mint_success
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: &zero 0x0000000000000000000000000000000000000000000000000000000000000000
+                  to: &user_1 0x0200000000000000000000000000000000000000000000000000000000000000
+                  token_id: 0 
+          # successfull reply of mint              
+          - <<: *mint_success
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *user_1
+                  token_id: 1
+          # successfull reply of burn
+          - &burn_success
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *user_1
+                  to: *zero
+                  token_id: 1
+          # Fail
+          - destination: 2
+            exitCode: 1
+          - destination: 3
+            exitCode: 1
+
+  - title: ownerOf
+    messages:
+      # Mints the first token, expects successfull reply
+      - *mint
+      # Mints the second token, expects successfull reply
+      - <<: *mint
+        destination: 1
+        source:
+          kind: id
+          value: 3
+        payload: *payload_mint
+      # Asks for the owner of the first token, expects that owner is 'user_1'
+      - &owner_of
+        destination: 1
+        source: *source
+        payload: 
+          kind: custom
+          value:
+            ownerOf: 0 
+      # Asks for the owner of the second token, expects that owner is 'user_2'
+      - <<: *owner_of
+        destination: 1
+        source: *source
+        payload: 
+          kind: custom
+          value:
+            ownerOf: 1 
+      # Asks for the owner of non-existing token, expects that zero address
+      - <<: *owner_of
+        destination: 1
+        source: *source
+        payload: 
+          kind: custom
+          value:
+            ownerOf: 2 
+    expected:
+    - log:
+      - *mint_success            
+      - <<: *mint_success
+        destination: 3
+        payload:
+          kind: custom
+          value:
+            transfer:
+              from: *zero
+              to: &user_2 0x0300000000000000000000000000000000000000000000000000000000000000
+              token_id: 1
+      - &owner_of_reply
+        destination: 2
+        payload:
+          kind: custom
+          value:
+            ownerOf: *user_1
+      - <<: *owner_of_reply
+        destination: 2
+        payload:
+          kind: custom
+          value:
+            ownerOf: *user_2
+      - <<: *owner_of_reply
+        destination: 2
+        payload:
+          kind: custom
+          value:
+            ownerOf: *zero
+  
+  - title: balanceOf
+    messages:
+      # Mints the first token, expects successfull reply
+      - *mint
+      # Mints the second token, expects successfull reply
+      - *mint
+      # Mints the third token, expects successfull reply
+      - *mint
+      # Asks for the balance of the 'user_1', expects that 'user_1' has 3 tokens
+      - &balance_of
+        destination: 1
+        source: *source
+        payload: 
+          kind: custom
+          value:
+            balanceOf: *user_1
+      # Asks for the balance of the 'user_2', expects that 'user_1' has no tokens
+      - &balance_of
+        destination: 1
+        source: *source
+        payload: 
+          kind: custom
+          value:
+            balanceOf: *user_2
+
+    expected:
+    - log:
+      - *mint_success            
+      - <<: *mint_success
+        destination: 2
+        payload:
+          kind: custom
+          value:
+            transfer:
+              from: *zero
+              to: *user_1 
+              token_id: 1
+      - <<: *mint_success
+        destination: 2
+        payload:
+          kind: custom
+          value:
+            transfer:
+              from: *zero
+              to: *user_1 
+              token_id: 2
+      - &balance_of_reply
+        destination: 2
+        payload:
+          kind: custom
+          value:
+            balanceOf: 3
+      - <<: *balance_of_reply
+        destination: 2
+        payload:
+          kind: custom
+          value:
+            balanceOf: 0
+  
+  
+  - title: transfer
+    messages:
+      # Mints the first token, expects successfull reply
+      - *mint
+      # Mints the second token, expects successfull reply
+      - *mint
+      # 'user_1' transfers the first token to 'user_2', expects successfull reply
+      - &transfer
+        destination: 1
+        source:
+          kind: id
+          value: 2
+        payload:
+          kind: custom
+          value:
+            transfer:
+              to: *user_2
+              token_id: 0
+      # Checks that now 'user_2' is an owner of the first token
+      - *owner_of  
+      # 'user_1' transfers the second token to zero actor, must fail
+      - <<: *transfer
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            transfer:
+              to: *zero
+              token_id: 1
+      # 'user_2' tries to transfer the second token that he does not own, must fail
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            transfer:
+              to: &user_3 0x0400000000000000000000000000000000000000000000000000000000000000
+              token_id: 1
+      # 'user_1' tries to transfer non-existing token, must fail
+      - <<: *transfer
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            transfer:
+              to: *user_2
+              token_id: 10
+      # 'user_1' tries to transfer the second token to himself, must fail
+      - <<: *transfer
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            transfer:
+              to: *user_1
+              token_id: 1
+
+    expected:
+      - allowError: true
+        log:
+          - *mint_success
+          - <<: *mint_success
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *user_1
+                  token_id: 1 
+          - &transfer_success
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *user_1
+                  to: *user_2
+                  token_id: 0
+          - <<: *owner_of_reply
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                ownerOf: *user_2
+          - destination: 2
+            exitCode: 1
+          - destination: 3
+            exitCode: 1
+          - destination: 2
+            exitCode: 1
+          - destination: 2
+            exitCode: 1
+
+  - title: approve
+    messages:
+      # Mints the first token, expects successfull reply
+      - *mint
+      # Mints the second token, expects successfull reply
+      - *mint
+      # 'user_1' approves 'user_2' to transfer his first token, expects successfull reply
+      - &approve
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            approve:
+              to: *user_2
+              token_id: 0
+      # 'user_1' approves zero actor to transfer his first token, must fail
+      - <<: *approve
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            approve:
+              to: *zero
+              token_id: 0
+      # 'user_1' gives approval to himself, must fail
+      - <<: *approve
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            approve:
+              to: *user_1
+              token_id: 0
+      # 'user_2' tries to approve the token that he does not own, must fail
+      - <<: *approve
+        destination: 1
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            approve:
+              to: *user_3
+              token_id: 0
+
+    expected:
+      - allowError: true
+        log:
+          - *mint_success
+          - <<: *mint_success
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *user_1
+                  token_id: 1
+          - &approve_success
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *user_1
+                  spender: *user_2
+                  token_id: 0
+          - destination: 2
+            exitCode: 1
+          - destination: 2
+            exitCode: 1
+          - destination: 3
+            exitCode: 1
+  
+  - title: transfer from approved address
+    messages:
+      # Mints the first token, expects successfull reply
+      - *mint
+      # Mints the second token, expects successfull reply
+      - *mint
+      # 'user_1' approves 'user_2' to transfer his first token, expects successfull reply
+      - *approve
+      # 'user_2' transfer the first token to 'user_3', expects successfull reply
+      - &transfer
+        destination: 1
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            transfer:
+              to: *user_3
+              token_id: 0
+
+    expected:
+      - log:
+        - *mint_success
+        - <<: *mint_success
+          destination: 2
+          payload:
+            kind: custom
+            value:
+              transfer:
+                from: *zero
+                to: *user_1
+                token_id: 1
+        - *approve_success
+        - <<: *transfer_success
+          destination: 3
+          payload:
+            kind: custom
+            value:
+              transfer:
+                from: *user_2
+                to: *user_3
+                token_id: 0
+
+  - title: operator (set_approval_for_all)
+    messages:
+      # Mints the first token, expects successfull reply
+      - *mint
+      # Mints the second token, expects successfull reply
+      - *mint
+      # Mints the third token, expects successfull reply
+      - *mint
+      # 'user_1' allows 'user_2' to transfer all his tokens, expects successfull reply
+      - &set_approval_for_all
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            approveForAll:
+              to: *user_2
+              approved: true
+      # 'user_2' transfers the first token of 'user_1' to 'user_3', expects successfull reply
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            transfer:
+              to: *user_3
+              token_id: 0
+      # 'user_2' transfers the second token of 'user_1' to 'user_3', expects successfull reply
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            transfer:
+              to: *user_3
+              token_id: 1
+      # 'user_1' removes permission from 'user_2' to transfer his tokens, expects successfull reply
+      - &set_approval_for_all
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            approveForAll:
+              to: *user_2
+              approved: false
+      # 'user_1' allows the zero actor to transfer his tokens, must fail
+      - <<: *set_approval_for_all
+        destination: 1
+        source: *source
+        payload:
+          kind: custom
+          value:
+            approveForAll:
+              to: *zero
+              approved: true
+      # 'user_2' tries to the token without permission, must fail
+      - <<: *transfer
+        destination: 1
+        source:
+          kind: id
+          value: 3
+        payload:
+          kind: custom
+          value:
+            transfer:
+              to: *user_3
+              token_id: 2
+
+    expected:
+      - allowError: true
+        log:
+          - *mint_success
+          - <<: *mint_success
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *user_1
+                  token_id: 1
+          - <<: *mint_success
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *user_1
+                  token_id: 2
+          - &set_approval_for_all_success
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                ApprovalForAll:
+                  owner: *user_1
+                  operator: *user_2
+                  approved: true
+          - <<: *transfer_success
+            destination: 3
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *user_2
+                  to: *user_3
+                  token_id: 0
+          - <<: *transfer_success
+            destination: 3
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *user_2
+                  to: *user_3
+                  token_id: 1
+          - <<: *set_approval_for_all_success
+            destination: 2
+            payload:
+              kind: custom
+              value:
+                ApprovalForAll:
+                  owner: *user_1
+                  operator: *user_2
+                  approved: false
+          - destination: 2
+            exitCode: 1
+          - destination: 3
+            exitCode: 1
