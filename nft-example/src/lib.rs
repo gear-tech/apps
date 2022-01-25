@@ -9,8 +9,7 @@ use scale_info::TypeInfo;
 pub mod state;
 pub use state::{State, StateReply};
 
-pub mod actions_events;
-pub use actions_events::{Action, Event};
+pub use nft_example_io::{Action, Event};
 
 use non_fungible_token::base::NonFungibleTokenBase;
 use non_fungible_token::NonFungibleToken;

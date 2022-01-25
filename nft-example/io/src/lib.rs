@@ -1,3 +1,5 @@
+#![no_std]
+
 use codec::{Decode, Encode};
 use gstd::{prelude::*, ActorId};
 use primitive_types::U256;

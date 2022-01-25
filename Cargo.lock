@@ -856,7 +856,7 @@ dependencies = [
 name = "nft-example-io"
 version = "0.1.0"
 dependencies = [
- "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git)",
+ "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
