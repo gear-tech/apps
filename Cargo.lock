@@ -151,7 +151,7 @@ dependencies = [
 [[package]]
 name = "galloc"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#76e71d332a6a117089515f8b965a3ad27bb7ec78"
+source = "git+https://github.com/gear-tech/gear.git#f6ad04e81b3b8aa907a0c7cfc9f444b380ee69fd"
 dependencies = [
  "dlmalloc",
 ]
@@ -159,7 +159,7 @@ dependencies = [
 [[package]]
 name = "gcore"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#76e71d332a6a117089515f8b965a3ad27bb7ec78"
+source = "git+https://github.com/gear-tech/gear.git#f6ad04e81b3b8aa907a0c7cfc9f444b380ee69fd"
 
 [[package]]
 name = "gear-feeds-router"
@@ -174,7 +174,7 @@ dependencies = [
 [[package]]
 name = "gstd"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#76e71d332a6a117089515f8b965a3ad27bb7ec78"
+source = "git+https://github.com/gear-tech/gear.git#f6ad04e81b3b8aa907a0c7cfc9f444b380ee69fd"
 dependencies = [
  "bs58",
  "futures",
@@ -190,7 +190,7 @@ dependencies = [
 [[package]]
 name = "gstd-codegen"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#76e71d332a6a117089515f8b965a3ad27bb7ec78"
+source = "git+https://github.com/gear-tech/gear.git#f6ad04e81b3b8aa907a0c7cfc9f444b380ee69fd"
 dependencies = [
  "quote",
  "syn",
