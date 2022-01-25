@@ -10,9 +10,3 @@ pub struct InitConfig {
     pub base_uri: String,
 }
 
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct TransferInput {
-    pub to: H256,
-    pub token_id: U256,
-}
-
