@@ -34,3 +34,10 @@ pub enum Event {
     OwnerOf(ActorId),
     BalanceOf(U256),
 }
+
+#[derive(Debug, Encode, Decode, TypeInfo)]
+pub struct InitConfig {
+    pub name: String,
+    pub symbol: String,
+    pub base_uri: String,
+}

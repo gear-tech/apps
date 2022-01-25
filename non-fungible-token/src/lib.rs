@@ -64,23 +64,12 @@ impl NonFungibleTokenBase for NonFungibleToken {
 
         self.owner_by_id.insert(token_id, *to);
 
-<<<<<<< HEAD
         msg::reply(
             Event::Transfer {
                 from: *from,
                 to: *to,
                 token_id,
             },
-=======
-        let transfer_token = Transfer {
-            from: *from,
-            to: *to,
-            token_id,
-        };
-
-        msg::reply(
-            Event::Transfer(transfer_token),
->>>>>>> master
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -99,23 +88,12 @@ impl NonFungibleTokenBase for NonFungibleToken {
 
         self.token_approvals.insert(token_id, *spender);
 
-<<<<<<< HEAD
         msg::reply(
             Event::Approval {
                 owner: *owner,
                 spender: *spender,
                 token_id,
             },
-=======
-        let approve_token = Approve {
-            owner: *owner,
-            spender: *spender,
-            token_id,
-        };
-
-        msg::reply(
-            Event::Approval(approve_token),
->>>>>>> master
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -130,23 +108,12 @@ impl NonFungibleTokenBase for NonFungibleToken {
             false => self.operator_approval.remove(owner),
         };
 
-<<<<<<< HEAD
         msg::reply(
             Event::ApprovalForAll {
                 owner: *owner,
                 operator: *operator,
                 approved,
             },
-=======
-        let approve_operator = ApproveForAll {
-            owner: *owner,
-            operator: *operator,
-            approved,
-        };
-
-        msg::reply(
-            Event::ApprovalForAll(approve_operator),
->>>>>>> master
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -172,7 +139,6 @@ impl NonFungibleTokenBase for NonFungibleToken {
 }
 
 impl NonFungibleToken {
-<<<<<<< HEAD
     pub const fn new() -> NonFungibleToken {
         NonFungibleToken {
             name: String::new(),
@@ -186,8 +152,6 @@ impl NonFungibleToken {
         }
     }
 
-=======
->>>>>>> master
     pub fn is_token_owner(&self, token_id: U256, account: &ActorId) -> bool {
         account == self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID)
     }
@@ -211,7 +175,6 @@ impl NonFungibleToken {
     }
 }
 
-<<<<<<< HEAD
 #[derive(Debug, Encode, TypeInfo, Decode)]
 pub enum Event {
     Transfer {
@@ -229,34 +192,6 @@ pub enum Event {
         operator: ActorId,
         approved: bool,
     },
-=======
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct Approve {
-    owner: ActorId,
-    spender: ActorId,
-    token_id: U256,
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct ApproveForAll {
-    owner: ActorId,
-    operator: ActorId,
-    approved: bool,
-}
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct Transfer {
-    pub from: ActorId,
-    pub to: ActorId,
-    pub token_id: U256,
-}
-
-#[derive(Debug, Encode, TypeInfo, Decode)]
-pub enum Event {
-    Transfer(Transfer),
-    Approval(Approve),
-    ApprovalForAll(ApproveForAll),
->>>>>>> master
     OwnerOf(ActorId),
     BalanceOf(U256),
 }

@@ -18,7 +18,7 @@ use non_fungible_token::NonFungibleToken;
 const GAS_RESERVE: u64 = 500_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
-#[derive(Debug, Decode, TypeInfo)]
+#[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct InitConfig {
     pub name: String,
     pub symbol: String,
