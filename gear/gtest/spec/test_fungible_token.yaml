@@ -1,0 +1,294 @@
+title: Fungible Token
+
+programs:
+  - id: 1
+    path: fungible_token.wasm
+    init_message:
+      kind: custom
+      value:
+        name: GearToken
+        symbol: GRT
+
+fixtures:
+  - title: fungible-token
+
+    messages:
+      # mint 10000 GRT to ALICE
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: &ALICE "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+              amount: 10000
+      # burn 10 GRT from ALICE
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            burn:
+              account: *ALICE
+              amount: 10
+      # transfer 200 GRT from ALICE to BOB
+      - destination: 1
+        source:
+          kind: account
+          value: alice
+        payload:
+          kind: custom
+          value:
+            transfer:
+              to: &BOB "0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"
+              amount: 200
+      # check BOB's balance
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            balanceOf: *BOB
+      # make ALICE admin of GRT. Note: admin can be added/removed by only creator of token.
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            addAdmin: *ALICE
+      # mint 100 GRT to CHARLIE, but use ALICE as source, just to test that ALICE can mint GRT.
+      - destination: 1
+        source:
+          kind: account
+          value: alice
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: &CHARLIE "0x90b5ab205c6974c9ea841be688864633dc9ca8a357843eeacf2314649965fe22"
+              amount: 100
+      # remove ALICE admin of GRT. Note: admin can be added/removed by only creator of token.
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            removeAdmin: *ALICE
+      # mint 100 GRT to CHARLIE, but use ALICE as source. (must fail)
+      - destination: 1
+        source:
+          kind: account
+          value: alice
+        payload:
+          kind: custom
+          value:
+            mint:
+              account: *CHARLIE
+              amount: 100
+      # approve BOB to spend upto 200 GRT from ALICE.
+      - destination: 1
+        source:
+          kind: account
+          value: alice
+        payload:
+          kind: custom
+          value:
+            approve:
+              spender: *BOB
+              amount: 200
+      # BOB sends 100 GRT from ALICE to CHARLIE
+      - destination: 1
+        source:
+          kind: account
+          value: bob
+        payload:
+          kind: custom
+          value:
+            transferFrom:
+              owner: *ALICE
+              to: *CHARLIE
+              amount: 100
+      # BOB sends 1000 GRT from ALICE to CHARLIE (must fail)
+      - destination: 1
+        source:
+          kind: account
+          value: bob
+        payload:
+          kind: custom
+          value:
+            transferFrom:
+              owner: *ALICE
+              to: *CHARLIE
+              amount: 1000
+      # increase allowance for BOB to spend upto 2000 (100 old_limit + 1900) GRT from ALICE.
+      - destination: 1
+        source:
+          kind: account
+          value: alice
+        payload:
+          kind: custom
+          value:
+            increaseAllowance:
+              spender: *BOB
+              amount: 1900
+      # BOB sends 1000 GRT from ALICE to CHARLIE (should work)
+      - destination: 1
+        source:
+          kind: account
+          value: bob
+        payload:
+          kind: custom
+          value:
+            transferFrom:
+              owner: *ALICE
+              to: *CHARLIE
+              amount: 1000
+      # decrease allowance for BOB to spend upto (1000 old_limit - 800) 200 GRT from ALICE.
+      - destination: 1
+        source:
+          kind: account
+          value: alice
+        payload:
+          kind: custom
+          value:
+            decreaseAllowance:
+              spender: *BOB
+              amount: 800
+      # check total issued token count
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            totalSupply
+
+    expected:
+      - allowError: true
+      - log:
+        # 10000 GRT minted to ALICE.
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: &zero 0x0000000000000000000000000000000000000000000000000000000000000000
+                  to: *ALICE
+                  amount: 10000
+        # 10 GRT burned from ALICE.
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *ALICE
+                  to: *zero
+                  amount: 10
+        # 200 GRT transferred from ALICE to BOB.
+          - destination:
+              kind: account
+              value: alice
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *ALICE
+                  to: *BOB
+                  amount: 200
+        # BOB's balance is 200 GRT.
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                balance: 200
+        # ALICE is admin of GRT token.
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                adminAdded: *ALICE
+        # ALICE minted 100 GRT to CHARLIE using admin power.
+          - destination:
+              kind: account
+              value: alice
+            payload:
+              kind: custom
+              value:
+                transfer:
+                  from: *zero
+                  to: *CHARLIE
+                  amount: 100
+        # ALICE removed from admin of GRT token.
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                adminRemoved: *ALICE
+        # ALICE tries to mint 100 GRT to CHARLIE using admin power, but fails.
+          - destination:
+              kind: account
+              value: alice
+            exitCode: 1
+        # ALICE approves BOB to spend upto 200 GRT.
+          - destination:
+              kind: account
+              value: alice
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *ALICE
+                  spender: *BOB
+                  amount: 200
+        # BOB tries to send 100 GRT from ALICE to CHARLIE.
+          - destination:
+              kind: account
+              value: bob
+            payload:
+              kind: custom
+              value:
+                transferFrom:
+                  owner: *ALICE
+                  sender: *BOB
+                  recipient: *CHARLIE
+                  amount: 100
+                  new_limit: 100
+        # BOB tries to send 1000 GRT from ALICE to CHARLIE. It fails.
+          - destination:
+              kind: account
+              value: bob
+            exitCode: 1
+        # ALICE approves BOB to spend upto 2000 GRT.
+          - destination:
+              kind: account
+              value: alice
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *ALICE
+                  spender: *BOB
+                  amount: 2000
+        # BOB tries to send 1000 GRT from ALICE to CHARLIE.
+          - destination:
+              kind: account
+              value: bob
+            payload:
+              kind: custom
+              value:
+                transferFrom:
+                  owner: *ALICE
+                  sender: *BOB
+                  recipient: *CHARLIE
+                  amount: 1000
+                  new_limit: 1000
+        # ALICE approves BOB to spend upto 200 GRT.
+          - destination:
+              kind: account
+              value: alice
+            payload:
+              kind: custom
+              value:
+                approval:
+                  owner: *ALICE
+                  spender: *BOB
+                  amount: 200
+        # check totalSupply reply
+          - destination: 1000001
+            payload:
+              kind: custom
+              value:
+                totalSupply: 10090
