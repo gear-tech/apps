@@ -1,65 +1,16 @@
 #![no_std]
 #![feature(const_btree_new)]
 use codec::{Decode, Encode};
-use gstd::{exec, msg, prelude::*, ActorId, String};
-use primitive_types::H256;
+use gstd::{exec, debug, msg, prelude::*, ActorId, String};
 use scale_info::TypeInfo;
+pub use dao_io::*;
+pub mod state;
+use state::*;
+pub mod ft_messages;
+pub use ft_messages::*;
+const GAS_RESERVE: u64 = 200_000_000;
+const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
-pub mod payloads;
-pub use payloads::{
-    CancelledProposal, FundingProposal, FundingProposalInput, InitConfig, MembershipProposal,
-    MembershipProposalInput, ProcessProposalInput, ProcessedProposal, SubmitVoteInput, Vote,
-    VoteOnProposal, Withdrawal,
-};
-pub mod erc20_functions;
-pub use erc20_functions::{balance, transfer_tokens};
-const GAS_RESERVE: u64 = 500_000_000;
-const ZERO_ID: ActorId = ActorId::new(H256::zero().to_fixed_bytes());
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum Action {
-    AddToWhiteList(H256),
-    SubmitMembershipProposal(MembershipProposalInput),
-    SubmitFundingProposal(FundingProposalInput),
-    ProcessProposal(ProcessProposalInput),
-    SubmitVote(SubmitVoteInput),
-    RageQuit(u128),
-    Abort(u128),
-    CancelProposal(u128),
-    UpdateDelegateKey(H256),
-    SetAdmin(H256),
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum Event {
-    MemberAddedToWhitelist(H256),
-    SubmitMembershipProposal(MembershipProposal),
-    SubmitFundingProposal(FundingProposal),
-    SubmitVote(VoteOnProposal),
-    ProcessProposal(ProcessedProposal),
-    RageQuit(Withdrawal),
-    Abort(CancelledProposal),
-    Cancel(CancelledProposal),
-    AdminUpdated(H256),
-}
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum State {
-    IsMember(H256),
-    IsInWhitelist(H256),
-    ProposalId,
-    ProposalInfo(u128),
-    MemberInfo(H256),
-}
-
-#[derive(Debug, Encode, TypeInfo)]
-pub enum StateReply {
-    IsMember(bool),
-    IsInWhitelist(bool),
-    ProposalId(u128),
-    ProposalInfo(Proposal),
-    MemberInfo(Member),
-}
 
 #[derive(Debug)]
 struct Dao {
@@ -78,7 +29,7 @@ struct Dao {
     whitelist: Vec<ActorId>,
 }
 
-#[derive(Debug, Clone, Decode, Encode, TypeInfo)]
+#[derive(Debug, Default, Clone, Decode, Encode, TypeInfo)]
 pub struct Proposal {
     pub proposer: ActorId,
     pub applicant: ActorId,
@@ -96,7 +47,7 @@ pub struct Proposal {
     pub details: String,
     pub starting_period: u64,
     pub max_total_shares_at_yes_vote: u128,
-    pub votes_by_member: BTreeMap<H256, Vote>,
+    pub votes_by_member: BTreeMap<ActorId, Vote>,
 }
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo)]
@@ -107,8 +58,8 @@ pub struct Member {
 }
 
 static mut DAO: Dao = Dao {
-    admin: ActorId::new(H256::zero().to_fixed_bytes()),
-    approved_token_program_id: ActorId::new(H256::zero().to_fixed_bytes()),
+    admin: ZERO_ID,
+    approved_token_program_id: ZERO_ID,
     voting_period_length: 0,
     period_duration: 0,
     grace_period_length: 0,
@@ -142,7 +93,7 @@ impl Dao {
         }
         self.whitelist.push(*member);
         msg::reply(
-            Event::MemberAddedToWhitelist(H256::from_slice(member.as_ref())),
+            DaoEvent::MemberAddedToWhitelist(*member),
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -183,7 +134,7 @@ impl Dao {
         }
 
         // transfer applicant tokens to DAO contract
-        transfer_tokens(
+        transfer_from_tokens(
             &self.approved_token_program_id,
             applicant,
             &exec::program_id(),
@@ -204,35 +155,25 @@ impl Dao {
                 starting_period = previous_starting_period + self.period_duration;
             }
         }
-
         let proposal = Proposal {
             proposer: msg::source(),
             applicant: *applicant,
             shares_requested,
-            yes_votes: 0,
-            no_votes: 0,
             quorum,
             is_membership_proposal: true,
-            amount: 0,
-            processed: false,
-            did_pass: false,
-            cancelled: false,
-            aborted: false,
             token_tribute,
             details,
             starting_period,
-            max_total_shares_at_yes_vote: 0,
-            votes_by_member: BTreeMap::new(),
+            ..Proposal::default()
         };
         self.proposals.insert(self.proposal_id, proposal);
-        let new_proposal = MembershipProposal {
-            proposer: H256::from_slice(msg::source().as_ref()),
-            applicant: H256::from_slice(applicant.as_ref()),
-            proposal_id: self.proposal_id,
-            token_tribute,
-        };
         msg::reply(
-            Event::SubmitMembershipProposal(new_proposal),
+            DaoEvent::SubmitMembershipProposal{
+                proposer: msg::source(),
+                applicant: *applicant,
+                proposal_id: self.proposal_id,
+                token_tribute,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -295,31 +236,22 @@ impl Dao {
         let proposal = Proposal {
             proposer: msg::source(),
             applicant: *applicant,
-            shares_requested: 0,
-            yes_votes: 0,
-            no_votes: 0,
             quorum,
-            is_membership_proposal: false,
             amount,
-            processed: false,
-            did_pass: false,
-            cancelled: false,
-            aborted: false,
-            token_tribute: 0,
             details,
             starting_period,
-            max_total_shares_at_yes_vote: 0,
-            votes_by_member: BTreeMap::new(),
+            ..Proposal::default()
         };
+
         self.proposals.insert(self.proposal_id, proposal);
-        let new_proposal = FundingProposal {
-            proposer: H256::from_slice(msg::source().as_ref()),
-            applicant: H256::from_slice(applicant.as_ref()),
-            proposal_id: self.proposal_id,
-            amount,
-        };
+
         msg::reply(
-            Event::SubmitFundingProposal(new_proposal),
+            DaoEvent::SubmitFundingProposal{
+                proposer: msg::source(),
+                applicant: *applicant,
+                proposal_id: self.proposal_id,
+                amount,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -347,7 +279,6 @@ impl Dao {
             }
         }
 
-        let account = H256::from_slice(msg::source().as_ref());
         // checks that proposal exists, the voting period has started, not expired and that member did not vote on the proposal
         match self.proposals.get(&proposal_id) {
             Some(proposal) => {
@@ -357,7 +288,7 @@ impl Dao {
                 if exec::block_timestamp() < proposal.starting_period {
                     panic!("voting period has not started");
                 }
-                if proposal.votes_by_member.contains_key(&account) {
+                if proposal.votes_by_member.contains_key(&msg::source()) {
                     panic!("account has already voted on that proposal");
                 }
             }
@@ -386,14 +317,14 @@ impl Dao {
         }
         proposal
             .votes_by_member
-            .insert(H256::from_slice(msg::source().as_ref()), vote.clone());
-        let vote_on_proposal = VoteOnProposal {
-            account,
-            proposal_id,
-            vote,
-        };
+            .insert(msg::source(), vote.clone());
+
         msg::reply(
-            Event::SubmitVote(vote_on_proposal),
+            DaoEvent::SubmitVote {
+                account: msg::source(),
+                proposal_id,
+                vote,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -452,7 +383,6 @@ impl Dao {
         } else {
             transfer_tokens(
                 &self.approved_token_program_id,
-                &exec::program_id(),
                 &proposal.applicant,
                 proposal.token_tribute,
             )
@@ -463,20 +393,18 @@ impl Dao {
         if proposal.did_pass && !proposal.is_membership_proposal {
             transfer_tokens(
                 &self.approved_token_program_id,
-                &exec::program_id(),
                 &proposal.applicant,
                 proposal.amount,
             )
             .await;
         }
 
-        let processed_proposal = ProcessedProposal {
-            applicant: H256::from_slice(proposal.applicant.as_ref()),
-            proposal_id,
-            did_pass: proposal.did_pass,
-        };
         msg::reply(
-            Event::ProcessProposal(processed_proposal),
+            DaoEvent::ProcessProposal {
+                applicant: proposal.applicant,
+                proposal_id,
+                did_pass: proposal.did_pass,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -512,17 +440,16 @@ impl Dao {
         let funds = self.redeemable_funds(amount).await;
         transfer_tokens(
             &self.approved_token_program_id,
-            &exec::program_id(),
             &msg::source(),
             funds,
         )
         .await;
-        let withdrawal_data = Withdrawal {
-            member: H256::from_slice(msg::source().as_ref()),
-            amount: funds,
-        };
+
         msg::reply(
-            Event::RageQuit(withdrawal_data),
+            DaoEvent::RageQuit {
+                member: msg::source(),
+                amount: funds,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -563,20 +490,16 @@ impl Dao {
 
         transfer_tokens(
             &self.approved_token_program_id,
-            &exec::program_id(),
-            &msg::source(),
+            &proposal.applicant,
             amount,
         )
         .await;
 
-        let cancelled_proposal = CancelledProposal {
-            member: H256::from_slice(msg::source().as_ref()),
-            proposal_id,
-            amount,
-        };
-
         msg::reply(
-            Event::Cancel(cancelled_proposal),
+            DaoEvent::Cancel {
+            member: msg::source(),
+            proposal_id,
+        },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -611,20 +534,17 @@ impl Dao {
 
         transfer_tokens(
             &self.approved_token_program_id,
-            &exec::program_id(),
             &msg::source(),
             amount,
         )
         .await;
 
-        let aborted_proposal = CancelledProposal {
-            member: H256::from_slice(msg::source().as_ref()),
-            proposal_id,
-            amount,
-        };
-
         msg::reply(
-            Event::Abort(aborted_proposal),
+            DaoEvent::Abort {
+                member: msg::source(),
+                proposal_id,
+                amount,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -644,7 +564,7 @@ impl Dao {
         }
         self.admin = *new_admin;
         msg::reply(
-            Event::AdminUpdated(H256::from_slice(new_admin.as_ref())),
+            DaoEvent::AdminUpdated(*new_admin),
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -699,10 +619,10 @@ impl Dao {
 gstd::metadata! {
     title: "DAO",
     init:
-        input : InitConfig,
+        input : InitDao,
     handle:
-        input : Action,
-        output : Event,
+        input : DaoAction,
+        output : DaoEvent,
     state:
         input: State,
         output: StateReply,
@@ -710,54 +630,60 @@ gstd::metadata! {
 
 #[no_mangle]
 pub unsafe extern "C" fn init() {
-    let config: InitConfig = msg::load().expect("Unable to decode InitConfig");
-    DAO.admin = ActorId::new(config.admin.to_fixed_bytes());
-    DAO.approved_token_program_id = ActorId::new(config.approved_token_program_id.to_fixed_bytes());
+    let config: InitDao = msg::load().expect("Unable to decode InitDao");
+    DAO.admin = config.admin;
+    DAO.approved_token_program_id = config.approved_token_program_id;
     DAO.voting_period_length = config.voting_period_length;
     DAO.period_duration = config.period_duration;
     DAO.grace_period_length = config.grace_period_length;
     DAO.abort_window = config.abort_window;
     DAO.dilution_bound = config.dilution_bound;
+    DAO.members.insert(config.admin, Member {
+        delegate_key: config.admin,
+        shares: 1,
+        highest_index_yes_vote: 0,
+    });
+    DAO.member_by_delegate_key
+            .insert(config.admin, config.admin);
+    DAO.total_shares = 1;
 }
 
 #[gstd::async_main]
 async fn main() {
-    let action: Action = msg::load().expect("Could not load Action");
+    let action: DaoAction = msg::load().expect("Could not load Action");
     match action {
-        Action::AddToWhiteList(input) => {
-            DAO.add_to_whitelist(&ActorId::new(input.to_fixed_bytes()))
+        DaoAction::AddToWhiteList(account) => {
+            DAO.add_to_whitelist(&account)
         }
-        Action::SubmitMembershipProposal(input) => {
-            let applicant = ActorId::new(input.applicant.to_fixed_bytes());
+        DaoAction::SubmitMembershipProposal {applicant ,token_tribute, shares_requested, quorum, details} => {
             DAO.submit_membership_proposal(
                 &applicant,
-                input.token_tribute,
-                input.shares_requested,
-                input.quorum,
-                input.details,
+                token_tribute,
+                shares_requested,
+                quorum,
+                details,
             )
             .await;
         }
-        Action::SubmitFundingProposal(input) => {
-            let applicant = ActorId::new(input.applicant.to_fixed_bytes());
-            DAO.submit_funding_proposal(&applicant, input.amount, input.quorum, input.details)
+        DaoAction::SubmitFundingProposal{applicant, amount, quorum, details} => {
+            DAO.submit_funding_proposal(&applicant, amount, quorum, details)
                 .await;
         }
-        Action::ProcessProposal(input) => {
-            DAO.process_proposal(input.proposal_id).await;
+        DaoAction::ProcessProposal(proposal_id) => {
+            DAO.process_proposal(proposal_id).await;
         }
-        Action::SubmitVote(input) => {
-            DAO.submit_vote(input.proposal_id, input.vote);
+        DaoAction::SubmitVote {proposal_id, vote} => {
+            DAO.submit_vote(proposal_id, vote);
         }
-        Action::RageQuit(input) => {
-            DAO.ragequit(input).await;
+        DaoAction::RageQuit(amount) => {
+            DAO.ragequit(amount).await;
         }
-        Action::Abort(input) => DAO.abort(input).await,
-        Action::CancelProposal(input) => DAO.cancel_proposal(input).await,
-        Action::UpdateDelegateKey(input) => {
-            DAO.update_delegate_key(&ActorId::new(input.to_fixed_bytes()))
+        DaoAction::Abort(proposal_id) => DAO.abort(proposal_id).await,
+        DaoAction::CancelProposal(proposal_id) => DAO.cancel_proposal(proposal_id).await,
+        DaoAction::UpdateDelegateKey(account) => {
+            DAO.update_delegate_key(&account)
         }
-        Action::SetAdmin(input) => DAO.set_admin(&ActorId::new(input.to_fixed_bytes())),
+        DaoAction::SetAdmin(account) => DAO.set_admin(&account),
     }
 }
 
@@ -765,21 +691,20 @@ async fn main() {
 pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let state: State = msg::load().expect("failed to decode input argument");
     let encoded = match state {
-        State::IsMember(input) => {
-            StateReply::IsMember(DAO.is_member(&ActorId::new(input.to_fixed_bytes()))).encode()
+        State::IsMember(account) => {
+            StateReply::IsMember(DAO.is_member(&account)).encode()
         }
-        State::IsInWhitelist(input) => StateReply::IsInWhitelist(
+        State::IsInWhitelist(account) => StateReply::IsInWhitelist(
             DAO.whitelist
-                .contains(&ActorId::new(input.to_fixed_bytes())),
+                .contains(&account),
         )
         .encode(),
         State::ProposalId => StateReply::ProposalId(DAO.proposal_id).encode(),
         State::ProposalInfo(input) => {
             StateReply::ProposalInfo(DAO.proposals.get(&input).unwrap().clone()).encode()
         }
-        State::MemberInfo(input) => {
-            let actor = ActorId::new(input.to_fixed_bytes());
-            StateReply::MemberInfo(DAO.members.get(&actor).unwrap().clone()).encode()
+        State::MemberInfo(account) => {
+            StateReply::MemberInfo(DAO.members.get(&account).unwrap().clone()).encode()
         }
     };
     let result = gstd::macros::util::to_wasm_ptr(&(encoded[..]));
