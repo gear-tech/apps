@@ -47,6 +47,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ansi_term"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
+dependencies = [
+ "winapi",
+]
+
+[[package]]
 name = "anyhow"
 version = "1.0.53"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -352,6 +361,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
 
 [[package]]
+name = "ctor"
+version = "0.1.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccc0a48a9b826acdf4028595adc9db92caea352f7af011a3034acd172a52a0aa"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "dao"
 version = "0.1.0"
 dependencies = [
@@ -360,6 +379,7 @@ dependencies = [
  "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
  "gtest",
  "parity-scale-codec",
+ "pretty_assertions",
  "primitive-types",
  "scale-info",
 ]
@@ -393,6 +413,12 @@ dependencies = [
  "rustc_version",
  "syn",
 ]
+
+[[package]]
+name = "diff"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e25ea47919b1560c4e3b7fe0aaab9becf5b84a10325ddf7db0f0ba5e1026499"
 
 [[package]]
 name = "dlmalloc"
@@ -532,7 +558,7 @@ dependencies = [
 [[package]]
 name = "galloc"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#505153d9f97da209b4160321848f3a101088958e"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
 dependencies = [
  "dlmalloc",
 ]
@@ -548,7 +574,7 @@ dependencies = [
 [[package]]
 name = "gcore"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#505153d9f97da209b4160321848f3a101088958e"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
 
 [[package]]
 name = "gcore"
@@ -558,7 +584,7 @@ source = "git+https://github.com/gear-tech/gear.git#f6ad04e81b3b8aa907a0c7cfc9f4
 [[package]]
 name = "gear-backend-common"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#505153d9f97da209b4160321848f3a101088958e"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -569,7 +595,7 @@ dependencies = [
 [[package]]
 name = "gear-backend-wasmtime"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#505153d9f97da209b4160321848f3a101088958e"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -582,7 +608,7 @@ dependencies = [
 [[package]]
 name = "gear-core"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#505153d9f97da209b4160321848f3a101088958e"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -596,7 +622,7 @@ dependencies = [
 [[package]]
 name = "gear-core-processor"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#505153d9f97da209b4160321848f3a101088958e"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
 dependencies = [
  "blake2-rfc",
  "gear-backend-common",
@@ -646,7 +672,7 @@ checksum = "78cc372d058dcf6d5ecd98510e7fbc9e5aec4d21de70f65fea8fecebcd881bd4"
 [[package]]
 name = "gstd"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#505153d9f97da209b4160321848f3a101088958e"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
 dependencies = [
  "bs58",
  "futures",
@@ -678,7 +704,7 @@ dependencies = [
 [[package]]
 name = "gstd-codegen"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#505153d9f97da209b4160321848f3a101088958e"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
 dependencies = [
  "quote",
  "syn",
@@ -696,7 +722,7 @@ dependencies = [
 [[package]]
 name = "gtest"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#505153d9f97da209b4160321848f3a101088958e"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
 dependencies = [
  "colored",
  "env_logger",
@@ -913,6 +939,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da32515d9f6e6e489d7bc9d84c71b060db7247dc035bbe44eac88cf87486d8d5"
 
 [[package]]
+name = "output_vt100"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53cdc5b785b7a58c5aad8216b3dfa114df64b0b06ae6e1501cef91df2fbdf8f9"
+dependencies = [
+ "winapi",
+]
+
+[[package]]
 name = "parity-scale-codec"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -973,6 +1008,18 @@ name = "ppv-lite86"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
+
+[[package]]
+name = "pretty_assertions"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec0cfe1b2403f172ba0f234e500906ee0a3e493fb81092dac23ebefe129301cc"
+dependencies = [
+ "ansi_term",
+ "ctor",
+ "diff",
+ "output_vt100",
+]
 
 [[package]]
 name = "primitive-types"
