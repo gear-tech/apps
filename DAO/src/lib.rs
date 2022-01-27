@@ -1,16 +1,15 @@
 #![no_std]
 #![feature(const_btree_new)]
 use codec::{Decode, Encode};
-use gstd::{exec, debug, msg, prelude::*, ActorId, String};
-use scale_info::TypeInfo;
 pub use dao_io::*;
+use gstd::{debug, exec, msg, prelude::*, ActorId, String};
+use scale_info::TypeInfo;
 pub mod state;
 use state::*;
 pub mod ft_messages;
 pub use ft_messages::*;
 const GAS_RESERVE: u64 = 200_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
-
 
 #[derive(Debug)]
 struct Dao {
@@ -168,7 +167,7 @@ impl Dao {
         };
         self.proposals.insert(self.proposal_id, proposal);
         msg::reply(
-            DaoEvent::SubmitMembershipProposal{
+            DaoEvent::SubmitMembershipProposal {
                 proposer: msg::source(),
                 applicant: *applicant,
                 proposal_id: self.proposal_id,
@@ -246,7 +245,7 @@ impl Dao {
         self.proposals.insert(self.proposal_id, proposal);
 
         msg::reply(
-            DaoEvent::SubmitFundingProposal{
+            DaoEvent::SubmitFundingProposal {
                 proposer: msg::source(),
                 applicant: *applicant,
                 proposal_id: self.proposal_id,
@@ -315,9 +314,7 @@ impl Dao {
                 proposal.no_votes = proposal.no_votes.saturating_sub(member.shares);
             }
         }
-        proposal
-            .votes_by_member
-            .insert(msg::source(), vote.clone());
+        proposal.votes_by_member.insert(msg::source(), vote.clone());
 
         msg::reply(
             DaoEvent::SubmitVote {
@@ -438,12 +435,7 @@ impl Dao {
         member.shares = member.shares.saturating_sub(amount);
         self.total_shares = self.total_shares.saturating_sub(amount);
         let funds = self.redeemable_funds(amount).await;
-        transfer_tokens(
-            &self.approved_token_program_id,
-            &msg::source(),
-            funds,
-        )
-        .await;
+        transfer_tokens(&self.approved_token_program_id, &msg::source(), funds).await;
 
         msg::reply(
             DaoEvent::RageQuit {
@@ -488,18 +480,13 @@ impl Dao {
         proposal.token_tribute = 0;
         proposal.cancelled = true;
 
-        transfer_tokens(
-            &self.approved_token_program_id,
-            &proposal.applicant,
-            amount,
-        )
-        .await;
+        transfer_tokens(&self.approved_token_program_id, &proposal.applicant, amount).await;
 
         msg::reply(
             DaoEvent::Cancel {
-            member: msg::source(),
-            proposal_id,
-        },
+                member: msg::source(),
+                proposal_id,
+            },
             exec::gas_available() - GAS_RESERVE,
             0,
         );
@@ -532,12 +519,7 @@ impl Dao {
         proposal.token_tribute = 0;
         proposal.aborted = true;
 
-        transfer_tokens(
-            &self.approved_token_program_id,
-            &msg::source(),
-            amount,
-        )
-        .await;
+        transfer_tokens(&self.approved_token_program_id, &msg::source(), amount).await;
 
         msg::reply(
             DaoEvent::Abort {
@@ -638,13 +620,16 @@ pub unsafe extern "C" fn init() {
     DAO.grace_period_length = config.grace_period_length;
     DAO.abort_window = config.abort_window;
     DAO.dilution_bound = config.dilution_bound;
-    DAO.members.insert(config.admin, Member {
-        delegate_key: config.admin,
-        shares: 1,
-        highest_index_yes_vote: 0,
-    });
+    DAO.members.insert(
+        config.admin,
+        Member {
+            delegate_key: config.admin,
+            shares: 1,
+            highest_index_yes_vote: 0,
+        },
+    );
     DAO.member_by_delegate_key
-            .insert(config.admin, config.admin);
+        .insert(config.admin, config.admin);
     DAO.total_shares = 1;
 }
 
@@ -652,10 +637,14 @@ pub unsafe extern "C" fn init() {
 async fn main() {
     let action: DaoAction = msg::load().expect("Could not load Action");
     match action {
-        DaoAction::AddToWhiteList(account) => {
-            DAO.add_to_whitelist(&account)
-        }
-        DaoAction::SubmitMembershipProposal {applicant ,token_tribute, shares_requested, quorum, details} => {
+        DaoAction::AddToWhiteList(account) => DAO.add_to_whitelist(&account),
+        DaoAction::SubmitMembershipProposal {
+            applicant,
+            token_tribute,
+            shares_requested,
+            quorum,
+            details,
+        } => {
             DAO.submit_membership_proposal(
                 &applicant,
                 token_tribute,
@@ -665,14 +654,19 @@ async fn main() {
             )
             .await;
         }
-        DaoAction::SubmitFundingProposal{applicant, amount, quorum, details} => {
+        DaoAction::SubmitFundingProposal {
+            applicant,
+            amount,
+            quorum,
+            details,
+        } => {
             DAO.submit_funding_proposal(&applicant, amount, quorum, details)
                 .await;
         }
         DaoAction::ProcessProposal(proposal_id) => {
             DAO.process_proposal(proposal_id).await;
         }
-        DaoAction::SubmitVote {proposal_id, vote} => {
+        DaoAction::SubmitVote { proposal_id, vote } => {
             DAO.submit_vote(proposal_id, vote);
         }
         DaoAction::RageQuit(amount) => {
@@ -680,9 +674,7 @@ async fn main() {
         }
         DaoAction::Abort(proposal_id) => DAO.abort(proposal_id).await,
         DaoAction::CancelProposal(proposal_id) => DAO.cancel_proposal(proposal_id).await,
-        DaoAction::UpdateDelegateKey(account) => {
-            DAO.update_delegate_key(&account)
-        }
+        DaoAction::UpdateDelegateKey(account) => DAO.update_delegate_key(&account),
         DaoAction::SetAdmin(account) => DAO.set_admin(&account),
     }
 }
@@ -691,14 +683,10 @@ async fn main() {
 pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let state: State = msg::load().expect("failed to decode input argument");
     let encoded = match state {
-        State::IsMember(account) => {
-            StateReply::IsMember(DAO.is_member(&account)).encode()
+        State::IsMember(account) => StateReply::IsMember(DAO.is_member(&account)).encode(),
+        State::IsInWhitelist(account) => {
+            StateReply::IsInWhitelist(DAO.whitelist.contains(&account)).encode()
         }
-        State::IsInWhitelist(account) => StateReply::IsInWhitelist(
-            DAO.whitelist
-                .contains(&account),
-        )
-        .encode(),
         State::ProposalId => StateReply::ProposalId(DAO.proposal_id).encode(),
         State::ProposalInfo(input) => {
             StateReply::ProposalInfo(DAO.proposals.get(&input).unwrap().clone()).encode()

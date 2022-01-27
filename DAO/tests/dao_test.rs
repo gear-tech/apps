@@ -1,7 +1,7 @@
-use gtest::{Program, System, Log, RunResult};
+use codec::Encode;
 use dao_io::*;
 use fungible_token_messages::*;
-use codec::Encode;
+use gtest::{Log, Program, RunResult, System};
 
 fn init_fungible_token<'a>(sys: &'a System) -> Program<'a> {
     sys.init_logger();
@@ -10,37 +10,51 @@ fn init_fungible_token<'a>(sys: &'a System) -> Program<'a> {
         "../../apps/target/wasm32-unknown-unknown/release/fungible_token.wasm",
     );
 
-    let res = ft.send(InitConfig {
-        name: String::from("MyToken"),
-        symbol: String::from("MTK"),
-    });
+    let res = ft.send(
+        100001,
+        InitConfig {
+            name: String::from("MyToken"),
+            symbol: String::from("MTK"),
+        },
+    );
 
     assert!(res.log().is_empty());
 
-    let res = ft.send(Action::Mint(MintInput{
-        account: 4.into(),
-        amount: 10000000,
-    }));
-    assert!(res.contains(&(gtest::DEFAULT_USER, Event::Transfer(
-        TransferReply {
+    let res = ft.send(
+        100001,
+        Action::Mint(MintInput {
+            account: 4.into(),
+            amount: 10000000,
+        }),
+    );
+    assert!(res.contains(&(
+        100001,
+        Event::Transfer(TransferReply {
             from: 0.into(),
             to: 4.into(),
             amount: 10000000,
-        }).encode())));
+        })
+        .encode()
+    )));
 
-    sys.set_user(4);
-    let res = ft.send(Action::Approve(ApproveInput{
-        spender: 2.into(),
-        amount: 10000000,
-    }));
-    assert!(res.contains(&(4, Event::Approval(
-        ApproveReply {
+    let res = ft.send(
+        4,
+        Action::Approve(ApproveInput {
+            spender: 2.into(),
+            amount: 10000000,
+        }),
+    );
+    assert!(res.contains(&(
+        4,
+        Event::Approval(ApproveReply {
             owner: 4.into(),
             spender: 2.into(),
             amount: 10000000,
-        }).encode())));
+        })
+        .encode()
+    )));
     ft
-    }
+}
 
 fn init_dao<'a>(sys: &'a System) -> Program<'a> {
     sys.init_logger();
@@ -53,56 +67,67 @@ fn init_dao<'a>(sys: &'a System) -> Program<'a> {
     // Log::error_builder() // not allows payload
     // assert_eq!(res.log()[0], Log::builder().source(0).dest(3).payload(DaoEvent::MemberAddedToWhitelist(4.into())));
 
-    let res = dao.send(InitDao {
-        admin: 3.into(),
-        approved_token_program_id: 1.into(),
-        period_duration: 10000000,
-        voting_period_length: 100000000,
-        grace_period_length: 10000000,
-        dilution_bound: 3,
-        abort_window: 10000000,
-    });
+    let res = dao.send(
+        100001,
+        InitDao {
+            admin: 3.into(),
+            approved_token_program_id: 1.into(),
+            period_duration: 10000000,
+            voting_period_length: 100000000,
+            grace_period_length: 10000000,
+            dilution_bound: 3,
+            abort_window: 10000000,
+        },
+    );
 
     assert!(res.log().is_empty());
-    sys.set_user(3);
 
-    let res = dao.send(DaoAction::AddToWhiteList(4.into()));
+    let res = dao.send(3, DaoAction::AddToWhiteList(4.into()));
     assert!(res.contains(&(3, DaoEvent::MemberAddedToWhitelist(4.into()).encode())));
 
     dao
-    }
+}
 
 fn create_membership_proposal<'a>(dao: &'a Program, proposal_id: u128) {
-    let res = dao.send(DaoAction::SubmitMembershipProposal{
-        applicant: 4.into(),
-        token_tribute: 1000,
-        shares_requested: 1000,
-        quorum: 80,
-        details: "First membership proposal".to_string(),
-    });
-    assert!(res.contains(
-        &(3,
-          DaoEvent::SubmitMembershipProposal{
-              proposer: 3.into(),
-              applicant: 4.into(),
-              proposal_id: proposal_id.clone(),
-              token_tribute: 1000
-          }.encode())));
+    let res = dao.send(
+        3,
+        DaoAction::SubmitMembershipProposal {
+            applicant: 4.into(),
+            token_tribute: 1000,
+            shares_requested: 1000,
+            quorum: 80,
+            details: "First membership proposal".to_string(),
+        },
+    );
+    assert!(res.contains(&(
+        3,
+        DaoEvent::SubmitMembershipProposal {
+            proposer: 3.into(),
+            applicant: 4.into(),
+            proposal_id: proposal_id.clone(),
+            token_tribute: 1000
+        }
+        .encode()
+    )));
 }
 
 fn vote<'a>(dao: &'a Program, proposal_id: u128, vote: Vote) {
-    let res =dao.send(DaoAction::SubmitVote{
-        proposal_id: proposal_id.clone(),
-        vote: vote.clone(),
-    });
-    assert!(res.contains(
-         &(3,
-           DaoEvent::SubmitVote {
+    let res = dao.send(
+        3,
+        DaoAction::SubmitVote {
+            proposal_id: proposal_id.clone(),
+            vote: vote.clone(),
+        },
+    );
+    assert!(res.contains(&(
+        3,
+        DaoEvent::SubmitVote {
             account: 3.into(),
             proposal_id: proposal_id.clone(),
             vote: vote.clone(),
-           }.encode()
-        )));
+        }
+        .encode()
+    )));
 }
 
 //#[test]
@@ -111,25 +136,21 @@ fn cancel_proposal_failures() {
     sys.init_logger();
     init_fungible_token(&sys);
     let dao = init_dao(&sys);
-    sys.set_user(3);
     create_membership_proposal(&dao, 0);
 
     // must fail since the proposal doesnt exist
-    let res = dao.send(DaoAction::CancelProposal(1));
+    let res = dao.send(3, DaoAction::CancelProposal(1));
     assert!(res.main_failed());
 
-    sys.set_user(5);
     // must fail since the caller isn't the proposer
-    let res = dao.send(DaoAction::CancelProposal(0));
+    let res = dao.send(5, DaoAction::CancelProposal(0));
     assert!(res.main_failed());
 
-    sys.set_user(3);
     // must fail since the voting period isnt over
-    let res = dao.send(DaoAction::CancelProposal(0));
+    let res = dao.send(3, DaoAction::CancelProposal(0));
     assert!(res.main_failed());
 
-    sys.set_user(4);
-    let res = dao.send(DaoAction::Abort(0));
+    let res = dao.send(4, DaoAction::Abort(0));
     assert!(!res.main_failed());
     // assert!(res.contains(
     //     &(4,
@@ -139,7 +160,7 @@ fn cancel_proposal_failures() {
     //        amount: 1000,
     //       }.encode()
     //    )));
- }
+}
 
 // #[test]
 // fn create_proposal() {
@@ -322,16 +343,14 @@ fn cancel_proposal_failures() {
 //     sys.set_user(4);
 //     let res = dao.send(DaoAction::Abort(0));
 //     assert!(!res.main_failed());
-    // assert!(res.contains(
-    //     &(4,
-    //       DaoEvent::Abort {
-    //        member: 4.into(),
-    //        proposal_id: 0,
-    //        amount: 1000,
-    //       }.encode()
-    //    )));
-
-
+// assert!(res.contains(
+//     &(4,
+//       DaoEvent::Abort {
+//        member: 4.into(),
+//        proposal_id: 0,
+//        amount: 1000,
+//       }.encode()
+//    )));
 
 //     sys.spend_blocks(1000000001);
 
@@ -346,7 +365,7 @@ fn cancel_proposal_failures() {
 //     // must fail since YES votes > NO votes
 //     dao.send(DaoAction::CancelProposal(1));
 //     sys.assert_run_failed();
- //}
+//}
 
 // #[test]
 // fn cancel_proposal() {

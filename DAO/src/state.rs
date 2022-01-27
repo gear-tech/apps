@@ -1,7 +1,6 @@
-
 use crate::{Member, Proposal};
 use codec::{Decode, Encode};
-use gstd::{ActorId};
+use gstd::ActorId;
 use scale_info::TypeInfo;
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
