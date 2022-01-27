@@ -532,7 +532,7 @@ dependencies = [
 [[package]]
 name = "galloc"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#1da16f10e2128e2c04daae881527b03a1cdc1682"
 dependencies = [
  "dlmalloc",
 ]
@@ -548,7 +548,7 @@ dependencies = [
 [[package]]
 name = "gcore"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#1da16f10e2128e2c04daae881527b03a1cdc1682"
 
 [[package]]
 name = "gcore"
@@ -558,7 +558,7 @@ source = "git+https://github.com/gear-tech/gear.git#f6ad04e81b3b8aa907a0c7cfc9f4
 [[package]]
 name = "gear-backend-common"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#1da16f10e2128e2c04daae881527b03a1cdc1682"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -569,7 +569,7 @@ dependencies = [
 [[package]]
 name = "gear-backend-wasmtime"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#1da16f10e2128e2c04daae881527b03a1cdc1682"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -582,7 +582,7 @@ dependencies = [
 [[package]]
 name = "gear-core"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#1da16f10e2128e2c04daae881527b03a1cdc1682"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -596,7 +596,7 @@ dependencies = [
 [[package]]
 name = "gear-core-processor"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#1da16f10e2128e2c04daae881527b03a1cdc1682"
 dependencies = [
  "blake2-rfc",
  "gear-backend-common",
@@ -646,7 +646,7 @@ checksum = "78cc372d058dcf6d5ecd98510e7fbc9e5aec4d21de70f65fea8fecebcd881bd4"
 [[package]]
 name = "gstd"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#1da16f10e2128e2c04daae881527b03a1cdc1682"
 dependencies = [
  "bs58",
  "futures",
@@ -678,7 +678,7 @@ dependencies = [
 [[package]]
 name = "gstd-codegen"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#1da16f10e2128e2c04daae881527b03a1cdc1682"
 dependencies = [
  "quote",
  "syn",
@@ -696,7 +696,7 @@ dependencies = [
 [[package]]
 name = "gtest"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#b124af1c3435db30830fc315b037a84e799ea331"
+source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#1da16f10e2128e2c04daae881527b03a1cdc1682"
 dependencies = [
  "colored",
  "env_logger",

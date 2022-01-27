@@ -81,7 +81,7 @@ fn create_membership_proposal<'a>(dao: &'a Program, proposal_id: u128) {
         details: "First membership proposal".to_string(),
     });
     assert!(res.contains(
-        &(3, 
+        &(3,
           DaoEvent::SubmitMembershipProposal{
               proposer: 3.into(),
               applicant: 4.into(),
@@ -101,7 +101,7 @@ fn vote<'a>(dao: &'a Program, proposal_id: u128, vote: Vote) {
             account: 3.into(),
             proposal_id: proposal_id.clone(),
             vote: vote.clone(),
-           }.encode() 
+           }.encode()
         )));
 }
 
@@ -130,14 +130,14 @@ fn cancel_proposal_failures() {
 
     sys.set_user(4);
     let res = dao.send(DaoAction::Abort(0));
-  //  assert!(res.main_failed());
+    assert!(!res.main_failed());
     assert!(res.contains(
         &(4,
           DaoEvent::Abort {
            member: 4.into(),
            proposal_id: 0,
            amount: 1000,
-          }.encode() 
+          }.encode()
        )));
  }
 
@@ -228,7 +228,7 @@ fn cancel_proposal_failures() {
 //            applicant: 4.into(),
 //            proposal_id: 0,
 //            did_pass: true,
-//           }.encode() 
+//           }.encode()
 //        )));
 
 //     create_membership_proposal(&dao, 1);
@@ -241,7 +241,7 @@ fn cancel_proposal_failures() {
 //            applicant: 4.into(),
 //            proposal_id: 1,
 //            did_pass: false,
-//           }.encode() 
+//           }.encode()
 //        )));
 //  }
 
@@ -284,7 +284,7 @@ fn cancel_proposal_failures() {
 //            member: 4.into(),
 //            proposal_id: 0,
 //            amount: 1000,
-//           }.encode() 
+//           }.encode()
 //        )));
 
 //     // must fail since the proposal has already been aborted
@@ -293,7 +293,7 @@ fn cancel_proposal_failures() {
 
 //     let res = ft.send(Action::BalanceOf(4.into()));
 //     assert!(res.contains(
-//         &(4, Event::Balance(10000000).encode())));        
+//         &(4, Event::Balance(10000000).encode())));
 // }
 
 // #[test]
@@ -328,9 +328,9 @@ fn cancel_proposal_failures() {
     //        member: 4.into(),
     //        proposal_id: 0,
     //        amount: 1000,
-    //       }.encode() 
+    //       }.encode()
     //    )));
-  
+
 
 
 //     sys.spend_blocks(1000000001);
