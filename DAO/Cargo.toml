@@ -9,7 +9,7 @@ license = "GPL-3.0"
 crate-type = ["cdylib"]
 
 [dependencies]
-gstd = { git = "https://github.com/gear-tech/gear.git", branch = "dn-gear-test-lib", features = ["debug"] }
+gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
 primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info"]}
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive", "full"] }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
@@ -17,4 +17,4 @@ dao-io = {path = "io"}
 fungible-token-messages = {path = "../fungible-token-messages"}
 
 [dev-dependencies]
-gtest = { git = "https://github.com/gear-tech/gear.git", branch = "dn-gear-test-lib" }
+gtest = { git = "https://github.com/gear-tech/gear.git" }

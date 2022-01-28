@@ -357,7 +357,7 @@ version = "0.1.0"
 dependencies = [
  "dao-io",
  "fungible-token-messages",
- "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
+ "gstd",
  "gtest",
  "parity-scale-codec",
  "primitive-types",
@@ -368,7 +368,7 @@ dependencies = [
 name = "dao-io"
 version = "0.1.0"
 dependencies = [
- "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
+ "gstd",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
@@ -378,7 +378,7 @@ dependencies = [
 name = "demo-ping"
 version = "0.1.0"
 dependencies = [
- "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git)",
+ "gstd",
 ]
 
 [[package]]
@@ -444,7 +444,8 @@ name = "fungible-token"
 version = "0.1.0"
 dependencies = [
  "fungible-token-messages",
- "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
+ "gstd",
+ "gtest",
  "hex",
  "parity-scale-codec",
  "primitive-types",
@@ -456,7 +457,7 @@ dependencies = [
 name = "fungible-token-messages"
 version = "0.1.0"
 dependencies = [
- "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
+ "gstd",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
@@ -532,15 +533,7 @@ dependencies = [
 [[package]]
 name = "galloc"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#36f30d4f59987863964c08a608d384824ef0cb28"
-dependencies = [
- "dlmalloc",
-]
-
-[[package]]
-name = "galloc"
-version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#416ba0cacfb6cc03a58a8c66a806a6bbc9c898d7"
+source = "git+https://github.com/gear-tech/gear.git#2cd8f9019453dbfd343da8a787974945690fd73e"
 dependencies = [
  "dlmalloc",
 ]
@@ -548,17 +541,12 @@ dependencies = [
 [[package]]
 name = "gcore"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#36f30d4f59987863964c08a608d384824ef0cb28"
-
-[[package]]
-name = "gcore"
-version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#416ba0cacfb6cc03a58a8c66a806a6bbc9c898d7"
+source = "git+https://github.com/gear-tech/gear.git#2cd8f9019453dbfd343da8a787974945690fd73e"
 
 [[package]]
 name = "gear-backend-common"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#36f30d4f59987863964c08a608d384824ef0cb28"
+source = "git+https://github.com/gear-tech/gear.git#2cd8f9019453dbfd343da8a787974945690fd73e"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -569,7 +557,7 @@ dependencies = [
 [[package]]
 name = "gear-backend-wasmtime"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#36f30d4f59987863964c08a608d384824ef0cb28"
+source = "git+https://github.com/gear-tech/gear.git#2cd8f9019453dbfd343da8a787974945690fd73e"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -582,7 +570,7 @@ dependencies = [
 [[package]]
 name = "gear-core"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#36f30d4f59987863964c08a608d384824ef0cb28"
+source = "git+https://github.com/gear-tech/gear.git#2cd8f9019453dbfd343da8a787974945690fd73e"
 dependencies = [
  "anyhow",
  "derive_more",
@@ -596,7 +584,7 @@ dependencies = [
 [[package]]
 name = "gear-core-processor"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#36f30d4f59987863964c08a608d384824ef0cb28"
+source = "git+https://github.com/gear-tech/gear.git#2cd8f9019453dbfd343da8a787974945690fd73e"
 dependencies = [
  "blake2-rfc",
  "gear-backend-common",
@@ -609,7 +597,7 @@ dependencies = [
 name = "gear-feeds-router"
 version = "0.1.0"
 dependencies = [
- "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git)",
+ "gstd",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
@@ -646,29 +634,13 @@ checksum = "78cc372d058dcf6d5ecd98510e7fbc9e5aec4d21de70f65fea8fecebcd881bd4"
 [[package]]
 name = "gstd"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#36f30d4f59987863964c08a608d384824ef0cb28"
+source = "git+https://github.com/gear-tech/gear.git#2cd8f9019453dbfd343da8a787974945690fd73e"
 dependencies = [
  "bs58",
  "futures",
- "galloc 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
- "gcore 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
- "gstd-codegen 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
- "hex",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
-name = "gstd"
-version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#416ba0cacfb6cc03a58a8c66a806a6bbc9c898d7"
-dependencies = [
- "bs58",
- "futures",
- "galloc 0.1.0 (git+https://github.com/gear-tech/gear.git)",
- "gcore 0.1.0 (git+https://github.com/gear-tech/gear.git)",
- "gstd-codegen 0.1.0 (git+https://github.com/gear-tech/gear.git)",
+ "galloc",
+ "gcore",
+ "gstd-codegen",
  "hex",
  "parity-scale-codec",
  "primitive-types",
@@ -678,16 +650,7 @@ dependencies = [
 [[package]]
 name = "gstd-codegen"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#36f30d4f59987863964c08a608d384824ef0cb28"
-dependencies = [
- "quote",
- "syn",
-]
-
-[[package]]
-name = "gstd-codegen"
-version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#416ba0cacfb6cc03a58a8c66a806a6bbc9c898d7"
+source = "git+https://github.com/gear-tech/gear.git#2cd8f9019453dbfd343da8a787974945690fd73e"
 dependencies = [
  "quote",
  "syn",
@@ -696,7 +659,7 @@ dependencies = [
 [[package]]
 name = "gtest"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib#36f30d4f59987863964c08a608d384824ef0cb28"
+source = "git+https://github.com/gear-tech/gear.git#2cd8f9019453dbfd343da8a787974945690fd73e"
 dependencies = [
  "colored",
  "env_logger",
@@ -867,7 +830,7 @@ checksum = "7843ec2de400bcbc6a6328c958dc38e5359da6e93e72e37bc5246bf1ae776389"
 name = "nft-example"
 version = "0.1.0"
 dependencies = [
- "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
+ "gstd",
  "gtest",
  "nft-example-io",
  "non-fungible-token",
@@ -880,7 +843,7 @@ dependencies = [
 name = "nft-example-io"
 version = "0.1.0"
 dependencies = [
- "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
+ "gstd",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
@@ -896,7 +859,7 @@ checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
 name = "non-fungible-token"
 version = "0.1.0"
 dependencies = [
- "gstd 0.1.0 (git+https://github.com/gear-tech/gear.git?branch=dn-gear-test-lib)",
+ "gstd",
  "hex",
  "parity-scale-codec",
  "primitive-types",
