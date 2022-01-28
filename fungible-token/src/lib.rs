@@ -8,7 +8,7 @@ use fungible_token_messages::{
     Action, AllowanceReply, ApproveReply, Event, InitConfig, State, StateReply, TransferFromReply,
     TransferReply,
 };
-use gstd::{msg, debug, prelude::*, ActorId};
+use gstd::{debug, msg, prelude::*, ActorId};
 
 const GAS_AMOUNT: u64 = 300_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
