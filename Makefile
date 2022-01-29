@@ -1,10 +1,13 @@
-.PHONY: all clean gtest fmt fmt-check linter pre-check pre-commit prepare
+.PHONY: all check clean gtest fmt fmt-check linter pre-check pre-commit prepare
 
 all:
 	@echo ──────────── Build release ────────────────────
 	@cargo +nightly build --target wasm32-unknown-unknown --workspace --release
 	@wasm-proc --path ./target/wasm32-unknown-unknown/release/*.wasm
 	@ls -la ./target/wasm32-unknown-unknown/release/*.wasm
+
+check: all
+	@cargo +nightly test --workspace
 
 clean:
 	@echo ──────────── Clean ────────────────────────────
@@ -20,16 +23,16 @@ fmt-check:
 
 gtest: all
 	@cp ./target/wasm32-unknown-unknown/release/*.wasm ./gear/
-	@cd gear/gtest/src/js && npm i
-	@cd gear && gtest gtest/spec/test*.yaml
+	@cd gear/gear-test/src/js && npm i
+	@cd gear && gear-test gear-test/spec/test*.yaml
 
 linter:
 	@echo ──────────── Run linter ───────────────────────
-	@cargo +nightly clippy --workspace -- --no-deps -D warnings -A "clippy::missing_safety_doc"
+	@cargo +nightly clippy --target wasm32-unknown-unknown --workspace -- --no-deps -D warnings -A "clippy::missing_safety_doc"
 
-pre-check: fmt-check linter gtest
+pre-check: fmt-check linter check gtest
 
-pre-commit: fmt linter gtest
+pre-commit: fmt linter check gtest
 
 prepare:
 	@rustup toolchain add nightly
