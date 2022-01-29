@@ -32,7 +32,7 @@ jobs:
         run: |
           wget -O ~/.cargo/bin/wasm-proc https://github.com/gear-tech/gear/releases/download/build/wasm-proc
           chmod +x ~/.cargo/bin/wasm-proc
-          wget -O ~/.cargo/bin/gtest https://github.com/gear-tech/gear/releases/download/build/gear-test
+          wget -O ~/.cargo/bin/gear-test https://github.com/gear-tech/gear/releases/download/build/gear-test
           chmod +x ~/.cargo/bin/gear-test
 
       - name: Check fmt
@@ -47,7 +47,7 @@ jobs:
       - name: Run tests
         run: make check
 
-      - name: Run gtest
+      - name: Run gear-test
         run: make gtest
 
       - name: Upload artifacts
