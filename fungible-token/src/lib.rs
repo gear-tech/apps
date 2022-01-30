@@ -113,8 +113,11 @@ impl FungibleToken {
             panic!("FungibleToken: Burn from zero address.");
         }
         unsafe {
-            self.decrease_total_supply(amount);
             let old_balance = FUNGIBLE_TOKEN.get_balance(account);
+            if old_balance < amount {
+                panic!("FungibleToken: burn amount exceeds balance");
+            }
+            self.decrease_total_supply(amount);
             self.set_balance(account, old_balance.saturating_sub(amount));
         }
     }

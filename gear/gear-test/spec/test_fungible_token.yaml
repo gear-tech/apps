@@ -29,6 +29,14 @@ fixtures:
             burn:
               account: *ALICE
               amount: 10
+      # burn 10000 GRT from ALICE (expect failure)
+      - destination: 1
+        payload:
+          kind: custom
+          value:
+            burn:
+              account: *ALICE
+              amount: 10000
       # transfer 200 GRT from ALICE to BOB
       - destination: 1
         source:
@@ -177,6 +185,9 @@ fixtures:
                   from: *ALICE
                   to: *zero
                   amount: 10
+        # try to brun 10000 GRT from ALICE, which fails as brun amount exceeds ALICE's balance.
+          - destination: 1000001
+            exitCode: 1
         # 200 GRT transferred from ALICE to BOB.
           - destination:
               kind: account
