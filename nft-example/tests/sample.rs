@@ -1,8 +1,9 @@
+use codec::Encode;
 use gtest::{Program, System};
-use primitive_types::U256;
 use nft_example_io::*;
+const USERS: &'static [u64] = &[3, 4, 5];
 
-fn init_with_mint<'a>(sys: &'a System) -> Program<'a> {
+fn init_with_mint<'a>(sys: &'a System) {
     sys.init_logger();
 
     let nft = Program::from_file(
@@ -10,24 +11,27 @@ fn init_with_mint<'a>(sys: &'a System) -> Program<'a> {
         "../../apps/target/wasm32-unknown-unknown/release/nft_example.wasm",
     );
 
-    nft.send(InitConfig {
-        name: String::from("Hello"),
-        symbol: String::from("WRLD"),
-        base_uri:  String::from(""),
-    });
-    sys.assert_log_empty();
-
-    nft.send(Action::Mint);
-    sys.assert_log(
-        205,
-        Event::Transfer{
-            from: 0.into(),
-            to: 5.into(),
-            token_id: U256::zero(),
+    let res = nft.send(
+        USERS[0],
+        InitConfig {
+            name: String::from("MyToken"),
+            symbol: String::from("MTK"),
+            base_uri: String::from(""),
         },
     );
 
-    nft
+    assert!(res.log().is_empty());
+
+    let res = nft.send(USERS[0], Action::Mint);
+    assert!(res.contains(&(
+        USERS[0],
+        Event::Transfer {
+            from: 0.into(),
+            to: USERS[0].into(),
+            token_id: 0.into(),
+        }
+        .encode()
+    )));
 }
 
 #[test]
@@ -36,100 +40,245 @@ fn mint() {
     init_with_mint(&sys);
 }
 
-// #[test]
-// fn burn() {
-//     /let/ sys = _System_::new();
-//     /let/ erc20 = init_with_mint(&sys);
+#[test]
+fn burn() {
+    let sys = System::new();
+    init_with_mint(&sys);
+    let nft = sys.get_program(1);
+    let res = nft.send(USERS[0], Action::Burn(0.into()));
+    assert!(res.contains(&(
+        USERS[0],
+        Event::Transfer {
+            from: USERS[0].into(),
+            to: 0.into(),
+            token_id: 0.into(),
+        }
+        .encode()
+    )));
+}
 
-//     erc20.send(_Action_::Burn(_BurnInput_ {
-//         account: 5.into(),
-//         amount: 10,
-//     }));
-//     sys.assert_run_success();
-//     sys.assert_log(
-//         205,
-//         _Event_::Transfer({
-//             _TransferReply_ {
-//                 from: 5.into(),
-//                 to: 0.into(),
-//                 amount: 10,
-//             }
-//         }),
-//     );
+#[test]
+fn burn_failures() {
+    let sys = System::new();
+    init_with_mint(&sys);
+    let nft = sys.get_program(1);
+    // must fail since the token doesn't exist
+    let res = nft.send(USERS[0], Action::Burn(1.into()));
+    assert!(res.main_failed());
 
-//     sys.set_user(2);
+    // must fail since the caller isn't the token owner
+    let res = nft.send(USERS[1], Action::Burn(0.into()));
+    assert!(res.main_failed());
+}
 
-//     erc20.send(_Action_::Burn(_BurnInput_ {
-//         account: 5.into(),
-//         amount: 10,
-//     }));
-//     sys.assert_run_failed();
-//     sys.assert_log_bytes(205, []);
-// }
+#[test]
+fn owner_of() {
+    let sys = System::new();
+    init_with_mint(&sys);
+    let nft = sys.get_program(1);
+    let res = nft.send(USERS[0], Action::OwnerOf(0.into()));
+    assert!(res.contains(&(USERS[0], Event::OwnerOf(USERS[0].into()).encode())));
 
-// #[test]
-// fn transfer() {
-//     /let/ sys = _System_::new();
-//     /let/ erc20 = init_with_mint(&sys);
+    // must return zero address since the token doesn't exist
+    let res = nft.send(USERS[0], Action::OwnerOf(100.into()));
+    assert!(res.contains(&(USERS[0], Event::OwnerOf(0.into()).encode())));
+}
 
-//     sys.set_user(5);
+#[test]
+fn balance_of() {
+    let sys = System::new();
+    init_with_mint(&sys);
+    let nft = sys.get_program(1);
+    let res = nft.send(USERS[0], Action::Mint);
+    assert!(!res.main_failed());
+    let res = nft.send(USERS[0], Action::Mint);
+    assert!(!res.main_failed());
 
-//     erc20.send(_Action_::Transfer({
-//         _TransferInput_ {
-//             to: 6.into(),
-//             amount: 30,
-//         }
-//     }));
-//     sys.assert_log(
-//         205,
-//         _Event_::Transfer({
-//             _TransferReply_ {
-//                 from: 5.into(),
-//                 to: 6.into(),
-//                 amount: 30,
-//             }
-//         }),
-//     );
-//     sys.assert_run_success();
-// }
+    let res = nft.send(USERS[0], Action::BalanceOf(USERS[0].into()));
+    assert!(res.contains(&(USERS[0], Event::BalanceOf(3.into()).encode())));
+}
 
-// #[test]
-// fn approve_and_transfer_from() {
-//     /let/ sys = _System_::new();
-//     /let/ erc20 = init_with_mint(&sys);
+#[test]
+fn transfer() {
+    let sys = System::new();
+    init_with_mint(&sys);
+    let nft = sys.get_program(1);
+    let res = nft.send(
+        USERS[0],
+        Action::Transfer {
+            to: USERS[1].into(),
+            token_id: 0.into(),
+        },
+    );
 
-//     sys.set_user(5);
+    assert!(res.contains(&(
+        USERS[0],
+        Event::Transfer {
+            from: USERS[0].into(),
+            to: USERS[1].into(),
+            token_id: 0.into(),
+        }
+        .encode()
+    )));
 
-//     erc20.send(_Action_::Approve(_ApproveInput_ {
-//         spender: 6.into(),
-//         amount: 60,
-//     }));
-//     sys.assert_run_success();
-//     sys.assert_log(
-//         205,
-//         _Event_::Approval(_ApproveReply_ {
-//             owner: 5.into(),
-//             spender: 6.into(),
-//             amount: 60,
-//         }),
-//     );
+    // check that the balance of `USER[0]` is zero, the balance of `USER[1]` is now 1
+    let res = nft.send(USERS[0], Action::BalanceOf(USERS[0].into()));
+    assert!(res.contains(&(USERS[0], Event::BalanceOf(0.into()).encode())));
+    let res = nft.send(USERS[0], Action::BalanceOf(USERS[1].into()));
+    assert!(res.contains(&(USERS[0], Event::BalanceOf(1.into()).encode())));
 
-//     sys.set_user(6);
+    // check that `USER[1]` is now the owner of the token with `0` id
+    let res = nft.send(USERS[0], Action::OwnerOf(0.into()));
+    assert!(res.contains(&(USERS[0], Event::OwnerOf(USERS[1].into()).encode())));
+}
 
-//     erc20.send(_Action_::TransferFrom(_TransferFromInput_ {
-//         owner: 5.into(),
-//         to: 7.into(),
-//         amount: 50,
-//     }));
-//     sys.assert_run_success();
-//     sys.assert_log(
-//         205,
-//         _Event_::TransferFrom(_TransferFromReply_ {
-//             owner: 5.into(),
-//             sender: 6.into(),
-//             recipient: 7.into(),
-//             amount: 50,
-//             new_limit: 10,
-//         }),
-//     );
-// }
+#[test]
+fn transfer_failures() {
+    let sys = System::new();
+    init_with_mint(&sys);
+    let nft = sys.get_program(1);
+    //must fail since the tokens doesn't exist
+    let res = nft.send(
+        USERS[0],
+        Action::Transfer {
+            to: USERS[1].into(),
+            token_id: 100.into(),
+        },
+    );
+    assert!(res.main_failed());
+
+    //must fail since the caller isn't the is not an authorized source
+    let res = nft.send(
+        USERS[2],
+        Action::Transfer {
+            to: USERS[1].into(),
+            token_id: 0.into(),
+        },
+    );
+    assert!(res.main_failed());
+
+    //must fail since the `to` is the zero address
+    let res = nft.send(
+        USERS[0],
+        Action::Transfer {
+            to: 0.into(),
+            token_id: 0.into(),
+        },
+    );
+    assert!(res.main_failed());
+}
+
+#[test]
+fn approve_and_transfer() {
+    let sys = System::new();
+    init_with_mint(&sys);
+    let nft = sys.get_program(1);
+
+    let res = nft.send(
+        USERS[0],
+        Action::Approve {
+            to: USERS[1].into(),
+            token_id: 0.into(),
+        },
+    );
+    assert!(res.contains(&(
+        USERS[0],
+        Event::Approval {
+            owner: USERS[0].into(),
+            spender: USERS[1].into(),
+            token_id: 0.into(),
+        }
+        .encode()
+    )));
+
+    let res = nft.send(
+        USERS[1],
+        Action::Transfer {
+            to: USERS[2].into(),
+            token_id: 0.into(),
+        },
+    );
+
+    assert!(res.contains(&(
+        USERS[1],
+        Event::Transfer {
+            from: USERS[1].into(),
+            to: USERS[2].into(),
+            token_id: 0.into(),
+        }
+        .encode()
+    )));
+}
+
+#[test]
+fn approve_for_all() {
+    let sys = System::new();
+    init_with_mint(&sys);
+    let nft = sys.get_program(1);
+
+    let res = nft.send(USERS[0], Action::Mint);
+    assert!(!res.main_failed());
+    let res = nft.send(USERS[0], Action::Mint);
+    assert!(!res.main_failed());
+
+    let res = nft.send(
+        USERS[0],
+        Action::ApproveForAll {
+            to: USERS[1].into(),
+            approved: true,
+        },
+    );
+    assert!(res.contains(&(
+        USERS[0],
+        Event::ApprovalForAll {
+            owner: USERS[0].into(),
+            operator: USERS[1].into(),
+            approved: true,
+        }
+        .encode()
+    )));
+
+    let res = nft.send(
+        USERS[1],
+        Action::Transfer {
+            to: USERS[2].into(),
+            token_id: 0.into(),
+        },
+    );
+    assert!(!res.main_failed());
+    let res = nft.send(
+        USERS[1],
+        Action::Transfer {
+            to: USERS[2].into(),
+            token_id: 1.into(),
+        },
+    );
+    assert!(!res.main_failed());
+
+    let res = nft.send(
+        USERS[0],
+        Action::ApproveForAll {
+            to: USERS[1].into(),
+            approved: false,
+        },
+    );
+    assert!(res.contains(&(
+        USERS[0],
+        Event::ApprovalForAll {
+            owner: USERS[0].into(),
+            operator: USERS[1].into(),
+            approved: false,
+        }
+        .encode()
+    )));
+
+    // must fail since the `USERS[1]` can no longer send tokens
+    let res = nft.send(
+        USERS[1],
+        Action::Transfer {
+            to: USERS[2].into(),
+            token_id: 2.into(),
+        },
+    );
+    assert!(res.main_failed());
+}
