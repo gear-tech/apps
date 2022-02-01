@@ -4,6 +4,9 @@
 #![no_std]
 #![feature(const_btree_new)]
 
+#[cfg(test)]
+mod tests;
+
 use fungible_token_messages::{
     Action, AllowanceReply, ApproveReply, Event, InitConfig, State, StateReply, TransferFromReply,
     TransferReply,
