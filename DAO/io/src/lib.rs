@@ -71,6 +71,10 @@ pub enum DaoEvent {
         proposal_id: u128,
     },
     AdminUpdated(ActorId),
+    DelegateKeyUpdated {
+        member: ActorId,
+        delegate: ActorId,
+    },
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]

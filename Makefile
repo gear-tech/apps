@@ -6,6 +6,9 @@ all:
 	@wasm-proc --path ./target/wasm32-unknown-unknown/release/*.wasm
 	@ls -la ./target/wasm32-unknown-unknown/release/*.wasm
 
+check: all
+	@cargo +nightly test --workspace --release
+
 clean:
 	@echo ──────────── Clean ────────────────────────────
 	@rm -rvf target

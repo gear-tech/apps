@@ -265,7 +265,7 @@ fn allowance() {
             amount: 500,
         }),
     );
-  //  println!("{:?}", res.decoded_log::<Event>());    
+    //  println!("{:?}", res.decoded_log::<Event>());
     assert!(res.contains(&(
         USERS[1],
         Event::Approval(ApproveReply {

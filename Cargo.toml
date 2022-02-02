@@ -5,7 +5,7 @@ members = [
     "fungible-token",
     "gear-feeds-router",
     "ping",
-    "DAO",
+    "dao",
     "fungible-token-messages",
     "non-fungible-token",
     "nft-example",
