@@ -6,6 +6,9 @@ all:
 	@wasm-proc --path ./target/wasm32-unknown-unknown/release/*.wasm
 	@ls -la ./target/wasm32-unknown-unknown/release/*.wasm
 
+check: all
+	@cargo +nightly test --workspace
+	
 clean:
 	@echo ──────────── Clean ────────────────────────────
 	@rm -rvf target
@@ -25,7 +28,7 @@ gtest: all
 
 linter:
 	@echo ──────────── Run linter ───────────────────────
-	@cargo +nightly clippy --workspace -- --no-deps -D warnings -A "clippy::missing_safety_doc"
+	@cargo +nightly clippy --target wasm32-unknown-unknown --workspace -- --no-deps -D warnings -A "clippy::missing_safety_doc"
 
 pre-check: fmt-check linter gtest
 

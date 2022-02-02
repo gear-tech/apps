@@ -3,7 +3,7 @@ use gtest::{Program, System};
 use nft_example_io::*;
 const USERS: &'static [u64] = &[3, 4, 5];
 
-fn init_with_mint<'a>(sys: &'a System) {
+fn init_with_mint(sys: &System) {
     sys.init_logger();
 
     let nft = Program::from_file(
