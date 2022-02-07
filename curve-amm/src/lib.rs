@@ -23,6 +23,7 @@ use codec::{Decode, Encode};
 use fungible_token_messages::{
     Action, BurnInput, Event, MintInput, TransferFromInput, TransferInput,
 };
+
 use futures::future;
 use gstd::exec::program_id;
 use gstd::{errors::ContractError, exec, lock::mutex::Mutex, msg, prelude::*, ActorId, ToString};
