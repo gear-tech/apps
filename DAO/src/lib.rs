@@ -283,7 +283,7 @@ impl Dao {
 
         let proposal = self.proposals.get_mut(&proposal_id).unwrap();
         let member_id = self.member_by_delegate_key.get(&msg::source()).unwrap();
-        let member = self.members.get_mut(&member_id).unwrap();
+        let member = self.members.get_mut(member_id).unwrap();
 
         match vote {
             Vote::Yes => {
@@ -442,10 +442,12 @@ impl Dao {
         if !self.proposals.contains_key(&proposal_id) {
             panic!("proposal does not exist");
         }
-        if self.proposals.get(&proposal_id).unwrap().proposer != msg::source() {
+        let proposal = self.proposals.get_mut(&proposal_id).unwrap();
+
+        if proposal.proposer != msg::source() {
             panic!("caller must be proposer");
         }
-        let proposal = self.proposals.get_mut(&proposal_id).unwrap();
+
         if proposal.yes_votes > proposal.no_votes
             && proposal.yes_votes * 1000 / self.total_shares > proposal.quorum
         {
@@ -491,11 +493,12 @@ impl Dao {
             panic!("caller must be applicant");
         }
         let proposal = self.proposals.get_mut(&proposal_id).unwrap();
-        if exec::block_timestamp() > proposal.starting_period + self.abort_window {
-            panic!("The abort window is over");
-        }
+
         if proposal.aborted {
             panic!("Proposal has already been aborted");
+        }
+        if exec::block_timestamp() > proposal.starting_period + self.abort_window {
+            panic!("The abort window is over");
         }
 
         let amount = proposal.token_tribute;

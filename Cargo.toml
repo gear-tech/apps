@@ -5,10 +5,10 @@ members = [
     "fungible-token",
     "gear-feeds-router",
     "ping",
-    "dao",
-    "fungible-token-messages",
     "non-fungible-token",
     "nft-example",
+    "fungible-token-messages",
+    "dao",
 ]
 
 [profile.release]

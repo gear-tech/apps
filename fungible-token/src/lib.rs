@@ -4,13 +4,16 @@
 #![no_std]
 #![feature(const_btree_new)]
 
+#[cfg(test)]
+mod tests;
+
 use fungible_token_messages::{
     Action, AllowanceReply, ApproveReply, Event, InitConfig, State, StateReply, TransferFromReply,
     TransferReply,
 };
 use gstd::{msg, prelude::*, ActorId};
 
-const GAS_AMOUNT: u64 = 500_000_000;
+const GAS_AMOUNT: u64 = 300_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug)]
@@ -113,8 +116,11 @@ impl FungibleToken {
             panic!("FungibleToken: Burn from zero address.");
         }
         unsafe {
-            self.decrease_total_supply(amount);
             let old_balance = FUNGIBLE_TOKEN.get_balance(account);
+            if old_balance < amount {
+                panic!("FungibleToken: burn amount exceeds balance");
+            }
+            self.decrease_total_supply(amount);
             self.set_balance(account, old_balance.saturating_sub(amount));
         }
     }

@@ -1,28 +1,20 @@
 #![no_std]
 #![feature(const_btree_new)]
 
-use codec::{Decode, Encode};
+use codec::Encode;
 use gstd::{debug, exec, msg, prelude::*, ActorId};
 use primitive_types::U256;
-use scale_info::TypeInfo;
 
 pub mod state;
 pub use state::{State, StateReply};
 
-pub use nft_example_io::{Action, Event};
+pub use nft_example_io::{Action, Event, InitConfig};
 
 use non_fungible_token::base::NonFungibleTokenBase;
 use non_fungible_token::NonFungibleToken;
 
 const GAS_RESERVE: u64 = 500_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct InitConfig {
-    pub name: String,
-    pub symbol: String,
-    pub base_uri: String,
-}
 
 #[derive(Debug)]
 pub struct NFT {
