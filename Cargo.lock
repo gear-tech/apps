@@ -652,7 +652,6 @@ name = "gstd-codegen"
 version = "0.1.0"
 source = "git+https://github.com/gear-tech/gear.git#5d12a57500da45f30e0a86d525a3351a4a6961d0"
 dependencies = [
- "proc-macro2",
  "quote",
  "syn",
 ]
@@ -701,10 +700,7 @@ dependencies = [
 name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a64b1ec5cda2586e284722486d802acf1f7dbdc623e2bfc57e65ca1cd099290"
-dependencies = [
- "autocfg",
-]
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "humantime"
@@ -716,20 +712,20 @@ checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 name = "impl-codec"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19e64526ebdee182341572e50e9ad03965aa510cd94427a4549448f285e957a1"
+checksum = "161ebdfec3c8e3b52bf61c4f3550a1eea4f9579d10dc1b936f3171ebdcd6c443"
 dependencies = [
- "hermit-abi",
- "libc",
+ "parity-scale-codec",
 ]
 
 [[package]]
-name = "object"
-version = "0.24.0"
+name = "impl-trait-for-tuples"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a5b3dd1c072ee7963717671d1ca129f1048fda25edea6b752bfc71ac8854170"
+checksum = "d5dacb10c5b3bb92d46ba347505a9041e676bb20ad220101326bffb0c93031ee"
 dependencies = [
- "crc32fast",
- "indexmap",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -778,7 +774,7 @@ name = "libc_print"
 version = "0.1.16"
 source = "git+https://github.com/grishasobol/rust-libc-print.git#b300804809e7a5f1c8fab4d2d11bcea29217bc70"
 dependencies = [
- "memchr",
+ "libc",
 ]
 
 [[package]]
@@ -835,7 +831,19 @@ name = "nft-example"
 version = "0.1.0"
 dependencies = [
  "gstd",
+ "gtest",
+ "nft-example-io",
  "non-fungible-token",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
+name = "nft-example-io"
+version = "0.1.0"
+dependencies = [
+ "gstd",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
