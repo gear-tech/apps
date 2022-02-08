@@ -179,6 +179,10 @@ impl Erc1155Token {
             panic!("ERC1155: caller is not owner nor approved")
         }
 
+        if *self.get_approval(from, to) {
+            panic!("ERC1155: caller is not owner nor approved")
+        }
+
         if to == &ZERO_ID {
             panic!("ERC1155: transfer to the zero address")
         }
@@ -207,7 +211,7 @@ impl Erc1155Token {
             panic!("ERC1155: caller is not owner nor approved")
         }
 
-        if !self.get_approval(from, to) {
+        if *self.get_approval(from, to) {
             panic!("ERC1155: caller is not owner nor approved")
         }
 
@@ -349,6 +353,20 @@ pub unsafe extern "C" fn handle() {
             msg::reply(Event::TransferSingle(transfer_data), GAS_AMOUNT, 0);
         }
 
+        Action::SafeBatchTransferFrom(from, to, ids, amounts) => {
+            ERC1155_TOKEN.safe_batch_transfer_from(&from, &to, &ids, &amounts);
+
+            let payload = Event::TransferBatch {
+                operator: msg::source(),
+                from: from,
+                to: to,
+                ids: ids,
+                values: amounts,
+            };
+
+            msg::reply(payload, GAS_AMOUNT, 0);
+        }
+
         Action::ApproveForAll(owner, operator, approved) => {
             ERC1155_TOKEN.set_approval_for_all(&owner, &operator, approved);
 
@@ -382,6 +400,7 @@ pub enum Action {
     BalanceOfBatch(Vec<ActorId>, Vec<u128>),
     MintBatch(ActorId, Vec<u128>, Vec<u128>),
     SafeTransferFrom(ActorId, ActorId, u128, u128),
+    SafeBatchTransferFrom(ActorId, ActorId, Vec<u128>, Vec<u128>),
     ApproveForAll(ActorId, ActorId, bool),
     IsApprovedForAll(ActorId, ActorId),
     // Approve { to: ActorId, id: U256 },
@@ -406,13 +425,6 @@ pub struct BalanceOfBatchReply {
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum Event {
-    // TransferSingle {
-    //     operator: ActorId,
-    //     from: ActorId,
-    //     to: ActorId,
-    //     id: u128,
-    //     amount: u128,
-    // },
     TransferSingle(TransferSingleReply),
     Balance(u128),
     BalanceOfBatch(Vec<BalanceOfBatchReply>),

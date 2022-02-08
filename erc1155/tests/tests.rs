@@ -194,6 +194,42 @@ fn safe_transfer_from() {
 }
 
 #[test]
+fn safe_batch_transfer_from() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    let from = USERS[0];
+    let to = USERS[1];
+    let newuser = USERS[2];
+
+    ft.send(
+        from,
+        lib::Action::MintBatch(to.into(), vec![1u128, 2u128], vec![BALANCE, BALANCE]),
+    );
+
+    let ret = ft.send(
+        to,
+        lib::Action::SafeBatchTransferFrom(
+            to.into(),
+            newuser.into(),
+            vec![1u128, 2u128],
+            vec![5u128, 10u128],
+        ),
+    );
+
+    let codec = lib::Event::TransferBatch {
+        operator: to.into(),
+        from: to.into(),
+        to: newuser.into(),
+        ids: vec![1u128, 2u128],
+        values: vec![5u128, 10u128],
+    }
+    .encode();
+
+    assert!(ret.contains(&(to, codec)));
+}
+
+#[test]
 fn set_approval_for_all() {
     let sys = System::new();
     let ft = init(&sys);
