@@ -390,6 +390,20 @@ pub unsafe extern "C" fn handle() {
 
             msg::reply(payload, GAS_AMOUNT, 0);
         }
+
+        Action::BurnBatch(from, ids, amounts) => {
+            ERC1155_TOKEN.burn_batch(&from, &ids, &amounts);
+
+            let payload = Event::TransferBatch {
+                operator: msg::source(),
+                from: from,
+                to: ZERO_ID,
+                ids: ids,
+                values: amounts,
+            };
+
+            msg::reply(payload, GAS_AMOUNT, 0);
+        }
     }
 }
 
@@ -403,8 +417,8 @@ pub enum Action {
     SafeBatchTransferFrom(ActorId, ActorId, Vec<u128>, Vec<u128>),
     ApproveForAll(ActorId, ActorId, bool),
     IsApprovedForAll(ActorId, ActorId),
+    BurnBatch(ActorId, Vec<u128>, Vec<u128>),
     // Approve { to: ActorId, id: U256 },
-    // Burn(U256),
     // OwnerOf(U256)
 }
 

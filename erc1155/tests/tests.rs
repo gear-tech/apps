@@ -97,9 +97,11 @@ fn balance_of_batch() {
     ft.send(USERS[0], lib::Action::Mint(USERS[2].into(), 2, BALANCE));
 
     let accounts: Vec<ActorId> = vec![USERS[1].into(), USERS[2].into()];
-    let ids: Vec<u128> = vec![1, 2];
 
-    let res = ft.send(USERS[0], lib::Action::BalanceOfBatch(accounts, ids));
+    let res = ft.send(
+        USERS[0],
+        lib::Action::BalanceOfBatch(accounts, vec![1u128, 2u128]),
+    );
 
     let reply1 = lib::BalanceOfBatchReply {
         account: USERS[1].into(),
@@ -288,4 +290,48 @@ fn is_approved_for_all() {
     .encode();
 
     assert!(ret.contains(&(from, codec)));
+}
+
+#[test]
+fn burn_batch() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    let from = USERS[0];
+    let user1 = USERS[1];
+
+    ft.send(
+        from,
+        lib::Action::MintBatch(user1.into(), vec![1u128, 2u128], vec![BALANCE, BALANCE]),
+    );
+
+    ft.send(
+        from,
+        lib::Action::BurnBatch(user1.into(), vec![1u128, 2u128], vec![10, 20]),
+    );
+
+    let accounts: Vec<ActorId> = vec![user1.into(), user1.into()];
+
+    let res = ft.send(
+        USERS[0],
+        lib::Action::BalanceOfBatch(accounts, vec![1u128, 2u128]),
+    );
+
+    let reply1 = lib::BalanceOfBatchReply {
+        account: user1.into(),
+        id: 1,
+        amount: BALANCE - 10,
+    };
+
+    let reply2 = lib::BalanceOfBatchReply {
+        account: user1.into(),
+        id: 2,
+        amount: BALANCE - 20,
+    };
+
+    let replies = vec![reply1, reply2];
+
+    let codec = lib::Event::BalanceOfBatch(replies).encode();
+
+    assert!(res.contains(&(from, codec)));
 }
