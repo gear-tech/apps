@@ -5,10 +5,31 @@ mod lib;
 
 #[cfg(test)]
 use codec::Encode;
-use gstd::String;
-use gtest::{Program, System, Log};
+use gstd::{ActorId, String};
+use gtest::{Log, Program, System};
 
+const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 const USERS: &'static [u64] = &[3, 4, 5];
+const TOKEN_ID: u128 = 1;
+const BALANCE: u128 = 100;
+
+fn init(sys: &System) -> Program {
+    sys.init_logger();
+
+    let ft = Program::from_file(
+        &sys,
+        "../../apps/target/wasm32-unknown-unknown/release/erc1155.wasm",
+    );
+
+    let init_config = lib::InitConfig {
+        name: String::from("MyToken"),
+        symbol: String::from("MTK"),
+        base_uri: String::from("baidu.so"),
+    };
+
+    ft.send(USERS[0], init_config);
+    return ft;
+}
 
 fn init_with_mint(sys: &System) {
     sys.init_logger();
@@ -28,19 +49,19 @@ fn init_with_mint(sys: &System) {
 
     assert!(res.log().is_empty());
 
-    let res = ft.send(USERS[0], lib::Action::Mint(USERS[1].into(), 1, 1000000));
-
-    let logs = res.log();
-    println!("logs: {:?}", logs);
+    let res = ft.send(
+        USERS[0],
+        lib::Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE),
+    );
 
     assert!(res.contains(&(
         USERS[0],
         lib::Event::TransferSingle(lib::TransferSingleReply {
-            operator: 0.into(),
-            from: 0.into(),
+            operator: USERS[0].into(),
+            from: ZERO_ID,
             to: USERS[1].into(),
-            id: 1,
-            amount: 1000000,
+            id: TOKEN_ID,
+            amount: BALANCE,
         })
         .encode()
     )));
@@ -50,4 +71,185 @@ fn init_with_mint(sys: &System) {
 fn mint() {
     let sys = System::new();
     init_with_mint(&sys);
+}
+
+#[test]
+fn balance() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    ft.send(
+        USERS[0],
+        lib::Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE),
+    );
+
+    let res = ft.send(USERS[1], lib::Action::BalanceOf(USERS[1].into(), TOKEN_ID));
+
+    assert!(res.contains(&(USERS[1], lib::Event::Balance(BALANCE).encode())));
+}
+
+#[test]
+fn balance_of_batch() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    ft.send(USERS[0], lib::Action::Mint(USERS[1].into(), 1, BALANCE));
+    ft.send(USERS[0], lib::Action::Mint(USERS[2].into(), 2, BALANCE));
+
+    let accounts: Vec<ActorId> = vec![USERS[1].into(), USERS[2].into()];
+    let ids: Vec<u128> = vec![1, 2];
+
+    let res = ft.send(USERS[0], lib::Action::BalanceOfBatch(accounts, ids));
+
+    let reply1 = lib::BalanceOfBatchReply {
+        account: USERS[1].into(),
+        id: 1,
+        amount: BALANCE,
+    };
+
+    let reply2 = lib::BalanceOfBatchReply {
+        account: USERS[2].into(),
+        id: 2,
+        amount: BALANCE,
+    };
+
+    let replies = vec![reply1, reply2];
+
+    let codec = lib::Event::BalanceOfBatch(replies).encode();
+
+    assert!(res.contains(&(USERS[0], codec)));
+}
+
+#[test]
+fn mint_batch() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    let res = ft.send(
+        USERS[0],
+        lib::Action::MintBatch(USERS[1].into(), vec![1u128, 2u128], vec![BALANCE, BALANCE]),
+    );
+
+    let codec = lib::Event::TransferBatch {
+        operator: USERS[0].into(),
+        from: ZERO_ID,
+        to: USERS[1].into(),
+        ids: vec![1u128, 2u128],
+        values: vec![BALANCE, BALANCE],
+    }
+    .encode();
+
+    assert!(res.contains(&(USERS[0], codec)));
+}
+
+#[test]
+fn safe_transfer_from() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    ft.send(
+        USERS[0],
+        lib::Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE),
+    );
+
+    let from = USERS[1];
+    let to = USERS[2];
+
+    let res = ft.send(
+        from,
+        lib::Action::SafeTransferFrom(from.into(), to.into(), TOKEN_ID, 10),
+    );
+
+    let reply = lib::TransferSingleReply {
+        operator: from.into(),
+        from: from.into(),
+        to: to.into(),
+        id: TOKEN_ID,
+        amount: 10,
+    };
+
+    let codec = lib::Event::TransferSingle(reply).encode();
+    assert!(res.contains(&(from, codec)));
+
+    // check two accounts balance
+    let accounts: Vec<ActorId> = vec![from.into(), to.into()];
+    let ids: Vec<u128> = vec![1, 1];
+    let res = ft.send(USERS[0], lib::Action::BalanceOfBatch(accounts, ids));
+
+    let reply1 = lib::BalanceOfBatchReply {
+        account: from.into(),
+        id: TOKEN_ID,
+        amount: BALANCE - 10,
+    };
+    let reply2 = lib::BalanceOfBatchReply {
+        account: to.into(),
+        id: TOKEN_ID,
+        amount: 10,
+    };
+
+    let replies = vec![reply1, reply2];
+    let codec = lib::Event::BalanceOfBatch(replies).encode();
+
+    assert!(res.contains(&(USERS[0], codec)));
+}
+
+#[test]
+fn set_approval_for_all() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    let from = USERS[0];
+    let to = USERS[1];
+
+    let ret = ft.send(
+        from,
+        lib::Action::ApproveForAll(from.into(), to.into(), true),
+    );
+
+    let codec = lib::Event::ApprovalForAll {
+        owner: from.into(),
+        operator: to.into(),
+        approved: true,
+    }
+    .encode();
+
+    assert!(ret.contains(&(from, codec)));
+}
+
+#[test]
+fn is_approved_for_all() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    let from = USERS[0];
+    let to = USERS[1];
+
+    ft.send(
+        from,
+        lib::Action::ApproveForAll(from.into(), to.into(), true),
+    );
+
+    let ret = ft.send(from, lib::Action::IsApprovedForAll(from.into(), to.into()));
+    let codec = lib::Event::ApprovalForAll {
+        owner: from.into(),
+        operator: to.into(),
+        approved: true,
+    }
+    .encode();
+
+    assert!(ret.contains(&(from, codec)));
+
+    let newuser = USERS[2];
+    let ret = ft.send(
+        from,
+        lib::Action::IsApprovedForAll(from.into(), newuser.into()),
+    );
+    let codec = lib::Event::ApprovalForAll {
+        owner: from.into(),
+        operator: newuser.into(),
+        approved: false,
+    }
+    .encode();
+
+    assert!(ret.contains(&(from, codec)));
 }
