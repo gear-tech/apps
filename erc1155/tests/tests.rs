@@ -306,7 +306,7 @@ fn burn_batch() {
     );
 
     ft.send(
-        from,
+        user1,
         lib::Action::BurnBatch(user1.into(), vec![1u128, 2u128], vec![10, 20]),
     );
 

@@ -68,7 +68,7 @@ impl Erc1155Token {
 
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[u128]) -> Vec<BalanceOfBatchReply> {
         if accounts.len() != ids.len() {
-            panic!("ERC1155: accounts and ids length mismatch");
+            panic!("ERC1155: accounts and ids length mismatch")
         }
 
         let mut arr: Vec<BalanceOfBatchReply> = Vec::new();
@@ -89,40 +89,41 @@ impl Erc1155Token {
         return arr;
     }
 
-    fn mint(&mut self, from: &ActorId, id: &u128, amount: u128) {
-        // check owner
-        if from == &ZERO_ID {
-            panic!("ERC1155: Mint to zero address");
+    fn mint(&mut self, account: &ActorId, id: &u128, amount: u128) {
+        if account == &ZERO_ID {
+            panic!("ERC1155: Mint to zero address")
         }
-        let old_balance = self.get_balance(from, id);
-        self.set_balance(from, id, old_balance.saturating_add(amount));
+        let old_balance = self.get_balance(account, id);
+        self.set_balance(account, id, old_balance.saturating_add(amount));
 
         // TransferSingle event
     }
 
-    fn mint_batch(&mut self, from: &ActorId, ids: &[u128], amounts: &[u128]) {
-        if from == &ZERO_ID {
-            panic!("ERC1155: Mint to zero address");
+    fn mint_batch(&mut self, account: &ActorId, ids: &[u128], amounts: &[u128]) {
+        if account == &ZERO_ID {
+            panic!("ERC1155: Mint to zero address")
         }
 
         if ids.len() != amounts.len() {
-            panic!("ERC1155: ids and amounts length mismatch");
+            panic!("ERC1155: ids and amounts length mismatch")
         }
 
         for (i, ele) in ids.iter().enumerate() {
             let amount = amounts[i];
-            let old_balance = self.get_balance(from, ele);
-            self.set_balance(from, ele, old_balance.saturating_add(amount));
+            let old_balance = self.get_balance(account, ele);
+            self.set_balance(account, ele, old_balance.saturating_add(amount));
         }
 
         // TransferBatch event
     }
 
-    fn burn_batch(&mut self, from: &ActorId, ids: &[u128], amounts: &[u128]) {
-        // TODO
-        // check owner
-        if from == &ZERO_ID {
-            panic!("ERC1155: burn from the zero address");
+    fn burn_batch(&mut self, owner: &ActorId, ids: &[u128], amounts: &[u128]) {
+        if owner != &msg::source() {
+            panic!("ERC1155: only burn for self")
+        }
+
+        if owner == &ZERO_ID {
+            panic!("ERC1155: burn from the zero address")
         }
 
         if ids.len() != amounts.len() {
@@ -132,13 +133,13 @@ impl Erc1155Token {
         for (i, ele) in ids.iter().enumerate() {
             let amount = amounts[i];
 
-            let from_balance = self.get_balance(from, ele);
+            let owner_balance = self.get_balance(owner, ele);
 
-            if from_balance < amount {
+            if owner_balance < amount {
                 panic!("ERC1155: burn amount exceeds balance")
             }
 
-            self.set_balance(from, ele, from_balance.saturating_sub(amount));
+            self.set_balance(owner, ele, owner_balance.saturating_sub(amount));
         }
 
         // TransferBatch event
@@ -175,10 +176,10 @@ impl Erc1155Token {
 
     fn safe_transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &u128, amount: u128) {
         if from == to {
-            panic!("ERC1155: caller is not owner nor approved")
+            panic!("ERC1155: sender and recipient addresses are the same")
         }
 
-        if *self.get_approval(from, to) {
+        if !(from == &msg::source() || *self.get_approval(from, &msg::source())) {
             panic!("ERC1155: caller is not owner nor approved")
         }
 
@@ -207,10 +208,10 @@ impl Erc1155Token {
         amounts: &[u128],
     ) {
         if from == to {
-            panic!("ERC1155: caller is not owner nor approved")
+            panic!("ERC1155: sender and recipient addresses are the same")
         }
 
-        if *self.get_approval(from, to) {
+        if !(from == &msg::source() || *self.get_approval(from, &msg::source())) {
             panic!("ERC1155: caller is not owner nor approved")
         }
 
