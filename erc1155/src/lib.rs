@@ -11,7 +11,6 @@ use scale_info::TypeInfo;
 
 pub mod base;
 
-const GAS_AMOUNT: u64 = 300_000_000;
 const GAS_RESERVE: u64 = 500_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
@@ -316,15 +315,27 @@ pub unsafe extern "C" fn handle() {
                 amount: amount,
             };
 
-            msg::reply(Event::TransferSingle(transfer_data), GAS_AMOUNT, 0);
+            msg::reply(
+                Event::TransferSingle(transfer_data),
+                exec::gas_available() - GAS_RESERVE,
+                0,
+            );
         }
         Action::BalanceOf(account, id) => {
             let balance = ERC1155_TOKEN.balance_of(&account, &id);
-            msg::reply(Event::Balance(balance), GAS_AMOUNT, 0);
+            msg::reply(
+                Event::Balance(balance),
+                exec::gas_available() - GAS_RESERVE,
+                0,
+            );
         }
         Action::BalanceOfBatch(accounts, ids) => {
             let res = ERC1155_TOKEN.balance_of_batch(&accounts, &ids);
-            msg::reply(Event::BalanceOfBatch(res), GAS_AMOUNT, 0);
+            msg::reply(
+                Event::BalanceOfBatch(res),
+                exec::gas_available() - GAS_RESERVE,
+                0,
+            );
         }
         Action::MintBatch(account, ids, amounts) => {
             ERC1155_TOKEN.mint_batch(&account, &ids, &amounts);
@@ -336,7 +347,7 @@ pub unsafe extern "C" fn handle() {
                 ids: ids,
                 values: amounts,
             };
-            msg::reply(payload, GAS_AMOUNT, 0);
+            msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
         }
 
         Action::SafeTransferFrom(from, to, id, amount) => {
@@ -350,7 +361,11 @@ pub unsafe extern "C" fn handle() {
                 amount: amount,
             };
 
-            msg::reply(Event::TransferSingle(transfer_data), GAS_AMOUNT, 0);
+            msg::reply(
+                Event::TransferSingle(transfer_data),
+                exec::gas_available() - GAS_RESERVE,
+                0,
+            );
         }
 
         Action::SafeBatchTransferFrom(from, to, ids, amounts) => {
@@ -364,7 +379,7 @@ pub unsafe extern "C" fn handle() {
                 values: amounts,
             };
 
-            msg::reply(payload, GAS_AMOUNT, 0);
+            msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
         }
 
         Action::ApproveForAll(owner, operator, approved) => {
@@ -376,7 +391,7 @@ pub unsafe extern "C" fn handle() {
                 approved: approved,
             };
 
-            msg::reply(payload, GAS_AMOUNT, 0);
+            msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
         }
 
         Action::IsApprovedForAll(owner, operator) => {
@@ -388,7 +403,7 @@ pub unsafe extern "C" fn handle() {
                 approved: *approved,
             };
 
-            msg::reply(payload, GAS_AMOUNT, 0);
+            msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
         }
 
         Action::BurnBatch(from, ids, amounts) => {
@@ -402,7 +417,7 @@ pub unsafe extern "C" fn handle() {
                 values: amounts,
             };
 
-            msg::reply(payload, GAS_AMOUNT, 0);
+            msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
         }
     }
 }
@@ -418,7 +433,6 @@ pub enum Action {
     ApproveForAll(ActorId, ActorId, bool),
     IsApprovedForAll(ActorId, ActorId),
     BurnBatch(ActorId, Vec<u128>, Vec<u128>),
-    // Approve { to: ActorId, id: U256 },
     // OwnerOf(U256)
 }
 
