@@ -145,13 +145,15 @@ impl Erc1155Token {
         // TransferBatch event
     }
 
-    fn set_approval_for_all(&mut self, owner: &ActorId, operator: &ActorId, approved: bool) {
-        if owner == operator {
+    fn set_approval_for_all(&mut self, operator: &ActorId, approved: bool) {
+        let owner = msg::source();
+
+        if owner == *operator {
             panic!("ERC1155: setting approval status for self")
         }
 
         self.operator_approvals
-            .entry(*owner)
+            .entry(owner)
             .or_default()
             .insert(*operator, approved);
 
@@ -163,10 +165,6 @@ impl Erc1155Token {
     }
 
     fn get_approval(&mut self, owner: &ActorId, operator: &ActorId) -> &bool {
-        if owner == operator {
-            panic!("ERC1155: setting approval status for self")
-        }
-
         self.operator_approvals
             .entry(*owner)
             .or_default()
@@ -383,8 +381,10 @@ pub unsafe extern "C" fn handle() {
             msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
         }
 
-        Action::ApproveForAll(owner, operator, approved) => {
-            ERC1155_TOKEN.set_approval_for_all(&owner, &operator, approved);
+        Action::ApproveForAll(operator, approved) => {
+            ERC1155_TOKEN.set_approval_for_all(&operator, approved);
+
+            let owner = msg::source();
 
             let payload = Event::ApprovalForAll {
                 owner: owner,
@@ -431,7 +431,7 @@ pub enum Action {
     MintBatch(ActorId, Vec<u128>, Vec<u128>),
     SafeTransferFrom(ActorId, ActorId, u128, u128),
     SafeBatchTransferFrom(ActorId, ActorId, Vec<u128>, Vec<u128>),
-    ApproveForAll(ActorId, ActorId, bool),
+    ApproveForAll(ActorId, bool),
     IsApprovedForAll(ActorId, ActorId),
     BurnBatch(ActorId, Vec<u128>, Vec<u128>),
     // OwnerOf(U256)

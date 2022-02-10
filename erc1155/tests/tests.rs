@@ -236,22 +236,19 @@ fn set_approval_for_all() {
     let sys = System::new();
     let ft = init(&sys);
 
-    let from = USERS[0];
-    let to = USERS[1];
+    let owner = USERS[0];
+    let operator = USERS[1];
 
-    let ret = ft.send(
-        from,
-        lib::Action::ApproveForAll(from.into(), to.into(), true),
-    );
+    let ret = ft.send(owner, lib::Action::ApproveForAll(operator.into(), true));
 
     let codec = lib::Event::ApprovalForAll {
-        owner: from.into(),
-        operator: to.into(),
+        owner: owner.into(),
+        operator: operator.into(),
         approved: true,
     }
     .encode();
 
-    assert!(ret.contains(&(from, codec)));
+    assert!(ret.contains(&(owner, codec)));
 }
 
 #[test]
@@ -259,37 +256,34 @@ fn is_approved_for_all() {
     let sys = System::new();
     let ft = init(&sys);
 
-    let from = USERS[0];
-    let to = USERS[1];
+    let owner = USERS[0];
+    let operator = USERS[1];
 
-    ft.send(
-        from,
-        lib::Action::ApproveForAll(from.into(), to.into(), true),
-    );
+    ft.send(owner, lib::Action::ApproveForAll(operator.into(), true));
 
-    let ret = ft.send(from, lib::Action::IsApprovedForAll(from.into(), to.into()));
+    let ret = ft.send(owner, lib::Action::IsApprovedForAll(owner.into(), operator.into()));
     let codec = lib::Event::ApprovalForAll {
-        owner: from.into(),
-        operator: to.into(),
+        owner: owner.into(),
+        operator: operator.into(),
         approved: true,
     }
     .encode();
 
-    assert!(ret.contains(&(from, codec)));
+    assert!(ret.contains(&(owner, codec)));
 
     let newuser = USERS[2];
     let ret = ft.send(
-        from,
-        lib::Action::IsApprovedForAll(from.into(), newuser.into()),
+        owner,
+        lib::Action::IsApprovedForAll(owner.into(), newuser.into()),
     );
     let codec = lib::Event::ApprovalForAll {
-        owner: from.into(),
+        owner: owner.into(),
         operator: newuser.into(),
         approved: false,
     }
     .encode();
 
-    assert!(ret.contains(&(from, codec)));
+    assert!(ret.contains(&(owner, codec)));
 }
 
 #[test]
