@@ -122,10 +122,6 @@ impl Erc1155Token {
             panic!("ERC1155: only burn for self")
         }
 
-        if owner == &ZERO_ID {
-            panic!("ERC1155: burn from the zero address")
-        }
-
         if ids.len() != amounts.len() {
             panic!("ERC1155: ids and amounts length mismatch")
         }
