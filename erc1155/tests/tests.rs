@@ -162,6 +162,13 @@ fn safe_transfer_from() {
         lib::Action::SafeTransferFrom(from.into(), to.into(), TOKEN_ID, 10),
     );
 
+    let failed_res = ft.send(
+        from,
+        lib::Action::SafeTransferFrom(from.into(), ZERO_ID.into(), TOKEN_ID, 10),
+    );
+
+    assert!(failed_res.main_failed());
+
     let reply = lib::TransferSingleReply {
         operator: from.into(),
         from: from.into(),
