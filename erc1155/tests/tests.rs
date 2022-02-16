@@ -261,7 +261,10 @@ fn is_approved_for_all() {
 
     ft.send(owner, lib::Action::ApproveForAll(operator.into(), true));
 
-    let ret = ft.send(owner, lib::Action::IsApprovedForAll(owner.into(), operator.into()));
+    let ret = ft.send(
+        owner,
+        lib::Action::IsApprovedForAll(owner.into(), operator.into()),
+    );
     let codec = lib::Event::ApprovalForAll {
         owner: owner.into(),
         operator: operator.into(),
