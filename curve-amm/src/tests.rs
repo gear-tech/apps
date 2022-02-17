@@ -1,6 +1,4 @@
-#[cfg(test)]
 extern crate std;
-#[cfg(test)]
 use std::fmt::Write;
 
 use codec::Encode;
@@ -343,14 +341,14 @@ fn dex_demo() {
             pool_id: 0_u32,
             i: 0_u32,
             j: 1_u32,
-            dy_amount: 99_u128
+            dy_amount: 100_u128
         })
         .encode()
     )));
 
     // redeem some LP tokens from ALICE
     let res = remove_liquidity(&curve_amm_program, USERS[0], 0_u32, 200_u128);
-    let expected_amounts = vec![100, 99];
+    let expected_amounts = vec![101, 100];
     assert!(res.contains(&(
         USERS[0],
         CurveAmmReply::RemoveLiquidity(CurveAmmRemoveLiquidityReply {

@@ -20,6 +20,7 @@ use core::num::ParseIntError;
 use fungible_token_messages::{
     Action, BurnInput, Event, MintInput, TransferFromInput, TransferInput,
 };
+use futures::future;
 use gstd::exec::program_id;
 use gstd::{errors::ContractError, exec, lock::mutex::Mutex, msg, prelude::*, ActorId, ToString};
 use scale_info::TypeInfo;
@@ -199,8 +200,12 @@ pub enum CurveAmmError {
     TransferFailed(ContractError),
     /// FungibleToken Mint failed
     MintFailed(ContractError),
+    /// FungibleToken TotalSupply failed
+    TotalSupplyFailed(ContractError),
     /// Error while decoding reply from FungibleToken
     DecodeError,
+    /// Error while create FixedU128 from u128
+    ConversionError,
 }
 
 /// Storage record type for a pool
@@ -237,7 +242,7 @@ impl CurveAmm {
     /// `n` - number of coins.
     #[allow(dead_code)]
     pub fn get_ann(&self, amp: FixedU128, n: usize) -> Option<FixedU128> {
-        let n_coins = FixedU128::saturating_from_integer(n as u128);
+        let n_coins = FixedU128::checked_from_integer(n as u128)?;
         let mut ann = amp;
         for _ in 0..n {
             ann = ann.checked_mul(&n_coins)?;
@@ -267,7 +272,7 @@ impl CurveAmm {
     pub fn get_d(&self, xp_f: &[FixedU128], ann_f: FixedU128) -> Option<FixedU128> {
         let zero = FixedU128::zero();
         let one = FixedU128::one();
-        let n = FixedU128::saturating_from_integer(u128::try_from(xp_f.len()).ok()?);
+        let n = FixedU128::checked_from_integer(u128::try_from(xp_f.len()).ok()?)?;
         let sum = xp_f.iter().try_fold(zero, |s, x| s.checked_add(x))?;
         if sum == zero {
             return Some(zero);
@@ -442,39 +447,51 @@ impl CurveAmm {
     }
 
     fn fixed_to_u128(value: &FixedU128) -> u128 {
-        value.into_inner() / FixedU128::DIV
+        value.round().into_inner() / FixedU128::DIV
     }
 
-    pub async fn get_pool_balances(assets: &[ActorId]) -> Vec<FixedU128> {
+    fn u128_to_fixed(value: u128) -> Result<FixedU128, CurveAmmError> {
+        FixedU128::checked_from_integer(value).ok_or(CurveAmmError::ConversionError)
+    }
+
+    pub async fn get_pool_balances(assets: &[ActorId]) -> Result<Vec<FixedU128>, CurveAmmError> {
         let mut balances = Vec::new();
         let program_id = program_id();
-        for asset in assets {
-            let lock = MUTEX.lock().await;
-            let reply: Event = msg::send_and_wait_for_reply(
-                *asset,
-                &Action::BalanceOf(program_id),
-                100_000_000_000,
-                0,
-            )
-            .await
-            .expect("Error in async message");
-            gstd::mem::drop(lock);
+        let mut requests: Vec<_> = assets
+            .iter()
+            .map(|asset| {
+                msg::send_and_wait_for_reply(
+                    *asset,
+                    &Action::BalanceOf(program_id),
+                    100_000_000_000,
+                    0,
+                )
+            })
+            .collect();
+        while !requests.is_empty() {
+            let (result, _, remaining) = future::select_all(requests).await;
+            let reply = result.map_err(CurveAmmError::BalaceOfFailed)?;
             let asset_balance = match reply {
-                Event::Balance(bal) => FixedU128::saturating_from_integer(bal),
+                Event::Balance(bal) => Self::u128_to_fixed(bal)?,
                 _ => {
-                    panic!("could not decode TotalIssuance reply");
+                    return Err(CurveAmmError::DecodeError);
                 }
             };
             balances.push(asset_balance);
+            requests = remaining;
         }
-        balances
+        Ok(balances)
     }
 
-    async fn transfer_funds_to_pool(who: &ActorId, amounts: Vec<FixedU128>, assets: &[ActorId]) {
+    async fn transfer_funds_to_pool(
+        who: &ActorId,
+        amounts: Vec<FixedU128>,
+        assets: &[ActorId],
+    ) -> Result<(), CurveAmmError> {
         let zero = FixedU128::zero();
         for (i, amount) in amounts.iter().enumerate() {
             if amount > &zero {
-                let amount_u = amount.into_inner() / FixedU128::DIV;
+                let amount_u = Self::fixed_to_u128(amount);
                 let lock = MUTEX.lock().await;
                 let _reply: Event = msg::send_and_wait_for_reply(
                     assets[i],
@@ -487,13 +504,18 @@ impl CurveAmm {
                     0,
                 )
                 .await
-                .expect("could not decode Transfer reply");
+                .map_err(CurveAmmError::TransferFailed)?;
                 gstd::mem::drop(lock);
             }
         }
+        Ok(())
     }
 
-    async fn transfer_funds_from_pool(who: &ActorId, amounts: Vec<FixedU128>, assets: &[ActorId]) {
+    async fn transfer_funds_from_pool(
+        who: &ActorId,
+        amounts: Vec<FixedU128>,
+        assets: &[ActorId],
+    ) -> Result<(), CurveAmmError> {
         let zero = FixedU128::zero();
         for (i, amount) in amounts.iter().enumerate() {
             if amount > &zero {
@@ -506,31 +528,32 @@ impl CurveAmm {
                     0,
                 )
                 .await
-                .expect("could not decode Transfer reply");
+                .map_err(CurveAmmError::TransferFailed)?;
                 gstd::mem::drop(lock);
             }
         }
+        Ok(())
     }
 
-    pub fn get_pool(&self, pool_id: &PoolId) -> &PoolInfo {
-        self.pools.get(pool_id).expect("get_pool: Pool Not Found")
+    pub fn get_pool(&self, pool_id: &PoolId) -> Result<&PoolInfo, CurveAmmError> {
+        self.pools.get(pool_id).ok_or(CurveAmmError::PoolNotFound)
     }
 
-    pub async fn get_lp_token_suppy(&self, pool_id: &PoolId) -> FixedU128 {
-        let pool = self.get_pool(pool_id);
+    pub async fn get_lp_token_suppy(&self, pool_id: &PoolId) -> Result<FixedU128, CurveAmmError> {
+        let pool = self.get_pool(pool_id)?;
         let lock = MUTEX.lock().await;
         let reply: Event =
             msg::send_and_wait_for_reply(pool.pool_asset, &Action::TotalSupply, 100_000_000_000, 0)
                 .await
-                .expect("Error in async message");
+                .map_err(CurveAmmError::TotalSupplyFailed)?;
         gstd::mem::drop(lock);
         let token_supply = match reply {
-            Event::TotalSupply(bal) => FixedU128::saturating_from_integer(bal),
+            Event::TotalSupply(bal) => Self::u128_to_fixed(bal)?,
             _ => {
-                panic!("could not decode TotalIssuance reply");
+                return Err(CurveAmmError::DecodeError);
             }
         };
-        token_supply
+        Ok(token_supply)
     }
 
     #[allow(dead_code)]
@@ -545,7 +568,7 @@ impl CurveAmm {
         if !amounts.iter().all(|&x| x > zero) {
             return Err(CurveAmmError::WrongAssetAmount);
         }
-        let pool = self.get_pool(&pool_id);
+        let pool = self.get_pool(&pool_id)?;
         let n_coins = pool.assets.len();
         if n_coins != amounts.len() {
             return Err(CurveAmmError::NotEnoughAssets);
@@ -553,9 +576,9 @@ impl CurveAmm {
         let ann = self
             .get_ann(pool.amplification_coefficient, n_coins)
             .ok_or(CurveAmmError::Math)?;
-        let old_balances = Self::get_pool_balances(&pool.assets).await;
+        let old_balances = Self::get_pool_balances(&pool.assets).await?;
         let d0 = self.get_d(&old_balances, ann).ok_or(CurveAmmError::Math)?;
-        let token_supply = self.get_lp_token_suppy(&pool_id).await;
+        let token_supply = self.get_lp_token_suppy(&pool_id).await?;
         let mut new_balances = old_balances.clone();
         for i in 0..n_coins {
             new_balances[i] = new_balances[i]
@@ -576,7 +599,7 @@ impl CurveAmm {
             // fee = pool.fee * n_coins / (4 * (n_coins - 1))
             let one = FixedU128::saturating_from_integer(1u8);
             let four = FixedU128::saturating_from_integer(4u8);
-            let n_coins_f = FixedU128::saturating_from_integer(n_coins as u128);
+            let n_coins_f = Self::u128_to_fixed(n_coins as u128)?;
             let fee_f: FixedU128 = pool.fee.into();
             let n_coins_1 = n_coins_f.checked_sub(&one).ok_or(CurveAmmError::Math)?;
             let four_n_coins_1 = four.checked_mul(&n_coins_1).ok_or(CurveAmmError::Math)?;
@@ -644,13 +667,13 @@ impl CurveAmm {
                     return Err(CurveAmmError::DecodeError);
                 }
             };
-            let balance: FixedU128 = FixedU128::saturating_from_integer(balance);
+            let balance: FixedU128 = Self::u128_to_fixed(balance)?;
             if balance < *amount {
                 return Err(CurveAmmError::InsufficientFunds);
             }
         }
         // Transfer funds to pool
-        Self::transfer_funds_to_pool(who, amounts, &pool.assets).await;
+        Self::transfer_funds_to_pool(who, amounts, &pool.assets).await?;
         let mint_amount: u128 = Self::fixed_to_u128(&mint_amount);
 
         let lock = MUTEX.lock().await;
@@ -688,11 +711,11 @@ impl CurveAmm {
         if amount <= zero {
             return Err(CurveAmmError::WrongAssetAmount);
         }
-        let pool = self.get_pool(&pool_id);
+        let pool = self.get_pool(&pool_id)?;
         let n_coins = pool.assets.len();
 
-        let token_supply = self.get_lp_token_suppy(&pool_id).await;
-        let old_balances = Self::get_pool_balances(&pool.assets).await;
+        let token_supply = self.get_lp_token_suppy(&pool_id).await?;
+        let old_balances = Self::get_pool_balances(&pool.assets).await?;
         let mut n_amounts = vec![FixedU128::zero(); n_coins];
         for (i, n_amount) in n_amounts.iter_mut().enumerate().take(n_coins) {
             let old_balance = old_balances[i];
@@ -734,14 +757,14 @@ impl CurveAmm {
                     return Err(CurveAmmError::DecodeError);
                 }
             };
-            let balance: FixedU128 = FixedU128::saturating_from_integer(balance);
+            let balance: FixedU128 = Self::u128_to_fixed(balance)?;
             if balance < *n_amount {
                 return Err(CurveAmmError::InsufficientFunds);
             }
         }
         // Transfer funds from pool
         let amounts = n_amounts.iter().map(Self::fixed_to_u128).collect();
-        Self::transfer_funds_from_pool(who, n_amounts, &pool.assets).await;
+        Self::transfer_funds_from_pool(who, n_amounts, &pool.assets).await?;
 
         let remove_liquidity_reply = CurveAmmRemoveLiquidityReply {
             who: *who,
@@ -769,13 +792,13 @@ impl CurveAmm {
         if dx < zero {
             return Err(CurveAmmError::WrongAssetAmount);
         }
-        let pool = self.get_pool(&pool_id);
+        let pool = self.get_pool(&pool_id)?;
         let amp_coeff = pool.amplification_coefficient;
         let n_coins = pool.assets.len();
         if i >= n_coins && j >= n_coins {
             return Err(CurveAmmError::IndexOutOfRange);
         }
-        let old_balances = Self::get_pool_balances(&pool.assets).await;
+        let old_balances = Self::get_pool_balances(&pool.assets).await?;
         let xp = old_balances.clone();
         let x = xp[i].checked_add(&dx).ok_or(CurveAmmError::Math)?;
         let ann = self
@@ -787,7 +810,7 @@ impl CurveAmm {
             .and_then(|v| v.checked_sub(&prec))
             .ok_or(CurveAmmError::Math)?;
 
-        let pool = self.get_pool(&pool_id);
+        let pool = self.get_pool(&pool_id)?;
         let lock = MUTEX.lock().await;
         let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
             pool.assets[i],
@@ -804,7 +827,7 @@ impl CurveAmm {
                 return Err(CurveAmmError::DecodeError);
             }
         };
-        let balance: FixedU128 = FixedU128::saturating_from_integer(balance);
+        let balance: FixedU128 = Self::u128_to_fixed(balance)?;
         if balance < dx {
             return Err(CurveAmmError::InsufficientFunds);
         }
@@ -824,7 +847,7 @@ impl CurveAmm {
                 return Err(CurveAmmError::DecodeError);
             }
         };
-        let balance: FixedU128 = FixedU128::saturating_from_integer(balance);
+        let balance: FixedU128 = Self::u128_to_fixed(balance)?;
         let amount: u128 = Self::fixed_to_u128(&dx);
         if balance < dy {
             return Err(CurveAmmError::InsufficientFunds);
@@ -898,7 +921,8 @@ pub unsafe extern "C" fn init() {
 
     let assets = vec![x_token, y_token];
     let amplification_coefficient =
-        FixedU128::saturating_from_integer(config.amplification_coefficient);
+        FixedU128::checked_from_integer(config.amplification_coefficient)
+            .expect("conversion error");
     let fee = Permill::from_percent(config.fee);
     let admin_fee = Permill::from_percent(config.admin_fee);
     let _res = CURVE_AMM
@@ -922,7 +946,7 @@ async fn main() {
             let pool_id: PoolId = add_liquidity.pool_id;
             let mut amounts_f = Vec::new();
             for amount in add_liquidity.amounts {
-                amounts_f.push(FixedU128::saturating_from_integer(amount));
+                amounts_f.push(FixedU128::checked_from_integer(amount).expect("conversion error"));
             }
             unsafe {
                 let res = CURVE_AMM
@@ -936,7 +960,8 @@ async fn main() {
         CurveAmmAction::RemoveLiquidity(remove_liquidity) => {
             let sender = msg::source();
             let pool_id: PoolId = remove_liquidity.pool_id;
-            let amount_f = FixedU128::saturating_from_integer(remove_liquidity.amount);
+            let amount_f =
+                FixedU128::checked_from_integer(remove_liquidity.amount).expect("conversion error");
             unsafe {
                 let res = CURVE_AMM.remove_liquidity(&sender, pool_id, amount_f).await;
                 if let Err(e) = res {
@@ -949,7 +974,8 @@ async fn main() {
             let pool_id: PoolId = exchange.pool_id;
             let i = exchange.i;
             let j = exchange.j;
-            let dx_amount_f = FixedU128::saturating_from_integer(exchange.dx_amount);
+            let dx_amount_f =
+                FixedU128::checked_from_integer(exchange.dx_amount).expect("conversion error");
             unsafe {
                 let res = CURVE_AMM
                     .exchange(&sender, pool_id, i, j, dx_amount_f)
