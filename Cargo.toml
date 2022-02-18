@@ -7,7 +7,7 @@ members = [
     "non-fungible-token",
     "nft-example",
     "fungible-token-messages",
-    "curve-amm"
+    "curve-amm",
 ]
 
 [profile.release]

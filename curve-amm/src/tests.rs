@@ -1,5 +1,4 @@
 extern crate std;
-use std::fmt::Write;
 
 use codec::Encode;
 use fungible_token_messages::*;
@@ -12,14 +11,6 @@ use crate::{
     CurveAmmExchangeReply, CurveAmmRemoveLiquidity, CurveAmmRemoveLiquidityReply, CurveAmmReply,
 };
 const USERS: &'static [u64] = &[5, 6, 7];
-
-fn encode_hex(bytes: &[u8]) -> String {
-    let mut s = String::with_capacity(bytes.len() * 2);
-    for &b in bytes {
-        write!(&mut s, "{:02x}", b).expect("Format failed")
-    }
-    s
-}
 
 fn init(sys: &System) {
     sys.init_logger();
@@ -66,15 +57,12 @@ fn init(sys: &System) {
     );
     assert!(res.log().is_empty());
 
-    let usdc_id = encode_hex(usdc_token.id().as_slice());
-    let usdt_id = encode_hex(usdt_token.id().as_slice());
-    let lp_token_id = encode_hex(lp_token.id().as_slice());
-    let token_accounts = usdc_id + "," + &usdt_id + "," + &lp_token_id;
-
     let res = curve_amm.send(
         USERS[0],
         crate::CurveAmmInitConfig {
-            token_accounts: token_accounts.as_bytes().to_vec(),
+            token_x_id: 1_u64.into(),
+            token_y_id: 2_u64.into(),
+            token_lp_id: 3_u64.into(),
             amplification_coefficient: 10000,
             fee: 0,
             admin_fee: 0,

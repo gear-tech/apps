@@ -19,7 +19,7 @@ use crate::math::*;
 use alloc::collections::{BTreeMap, BTreeSet};
 use alloc::{vec, vec::Vec};
 use codec::{Decode, Encode};
-use core::num::ParseIntError;
+// use core::num::ParseIntError;
 use fungible_token_messages::{
     Action, BurnInput, Event, MintInput, TransferFromInput, TransferInput,
 };
@@ -34,39 +34,14 @@ use sp_arithmetic::{
     FixedPointNumber,
 };
 
-fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
-        .collect()
-}
-
-/// Return Err of the expression: `return Err($expression);`.
-///
-/// Used as `fail!(expression)`.
-#[macro_export]
-macro_rules! fail {
-    ( $y:expr ) => {{
-        return Err($y.into());
-    }};
-}
-
-/// Evaluate `$x:expr` and if not true return `Err($y:expr)`.
-///
-/// Used as `ensure!(expression_to_ensure, expression_to_return_on_false)`.
-#[macro_export]
-macro_rules! ensure {
-    ( $x:expr, $y:expr $(,)? ) => {{
-        if !$x {
-            $crate::fail!($y);
-        }
-    }};
-}
-
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct CurveAmmInitConfig {
-    /// vec containing program_id of token-x, token-y and lp-token.
-    token_accounts: Vec<u8>,
+    /// program id of fungible token X.
+    token_x_id: ActorId,
+    /// program id of fungible token Y.
+    token_y_id: ActorId,
+    /// program id of fungible token LP.
+    token_lp_id: ActorId,
     /// amp_coeff is configuration parameter used in stableswap algorithm.
     amplification_coefficient: u128,
     /// fees charged for any operation which changes pool's balances in imbalanced way.
@@ -326,8 +301,8 @@ impl CurveAmm {
         for (i, amount) in amounts.iter().enumerate() {
             if amount > &zero {
                 let amount_u = Self::fixed_to_u128(amount);
-                let lock = MUTEX.lock().await;
-                let _reply: Event = msg::send_and_wait_for_reply(
+                let _lock = MUTEX.lock().await; // will be dropped automatically on function return
+                msg::send_and_wait_for_reply(
                     assets[i],
                     &Action::TransferFrom(TransferFromInput {
                         owner: *who,
@@ -339,7 +314,6 @@ impl CurveAmm {
                 )
                 .await
                 .map_err(CurveAmmError::TransferFailed)?;
-                gstd::mem::drop(lock);
             }
         }
         Ok(())
@@ -353,9 +327,9 @@ impl CurveAmm {
         let zero = FixedU128::zero();
         for (i, amount) in amounts.iter().enumerate() {
             if amount > &zero {
-                let amount: u128 = Self::fixed_to_u128(amount);
-                let lock = MUTEX.lock().await;
-                let _reply: Event = msg::send_and_wait_for_reply(
+                let amount = Self::fixed_to_u128(amount);
+                let _lock = MUTEX.lock().await; // will be dropped automatically on function return
+                msg::send_and_wait_for_reply(
                     assets[i],
                     &Action::Transfer(TransferInput { to: *who, amount }),
                     100_000_000_000,
@@ -363,7 +337,6 @@ impl CurveAmm {
                 )
                 .await
                 .map_err(CurveAmmError::TransferFailed)?;
-                gstd::mem::drop(lock);
             }
         }
         Ok(())
@@ -375,12 +348,11 @@ impl CurveAmm {
 
     pub async fn get_lp_token_suppy(&self, pool_id: &PoolId) -> Result<FixedU128, CurveAmmError> {
         let pool = self.get_pool(pool_id)?;
-        let lock = MUTEX.lock().await;
-        let reply: Event =
+        let _lock = MUTEX.lock().await; // will be dropped automatically on function return
+        let reply =
             msg::send_and_wait_for_reply(pool.pool_asset, &Action::TotalSupply, 100_000_000_000, 0)
                 .await
                 .map_err(CurveAmmError::TotalSupplyFailed)?;
-        gstd::mem::drop(lock);
         let token_supply = match reply {
             Event::TotalSupply(bal) => Self::u128_to_fixed(bal)?,
             _ => {
@@ -477,39 +449,37 @@ impl CurveAmm {
             return Err(CurveAmmError::RequiredAmountNotReached);
         }
 
-        let _new_token_supply = token_supply
-            .checked_add(&mint_amount)
-            .ok_or(CurveAmmError::Math)?;
-
-        // Ensure that for all tokens user has sufficient amount
-        for (i, amount) in amounts.iter().enumerate() {
-            let lock = MUTEX.lock().await;
-            let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
-                pool.assets[i],
-                &Action::BalanceOf(*who),
-                100_000_000_000,
-                0,
-            )
-            .await;
-            gstd::mem::drop(lock);
-            let reply = reply.map_err(CurveAmmError::BalaceOfFailed)?;
-            let balance = match reply {
-                Event::Balance(bal) => bal,
-                _ => {
-                    return Err(CurveAmmError::DecodeError);
+        {
+            let _lock = MUTEX.lock().await;
+            // Ensure that for all tokens user has sufficient amount
+            for (i, amount) in amounts.iter().enumerate() {
+                let reply = msg::send_and_wait_for_reply(
+                    pool.assets[i],
+                    &Action::BalanceOf(*who),
+                    100_000_000_000,
+                    0,
+                )
+                .await
+                .map_err(CurveAmmError::BalaceOfFailed)?;
+                let balance = match reply {
+                    Event::Balance(bal) => bal,
+                    _ => {
+                        return Err(CurveAmmError::DecodeError);
+                    }
+                };
+                let balance = Self::u128_to_fixed(balance)?;
+                if balance < *amount {
+                    return Err(CurveAmmError::InsufficientFunds);
                 }
-            };
-            let balance: FixedU128 = Self::u128_to_fixed(balance)?;
-            if balance < *amount {
-                return Err(CurveAmmError::InsufficientFunds);
             }
-        }
+        } // lock will be dropped here or on return
+
         // Transfer funds to pool
         Self::transfer_funds_to_pool(who, amounts, &pool.assets).await?;
-        let mint_amount: u128 = Self::fixed_to_u128(&mint_amount);
+        let mint_amount = Self::fixed_to_u128(&mint_amount);
 
-        let lock = MUTEX.lock().await;
-        let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
+        let _lock = MUTEX.lock().await;
+        msg::send_and_wait_for_reply(
             pool.pool_asset,
             &Action::Mint(MintInput {
                 account: *who,
@@ -518,9 +488,8 @@ impl CurveAmm {
             100_000_000_000,
             0,
         )
-        .await;
-        gstd::mem::drop(lock);
-        let _reply = reply.map_err(CurveAmmError::MintFailed)?;
+        .await
+        .map_err(CurveAmmError::MintFailed)?;
 
         let add_liquidity_reply = CurveAmmAddLiquidityReply {
             who: *who,
@@ -558,42 +527,43 @@ impl CurveAmm {
                 .ok_or(CurveAmmError::Math)?;
             *n_amount = value;
         }
-        let burn_amount: u128 = Self::fixed_to_u128(&amount);
-        let lock = MUTEX.lock().await;
-        let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
-            pool.pool_asset,
-            &Action::Burn(BurnInput {
-                account: *who,
-                amount: burn_amount,
-            }),
-            100_000_000_000,
-            0,
-        )
-        .await;
-        gstd::mem::drop(lock);
-        let _reply = reply.map_err(CurveAmmError::BurnFailed)?;
-        for (i, n_amount) in n_amounts.iter_mut().enumerate().take(n_coins) {
-            let lock = MUTEX.lock().await;
-            let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
-                pool.assets[i],
-                &Action::BalanceOf(*who),
+        let burn_amount = Self::fixed_to_u128(&amount);
+        {
+            let _lock = MUTEX.lock().await;
+            msg::send_and_wait_for_reply(
+                pool.pool_asset,
+                &Action::Burn(BurnInput {
+                    account: *who,
+                    amount: burn_amount,
+                }),
                 100_000_000_000,
                 0,
             )
-            .await;
-            gstd::mem::drop(lock);
-            let reply = reply.map_err(CurveAmmError::BalaceOfFailed)?;
-            let balance = match reply {
-                Event::Balance(bal) => bal,
-                _ => {
-                    return Err(CurveAmmError::DecodeError);
+            .await
+            .map_err(CurveAmmError::BurnFailed)?;
+
+            for (i, n_amount) in n_amounts.iter_mut().enumerate().take(n_coins) {
+                let reply = msg::send_and_wait_for_reply(
+                    pool.assets[i],
+                    &Action::BalanceOf(*who),
+                    100_000_000_000,
+                    0,
+                )
+                .await
+                .map_err(CurveAmmError::BalaceOfFailed)?;
+                let balance = match reply {
+                    Event::Balance(bal) => bal,
+                    _ => {
+                        return Err(CurveAmmError::DecodeError);
+                    }
+                };
+                let balance = Self::u128_to_fixed(balance)?;
+                if balance < *n_amount {
+                    return Err(CurveAmmError::InsufficientFunds);
                 }
-            };
-            let balance: FixedU128 = Self::u128_to_fixed(balance)?;
-            if balance < *n_amount {
-                return Err(CurveAmmError::InsufficientFunds);
             }
-        }
+        } // lock will be dropped here or on return
+
         // Transfer funds from pool
         let amounts = n_amounts.iter().map(Self::fixed_to_u128).collect();
         Self::transfer_funds_from_pool(who, n_amounts, &pool.assets).await?;
@@ -641,49 +611,47 @@ impl CurveAmm {
             .ok_or(CurveAmmError::Math)?;
 
         let pool = self.get_pool(&pool_id)?;
-        let lock = MUTEX.lock().await;
-        let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
+
+        let _lock = MUTEX.lock().await; // will be dropped on function return
+        let reply = msg::send_and_wait_for_reply(
             pool.assets[i],
             &Action::BalanceOf(*who),
             100_000_000_000,
             0,
         )
-        .await;
-        gstd::mem::drop(lock);
-        let reply = reply.map_err(CurveAmmError::BalaceOfFailed)?;
+        .await
+        .map_err(CurveAmmError::BalaceOfFailed)?;
         let balance = match reply {
             Event::Balance(bal) => bal,
             _ => {
                 return Err(CurveAmmError::DecodeError);
             }
         };
-        let balance: FixedU128 = Self::u128_to_fixed(balance)?;
+        let balance = Self::u128_to_fixed(balance)?;
         if balance < dx {
             return Err(CurveAmmError::InsufficientFunds);
         }
-        let lock = MUTEX.lock().await;
-        let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
+        let reply = msg::send_and_wait_for_reply(
             pool.assets[j],
             &Action::BalanceOf(exec::program_id()),
             100_000_000_000,
             0,
         )
-        .await;
-        gstd::mem::drop(lock);
-        let reply = reply.map_err(CurveAmmError::BalaceOfFailed)?;
+        .await
+        .map_err(CurveAmmError::BalaceOfFailed)?;
         let balance = match reply {
             Event::Balance(bal) => bal,
             _ => {
                 return Err(CurveAmmError::DecodeError);
             }
         };
-        let balance: FixedU128 = Self::u128_to_fixed(balance)?;
-        let amount: u128 = Self::fixed_to_u128(&dx);
+        let balance = Self::u128_to_fixed(balance)?;
+        let amount = Self::fixed_to_u128(&dx);
         if balance < dy {
             return Err(CurveAmmError::InsufficientFunds);
         }
-        let lock = MUTEX.lock().await;
-        let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
+
+        msg::send_and_wait_for_reply(
             pool.assets[i],
             &Action::TransferFrom(TransferFromInput {
                 owner: *who,
@@ -693,20 +661,17 @@ impl CurveAmm {
             100_000_000_000,
             0,
         )
-        .await;
-        gstd::mem::drop(lock);
-        let _reply = reply.map_err(CurveAmmError::TransferFromFailed)?;
-        let amount: u128 = Self::fixed_to_u128(&dy);
-        let lock = MUTEX.lock().await;
-        let reply: Result<Event, ContractError> = msg::send_and_wait_for_reply(
+        .await
+        .map_err(CurveAmmError::TransferFromFailed)?;
+        let amount = Self::fixed_to_u128(&dy);
+        msg::send_and_wait_for_reply(
             pool.assets[j],
             &Action::Transfer(TransferInput { to: *who, amount }),
             100_000_000_000,
             0,
         )
-        .await;
-        gstd::mem::drop(lock);
-        let _reply = reply.map_err(CurveAmmError::TransferFailed)?;
+        .await
+        .map_err(CurveAmmError::TransferFailed)?;
         let exchange_reply = CurveAmmExchangeReply {
             who: *who,
             pool_id,
@@ -731,25 +696,7 @@ static mut CURVE_AMM: CurveAmm = CurveAmm {
 pub unsafe extern "C" fn init() {
     let config: CurveAmmInitConfig = msg::load().expect("Unable to decode InitConfig");
     let owner = msg::source();
-    let input = String::from_utf8(config.token_accounts).expect("Invalid message: should be utf-8");
-    let dests: Vec<&str> = input.split(',').collect();
-    if dests.len() != 3 {
-        panic!("Invalid input, should be three IDs separated by comma");
-    }
-    let x_token = ActorId::from_slice(
-        &decode_hex(dests[0]).expect("INTIALIZATION FAILED: INVALID PROGRAM ID"),
-    )
-    .expect("Unable to create ActorId");
-    let y_token = ActorId::from_slice(
-        &decode_hex(dests[1]).expect("INTIALIZATION FAILED: INVALID PROGRAM ID"),
-    )
-    .expect("Unable to create ActorId");
-    let lp_token = ActorId::from_slice(
-        &decode_hex(dests[2]).expect("INTIALIZATION FAILED: INVALID PROGRAM ID"),
-    )
-    .expect("Unable to create ActorId");
-
-    let assets = vec![x_token, y_token];
+    let assets = vec![config.token_x_id, config.token_y_id];
     let amplification_coefficient =
         FixedU128::checked_from_integer(config.amplification_coefficient)
             .expect("conversion error");
@@ -759,7 +706,7 @@ pub unsafe extern "C" fn init() {
         .create_pool(
             &owner,
             assets,
-            &lp_token,
+            &config.token_lp_id,
             amplification_coefficient,
             fee,
             admin_fee,
