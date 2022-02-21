@@ -466,8 +466,4 @@ pub enum Event {
         operator: ActorId,
         approved: bool,
     },
-    URI {
-        value: String,
-        token_id: U256,
-    },
 }
