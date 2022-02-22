@@ -34,7 +34,7 @@ static mut ERC1155_TOKEN: Erc1155Token = Erc1155Token {
 };
 
 impl Erc1155Token {
-    fn _get_balance(&self, account: &ActorId, id: &u128) -> u128 {
+    fn balance_of(&self, account: &ActorId, id: &u128) -> u128 {
         *self
             .balances
             .get(id)
@@ -45,7 +45,7 @@ impl Erc1155Token {
     fn _set_balance(&mut self, account: &ActorId, id: &u128, amount: u128) {
         debug!(
             "before mint: {:?}, id: {:?}",
-            self._get_balance(account, id),
+            self.balance_of(account, id),
             id
         );
 
@@ -57,13 +57,9 @@ impl Erc1155Token {
 
         debug!(
             "after mint: {:?}, id: {:?}",
-            self._get_balance(account, id),
+            self.balance_of(account, id),
             id
         );
-    }
-
-    fn balance_of(&self, account: &ActorId, id: &u128) -> u128 {
-        self._get_balance(account, id)
     }
 
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[u128]) -> Vec<BalanceOfBatchReply> {
@@ -75,7 +71,7 @@ impl Erc1155Token {
 
         for (i, ele) in ids.iter().enumerate() {
             let account = accounts[i];
-            let amount = self._get_balance(&account, &ele);
+            let amount = self.balance_of(&account, &ele);
 
             let obj = BalanceOfBatchReply {
                 account: account,
@@ -93,7 +89,7 @@ impl Erc1155Token {
         if account == &ZERO_ID {
             panic!("ERC1155: Mint to zero address")
         }
-        let old_balance = self._get_balance(account, id);
+        let old_balance = self.balance_of(account, id);
         self._set_balance(account, id, old_balance.saturating_add(amount));
 
         // TransferSingle event
@@ -110,7 +106,7 @@ impl Erc1155Token {
 
         for (i, ele) in ids.iter().enumerate() {
             let amount = amounts[i];
-            let old_balance = self._get_balance(account, ele);
+            let old_balance = self.balance_of(account, ele);
             self._set_balance(account, ele, old_balance.saturating_add(amount));
         }
 
@@ -129,7 +125,7 @@ impl Erc1155Token {
         for (i, ele) in ids.iter().enumerate() {
             let amount = amounts[i];
 
-            let owner_balance = self._get_balance(owner, ele);
+            let owner_balance = self.balance_of(owner, ele);
 
             if owner_balance < amount {
                 panic!("ERC1155: burn amount exceeds balance")
@@ -156,11 +152,7 @@ impl Erc1155Token {
         // ApprovalForAll event
     }
 
-    fn is_approved_for_all(&mut self, account: &ActorId, operator: &ActorId) -> &bool {
-        self._get_approval(account, operator)
-    }
-
-    fn _get_approval(&mut self, owner: &ActorId, operator: &ActorId) -> &bool {
+    fn is_approved_for_all(&mut self, owner: &ActorId, operator: &ActorId) -> &bool {
         self.operator_approvals
             .entry(*owner)
             .or_default()
@@ -173,7 +165,7 @@ impl Erc1155Token {
             panic!("ERC1155: sender and recipient addresses are the same")
         }
 
-        if !(from == &msg::source() || *self._get_approval(from, &msg::source())) {
+        if !(from == &msg::source() || *self.is_approved_for_all(from, &msg::source())) {
             panic!("ERC1155: caller is not owner nor approved")
         }
 
@@ -181,14 +173,14 @@ impl Erc1155Token {
             panic!("ERC1155: transfer to the zero address")
         }
 
-        let from_balance = self._get_balance(from, id);
+        let from_balance = self.balance_of(from, id);
 
         if from_balance < amount {
             panic!("ERC1155: insufficient balance for transfer")
         }
 
         self._set_balance(from, id, from_balance.saturating_sub(amount));
-        let to_balance = self._get_balance(to, id);
+        let to_balance = self.balance_of(to, id);
         self._set_balance(to, id, to_balance.saturating_add(amount));
 
         // TransferSingle event
@@ -205,7 +197,7 @@ impl Erc1155Token {
             panic!("ERC1155: sender and recipient addresses are the same")
         }
 
-        if !(from == &msg::source() || *self._get_approval(from, &msg::source())) {
+        if !(from == &msg::source() || *self.is_approved_for_all(from, &msg::source())) {
             panic!("ERC1155: caller is not owner nor approved")
         }
 
@@ -220,14 +212,14 @@ impl Erc1155Token {
         for (i, ele) in ids.iter().enumerate() {
             let amount = amounts[i];
 
-            let from_balance = self._get_balance(from, ele);
+            let from_balance = self.balance_of(from, ele);
 
             if from_balance < amount {
                 panic!("ERC1155: insufficient balance for transfer")
             }
 
             self._set_balance(from, ele, from_balance.saturating_sub(amount));
-            let to_balance = self._get_balance(to, ele);
+            let to_balance = self.balance_of(to, ele);
             self._set_balance(to, ele, to_balance.saturating_add(amount));
         }
 
