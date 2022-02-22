@@ -369,7 +369,7 @@ pub unsafe extern "C" fn handle() {
             msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
         }
 
-        Action::ApproveForAll(operator, approved) => {
+        Action::SetApprovalForAll(operator, approved) => {
             ERC1155_TOKEN.set_approval_for_all(&operator, approved);
 
             let owner = msg::source();
@@ -419,7 +419,7 @@ pub enum Action {
     MintBatch(ActorId, Vec<u128>, Vec<u128>),
     SafeTransferFrom(ActorId, ActorId, u128, u128),
     SafeBatchTransferFrom(ActorId, ActorId, Vec<u128>, Vec<u128>),
-    ApproveForAll(ActorId, bool),
+    SetApprovalForAll(ActorId, bool),
     IsApprovedForAll(ActorId, ActorId),
     BurnBatch(ActorId, Vec<u128>, Vec<u128>),
     // OwnerOf(U256)

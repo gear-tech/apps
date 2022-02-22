@@ -245,8 +245,18 @@ fn set_approval_for_all() {
 
     let owner = USERS[0];
     let operator = USERS[1];
+    let other = USERS[2];
 
-    let ret = ft.send(owner, lib::Action::ApproveForAll(operator.into(), true));
+    ft.send(owner, lib::Action::Mint(owner.into(), TOKEN_ID, BALANCE));
+
+    let failed_res = ft.send(
+        operator,
+        lib::Action::SafeTransferFrom(owner.into(), other.into(), 1, 10),
+    );
+
+    assert!(failed_res.main_failed());
+
+    let ret = ft.send(owner, lib::Action::SetApprovalForAll(operator.into(), true));
 
     let codec = lib::Event::ApprovalForAll {
         owner: owner.into(),
@@ -256,6 +266,15 @@ fn set_approval_for_all() {
     .encode();
 
     assert!(ret.contains(&(owner, codec)));
+
+    ft.send(
+        operator,
+        lib::Action::SafeTransferFrom(owner.into(), other.into(), 1, 30),
+    );
+
+    let ret3 = ft.send(other, lib::Action::BalanceOf(other.into(), 1));
+
+    assert!(ret3.contains(&(other, lib::Event::Balance(30).encode())));
 }
 
 #[test]
@@ -266,7 +285,7 @@ fn is_approved_for_all() {
     let owner = USERS[0];
     let operator = USERS[1];
 
-    ft.send(owner, lib::Action::ApproveForAll(operator.into(), true));
+    ft.send(owner, lib::Action::SetApprovalForAll(operator.into(), true));
 
     let ret = ft.send(
         owner,
