@@ -85,7 +85,7 @@ pub enum Action {
     MintBatch(ActorId, Vec<u128>, Vec<u128>),
     SafeTransferFrom(ActorId, ActorId, u128, u128),
     SafeBatchTransferFrom(ActorId, ActorId, Vec<u128>, Vec<u128>),
-    ApproveForAll(ActorId, bool),
+    SetApprovalForAll(ActorId, bool),
     IsApprovedForAll(ActorId, ActorId),
     BurnBatch(ActorId, Vec<u128>, Vec<u128>),
 }
@@ -110,10 +110,6 @@ pub enum Event {
         owner: ActorId,
         operator: ActorId,
         approved: bool,
-    },
-    URI {
-        value: String,
-        token_id: U256,
     },
 }
 
