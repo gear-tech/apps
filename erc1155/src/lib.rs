@@ -238,6 +238,7 @@ pub struct InitConfig {
 pub enum State {
     Name,
     Symbol,
+    Uri,
     BalanceOf(ActorId, u128),
 }
 
@@ -245,6 +246,7 @@ pub enum State {
 pub enum StateReply {
     Name(String),
     Symbol(String),
+    Uri(String),
     Balance(u128),
 }
 
@@ -277,8 +279,7 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let encoded = match query {
         State::Name => StateReply::Name(ERC1155_TOKEN.name.clone()).encode(),
         State::Symbol => StateReply::Name(ERC1155_TOKEN.symbol.clone()).encode(),
-        // TODO
-        // url
+        State::Uri => StateReply::Uri(ERC1155_TOKEN.base_uri.clone()).encode(),
         State::BalanceOf(account, id) => {
             StateReply::Balance(ERC1155_TOKEN.balance_of(&account, &id)).encode()
         }
