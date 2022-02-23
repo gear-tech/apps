@@ -113,10 +113,8 @@ impl Erc1155Token {
         // TransferBatch event
     }
 
-    fn burn_batch(&mut self, owner: &ActorId, ids: &[u128], amounts: &[u128]) {
-        if owner != &msg::source() {
-            panic!("ERC1155: only burn for self")
-        }
+    fn burn_batch(&mut self, ids: &[u128], amounts: &[u128]) {
+        let owner = &msg::source();
 
         if ids.len() != amounts.len() {
             panic!("ERC1155: ids and amounts length mismatch")
@@ -396,12 +394,12 @@ pub unsafe extern "C" fn handle() {
             msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
         }
 
-        Action::BurnBatch(from, ids, amounts) => {
-            ERC1155_TOKEN.burn_batch(&from, &ids, &amounts);
+        Action::BurnBatch(ids, amounts) => {
+            ERC1155_TOKEN.burn_batch(&ids, &amounts);
 
             let payload = Event::TransferBatch {
                 operator: msg::source(),
-                from: from,
+                from: msg::source(),
                 to: ZERO_ID,
                 ids: ids,
                 values: amounts,
@@ -422,8 +420,7 @@ pub enum Action {
     SafeBatchTransferFrom(ActorId, ActorId, Vec<u128>, Vec<u128>),
     SetApprovalForAll(ActorId, bool),
     IsApprovedForAll(ActorId, ActorId),
-    BurnBatch(ActorId, Vec<u128>, Vec<u128>),
-    // OwnerOf(U256)
+    BurnBatch(Vec<u128>, Vec<u128>),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]

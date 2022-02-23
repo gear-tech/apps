@@ -330,7 +330,7 @@ fn burn_batch() {
 
     ft.send(
         user1,
-        lib::Action::BurnBatch(user1.into(), vec![1u128, 2u128], vec![10, 20]),
+        lib::Action::BurnBatch(vec![1u128, 2u128], vec![10, 20]),
     );
 
     let accounts: Vec<ActorId> = vec![user1.into(), user1.into()];
