@@ -165,7 +165,7 @@ pub enum CurveAmmError {
     IndexOutOfRange,
     /// The `AssetChecker` can use this error in case it can't provide better error
     ExternalAssetCheckFailed,
-    /// FungibleToken Burn failed  
+    /// FungibleToken Burn failed
     BurnFailed(ContractError),
     /// FungibleToken BalanceOf failed
     BalaceOfFailed(ContractError),
@@ -696,25 +696,21 @@ async fn main() {
         CurveAmmAction::AddLiquidity(add_liquidity) => {
             let sender = msg::source();
             let pool_id: PoolId = add_liquidity.pool_id;
-            unsafe {
-                let res = CURVE_AMM
-                    .add_liquidity(&sender, pool_id, add_liquidity.amounts, 0_u128)
-                    .await;
-                if let Err(e) = res {
-                    panic!("add_liquidity failed with {:?}", e);
-                }
+            let res = CURVE_AMM
+                .add_liquidity(&sender, pool_id, add_liquidity.amounts, 0_u128)
+                .await;
+            if let Err(e) = res {
+                panic!("add_liquidity failed with {:?}", e);
             }
         }
         CurveAmmAction::RemoveLiquidity(remove_liquidity) => {
             let sender = msg::source();
             let pool_id: PoolId = remove_liquidity.pool_id;
-            unsafe {
-                let res = CURVE_AMM
-                    .remove_liquidity(&sender, pool_id, remove_liquidity.amount)
-                    .await;
-                if let Err(e) = res {
-                    panic!("remove_liquidity failed with {:?}", e);
-                }
+            let res = CURVE_AMM
+                .remove_liquidity(&sender, pool_id, remove_liquidity.amount)
+                .await;
+            if let Err(e) = res {
+                panic!("remove_liquidity failed with {:?}", e);
             }
         }
         CurveAmmAction::Exchange(exchange) => {
@@ -722,13 +718,11 @@ async fn main() {
             let pool_id: PoolId = exchange.pool_id;
             let i = exchange.i;
             let j = exchange.j;
-            unsafe {
-                let res = CURVE_AMM
-                    .exchange(&sender, pool_id, i, j, exchange.dx_amount)
-                    .await;
-                if let Err(e) = res {
-                    panic!("exchange failed with {:?}", e);
-                }
+            let res = CURVE_AMM
+                .exchange(&sender, pool_id, i, j, exchange.dx_amount)
+                .await;
+            if let Err(e) = res {
+                panic!("exchange failed with {:?}", e);
             }
         }
     }
