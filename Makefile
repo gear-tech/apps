@@ -1,4 +1,4 @@
-.PHONY: all check clean gtest fmt fmt-check linter pre-check pre-commit prepare
+.PHONY: all check clean fmt fmt-check linter pre-check pre-commit prepare
 
 all:
 	@echo ──────────── Build release ────────────────────
@@ -21,21 +21,15 @@ fmt-check:
 	@echo ──────────── Check format ─────────────────────
 	@cargo fmt --all -- --check
 
-gtest: all
-	@cp ./target/wasm32-unknown-unknown/release/*.wasm ./gear/
-	@cd gear/gear-test/src/js && npm i
-	@cd gear && gear-test gear-test/spec/test*.yaml
-
 linter:
 	@echo ──────────── Run linter ───────────────────────
 	@cargo +nightly clippy --target wasm32-unknown-unknown --workspace -- --no-deps -D warnings -A "clippy::missing_safety_doc"
 
-pre-check: fmt-check linter check gtest
+pre-check: fmt-check linter check
 
-pre-commit: fmt linter check gtest
+pre-commit: fmt linter check
 
 prepare:
 	@rustup toolchain add nightly
 	@rustup target add wasm32-unknown-unknown --toolchain nightly
 	@cargo install --locked --git https://github.com/gear-tech/gear wasm-proc
-	@cargo install --locked --git https://github.com/gear-tech/gear gear-test

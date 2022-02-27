@@ -47,9 +47,6 @@ jobs:
       - name: Run tests
         run: make check
 
-      - name: Run gear-test
-        run: make gtest
-
       - name: Upload artifacts
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v2
