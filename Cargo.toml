@@ -4,7 +4,6 @@ resolver = "2"
 members = [
     "fungible-token",
     "gear-feeds-router",
-    "ping",
     "non-fungible-token",
     "nft-example",
     "fungible-token-messages",

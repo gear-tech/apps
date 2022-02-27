@@ -13,3 +13,5 @@ gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git" }
+
+[workspace]
