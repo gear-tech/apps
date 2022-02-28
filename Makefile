@@ -6,11 +6,14 @@ all:
 	@wasm-proc --path ./target/wasm32-unknown-unknown/release/*.wasm
 	@ls -la ./target/wasm32-unknown-unknown/release/*.wasm
 	@cargo build --release --manifest-path ping/Cargo.toml
+	@cargo build --release --manifest-path fungible-token/Cargo.toml
 	@cp ./ping/target/wasm32-unknown-unknown/release/*.wasm ./target/wasm32-unknown-unknown/release/
+	@cp ./fungible-token/target/wasm32-unknown-unknown/release/*.wasm ./target/wasm32-unknown-unknown/release/
 
 check: all
 	@cargo +nightly test --release --workspace
 	@cargo +nightly test --release --manifest-path ping/Cargo.toml
+	@cargo +nightly test --release --manifest-path fungible-token/Cargo.toml
 
 clean:
 	@echo ──────────── Clean ────────────────────────────

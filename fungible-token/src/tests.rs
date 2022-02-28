@@ -1,3 +1,5 @@
+extern crate std;
+use std::println;
 use codec::Encode;
 use fungible_token_messages::*;
 use gstd::String;
@@ -19,7 +21,7 @@ fn init_with_mint(sys: &System) {
             symbol: String::from("MTK"),
         },
     );
-
+    println!("vivek {:?}", res.log());
     assert!(res.log().is_empty());
 
     let res = ft.send(

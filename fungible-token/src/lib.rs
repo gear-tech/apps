@@ -11,9 +11,8 @@ use fungible_token_messages::{
     Action, AllowanceReply, ApproveReply, Event, InitConfig, State, StateReply, TransferFromReply,
     TransferReply,
 };
-use gstd::{msg, prelude::*, ActorId};
+use gstd::{debug, msg, prelude::*, ActorId};
 
-const GAS_AMOUNT: u64 = 300_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug)]
@@ -219,7 +218,7 @@ pub unsafe extern "C" fn handle() {
                 to: mint_input.account,
                 amount: mint_input.amount,
             };
-            msg::reply(Event::Transfer(transfer_data), GAS_AMOUNT, 0);
+            msg::reply(Event::Transfer(transfer_data), 0);
         }
         Action::Burn(burn_input) => {
             FUNGIBLE_TOKEN.burn(&burn_input.account, burn_input.amount);
@@ -228,7 +227,7 @@ pub unsafe extern "C" fn handle() {
                 to: ZERO_ID,
                 amount: burn_input.amount,
             };
-            msg::reply(Event::Transfer(transfer_data), GAS_AMOUNT, 0);
+            msg::reply(Event::Transfer(transfer_data), 0);
         }
         Action::Transfer(transfer_data) => {
             let from = msg::source();
@@ -236,7 +235,7 @@ pub unsafe extern "C" fn handle() {
             let amount = transfer_data.amount;
             FUNGIBLE_TOKEN.transfer(&from, &to, amount);
             let transfer_data = TransferReply { from, to, amount };
-            msg::reply(Event::Transfer(transfer_data), GAS_AMOUNT, 0);
+            msg::reply(Event::Transfer(transfer_data), 0);
         }
         Action::Approve(approve_data) => {
             let owner = msg::source();
@@ -248,7 +247,7 @@ pub unsafe extern "C" fn handle() {
                 spender,
                 amount,
             };
-            msg::reply(Event::Approval(approve_data), GAS_AMOUNT, 0);
+            msg::reply(Event::Approval(approve_data), 0);
         }
         Action::TransferFrom(transfer_data) => {
             let owner = transfer_data.owner;
@@ -263,7 +262,7 @@ pub unsafe extern "C" fn handle() {
                 amount,
                 new_limit,
             };
-            msg::reply(Event::TransferFrom(tranfer_from), GAS_AMOUNT, 0);
+            msg::reply(Event::TransferFrom(tranfer_from), 0);
         }
         Action::IncreaseAllowance(approve_data) => {
             let owner = msg::source();
@@ -276,7 +275,7 @@ pub unsafe extern "C" fn handle() {
                 spender,
                 amount,
             };
-            msg::reply(Event::Approval(approve_data), GAS_AMOUNT, 0);
+            msg::reply(Event::Approval(approve_data), 0);
         }
         Action::DecreaseAllowance(approve_data) => {
             let owner = msg::source();
@@ -289,23 +288,23 @@ pub unsafe extern "C" fn handle() {
                 spender,
                 amount,
             };
-            msg::reply(Event::Approval(approve_data), GAS_AMOUNT, 0);
+            msg::reply(Event::Approval(approve_data), 0);
         }
         Action::TotalSupply => {
             let total_supply = FUNGIBLE_TOKEN.total_supply;
-            msg::reply(Event::TotalSupply(total_supply), GAS_AMOUNT, 0);
+            msg::reply(Event::TotalSupply(total_supply), 0);
         }
         Action::BalanceOf(account) => {
             let balance = FUNGIBLE_TOKEN.balance_of(&account);
-            msg::reply(Event::Balance(balance), GAS_AMOUNT, 0);
+            msg::reply(Event::Balance(balance), 0);
         }
         Action::AddAdmin(account) => {
             FUNGIBLE_TOKEN.add_admin(&account);
-            msg::reply(Event::AdminAdded(account), GAS_AMOUNT, 0);
+            msg::reply(Event::AdminAdded(account), 0);
         }
         Action::RemoveAdmin(account) => {
             FUNGIBLE_TOKEN.remove_admin(&account);
-            msg::reply(Event::AdminRemoved(account), GAS_AMOUNT, 0);
+            msg::reply(Event::AdminRemoved(account), 0);
         }
         Action::Allowance(allowance) => {
             let limit = FUNGIBLE_TOKEN.get_allowance(&allowance.owner, &allowance.spender);
@@ -314,14 +313,16 @@ pub unsafe extern "C" fn handle() {
                 spender: allowance.spender,
                 limit,
             };
-            msg::reply(Event::Allowance(allowance_reply), GAS_AMOUNT, 0);
+            msg::reply(Event::Allowance(allowance_reply), 0);
         }
     }
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn init() {
+    debug!("shamil");
     let config: InitConfig = msg::load().expect("Unable to decode InitConfig");
+    debug!("{:?}", config);
     FUNGIBLE_TOKEN.name = config.name;
     FUNGIBLE_TOKEN.symbol = config.symbol;
     FUNGIBLE_TOKEN.creator = msg::source();
