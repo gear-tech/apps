@@ -5,7 +5,6 @@ members = [
     "gear-feeds-router",
     "non-fungible-token",
     "nft-example",
-    "fungible-token-messages",
 ]
 
 [profile.release]
