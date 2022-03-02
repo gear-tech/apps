@@ -6,7 +6,6 @@
 #[cfg(test)]
 use codec::{Decode, Encode};
 use gstd::{debug, exec, msg, prelude::*, ActorId};
-use primitive_types::U256;
 use scale_info::TypeInfo;
 
 pub mod base;
@@ -18,7 +17,6 @@ const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 struct Erc1155Token {
     name: String,
     symbol: String,
-    description: String,
     base_uri: String,
     balances: BTreeMap<u128, BTreeMap<ActorId, u128>>,
     operator_approvals: BTreeMap<ActorId, BTreeMap<ActorId, bool>>,
@@ -28,7 +26,6 @@ static mut ERC1155_TOKEN: Erc1155Token = Erc1155Token {
     name: String::new(),
     symbol: String::new(),
     base_uri: String::new(),
-    description: String::new(),
     balances: BTreeMap::new(),
     operator_approvals: BTreeMap::new(),
 };

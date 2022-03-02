@@ -1,5 +1,4 @@
 use gstd::{prelude::*, ActorId};
-use primitive_types::U256;
 
 pub trait Erc1155TokenBase {
     fn init(&mut self, name: String, symbol: String, base_uri: String);
