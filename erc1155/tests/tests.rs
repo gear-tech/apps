@@ -18,7 +18,7 @@ fn init(sys: &System) -> Program {
 
     let ft = Program::from_file(
         &sys,
-        "../../apps/target/wasm32-unknown-unknown/release/erc1155.wasm",
+        "./target/wasm32-unknown-unknown/release/erc1155.wasm",
     );
 
     let init_config = lib::InitConfig {
@@ -36,7 +36,7 @@ fn init_with_mint(sys: &System) {
 
     let ft = Program::from_file(
         &sys,
-        "../../apps/target/wasm32-unknown-unknown/release/erc1155.wasm",
+        "./target/wasm32-unknown-unknown/release/erc1155.wasm",
     );
 
     let init_config = lib::InitConfig {
