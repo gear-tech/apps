@@ -100,7 +100,6 @@ impl Erc1155Token {
         for (_, ele) in ids.iter().enumerate() {
             let res = self.owner_of(ele);
             if !res {
-                break;
                 return false;
             }
         }
