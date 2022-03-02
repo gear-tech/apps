@@ -5,7 +5,6 @@ members = [
     "erc1155",
     "fungible-token",
     "gear-feeds-router",
-    "ping",
     "non-fungible-token",
     "nft-example",
     "fungible-token-messages",

@@ -9,7 +9,7 @@ pub unsafe extern "C" fn handle() {
     let new_msg = String::from_utf8(msg::load_bytes()).expect("Invalid message");
 
     if new_msg == "PING" {
-        msg::reply_bytes("PONG", 12_000_000, 0);
+        msg::reply_bytes("PONG", 0);
     }
 
     MESSAGE_LOG.push(new_msg);
@@ -21,5 +21,24 @@ pub unsafe extern "C" fn handle() {
     }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn init() {}
+#[cfg(test)]
+mod tests {
+    extern crate std;
+
+    use gtest::{Log, Program, System};
+
+    #[test]
+    fn it_works() {
+        let system = System::new();
+        system.init_logger();
+
+        let program = Program::current(&system);
+
+        let res = program.send_bytes(42, "INIT");
+        assert!(res.log().is_empty());
+
+        let res = program.send_bytes(42, "PING");
+        let log = Log::builder().source(1).dest(42).payload_bytes("PONG");
+        assert!(res.contains(&log));
+    }
+}
