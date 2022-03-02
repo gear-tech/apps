@@ -85,6 +85,29 @@ impl Erc1155Token {
         return arr;
     }
 
+    fn owner_of(&self, id: &u128) -> bool {
+        // https://forum.openzeppelin.com/t/erc1155-check-if-token-owner/8503/2
+        let owner = msg::source();
+
+        if self.balance_of(&owner, id) == 0u128 {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    fn owner_of_batch(&self, ids: &[u128]) -> bool {
+        for (_, ele) in ids.iter().enumerate() {
+            let res = self.owner_of(ele);
+            if !res {
+                break;
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     fn mint(&mut self, account: &ActorId, id: &u128, amount: u128) {
         if account == &ZERO_ID {
             panic!("ERC1155: Mint to zero address")
@@ -118,6 +141,10 @@ impl Erc1155Token {
 
         if ids.len() != amounts.len() {
             panic!("ERC1155: ids and amounts length mismatch")
+        }
+
+        if !self.owner_of_batch(ids) {
+            panic!("ERC1155: have no ownership of ids")
         }
 
         for (i, ele) in ids.iter().enumerate() {

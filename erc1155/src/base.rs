@@ -20,4 +20,5 @@ pub trait Erc1155TokenBase {
     );
 
     fn owner_of(&self, id: u128);
+    fn owner_of_batch(&self, ids: &[u128]);
 }
