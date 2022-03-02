@@ -1,9 +1,7 @@
 use gstd::{prelude::*, ActorId};
 
-pub trait Erc1155TokenBase {
+pub trait ERC1155TokenBase {
     fn init(&mut self, name: String, symbol: String, base_uri: String);
-
-    // https://docs.openzeppelin.com/contracts/4.x/api/token/erc1155
 
     fn balance_of(&self, account: &ActorId, id: u128);
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[u128]);

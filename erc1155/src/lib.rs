@@ -14,7 +14,7 @@ const GAS_RESERVE: u64 = 500_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug)]
-struct Erc1155Token {
+struct ERC1155Token {
     name: String,
     symbol: String,
     base_uri: String,
@@ -22,7 +22,7 @@ struct Erc1155Token {
     operator_approvals: BTreeMap<ActorId, BTreeMap<ActorId, bool>>,
 }
 
-static mut ERC1155_TOKEN: Erc1155Token = Erc1155Token {
+static mut ERC1155_TOKEN: ERC1155Token = ERC1155Token {
     name: String::new(),
     symbol: String::new(),
     base_uri: String::new(),
@@ -30,7 +30,7 @@ static mut ERC1155_TOKEN: Erc1155Token = Erc1155Token {
     operator_approvals: BTreeMap::new(),
 };
 
-impl Erc1155Token {
+impl ERC1155Token {
     fn balance_of(&self, account: &ActorId, id: &u128) -> u128 {
         *self
             .balances
