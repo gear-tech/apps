@@ -130,6 +130,11 @@ pub struct BalanceOfBatchReply {
 }
 ```
 
+
+## Ref
+
+https://docs.openzeppelin.com/contracts/4.x/api/token/erc1155
+
 ## Conclusion
 
 A source code of the contract example provided by Gear is available on GitHub: [`erc1155/src/lib.rs`](https://github.com/gear-tech/apps/blob/erc1155/erc1155/src/lib.rs).
