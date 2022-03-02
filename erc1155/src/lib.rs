@@ -1,14 +1,15 @@
-// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.4.2/contracts/token/ERC1155/IERC1155.sol
-
 #![no_std]
 #![feature(const_btree_new)]
 
 #[cfg(test)]
-use codec::{Decode, Encode};
+use codec::Encode;
 use gstd::{debug, exec, msg, prelude::*, ActorId};
-use scale_info::TypeInfo;
 
 pub mod base;
+use base::{ERC1155TokenBase, ExtendERC1155TokenBase};
+
+pub mod common;
+use common::*;
 
 const GAS_RESERVE: u64 = 500_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
@@ -31,7 +32,7 @@ static mut ERC1155_TOKEN: ERC1155Token = ERC1155Token {
 };
 
 impl ERC1155Token {
-    fn balance_of(&self, account: &ActorId, id: &u128) -> u128 {
+    fn get_balance(&self, account: &ActorId, id: &u128) -> u128 {
         *self
             .balances
             .get(id)
@@ -39,7 +40,7 @@ impl ERC1155Token {
             .unwrap_or(&0)
     }
 
-    fn _set_balance(&mut self, account: &ActorId, id: &u128, amount: u128) {
+    fn set_balance(&mut self, account: &ActorId, id: &u128, amount: u128) {
         debug!(
             "before mint: {:?}, id: {:?}",
             self.balance_of(account, id),
@@ -57,6 +58,12 @@ impl ERC1155Token {
             self.balance_of(account, id),
             id
         );
+    }
+}
+
+impl ERC1155TokenBase for ERC1155Token {
+    fn balance_of(&self, account: &ActorId, id: &u128) -> u128 {
+        return self.get_balance(account, id);
     }
 
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[u128]) -> Vec<BalanceOfBatchReply> {
@@ -80,82 +87,6 @@ impl ERC1155Token {
         }
 
         return arr;
-    }
-
-    fn owner_of(&self, id: &u128) -> bool {
-        // https://forum.openzeppelin.com/t/erc1155-check-if-token-owner/8503/2
-        let owner = msg::source();
-
-        if self.balance_of(&owner, id) == 0u128 {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    fn owner_of_batch(&self, ids: &[u128]) -> bool {
-        for (_, ele) in ids.iter().enumerate() {
-            let res = self.owner_of(ele);
-            if !res {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    fn mint(&mut self, account: &ActorId, id: &u128, amount: u128) {
-        if account == &ZERO_ID {
-            panic!("ERC1155: Mint to zero address")
-        }
-        let old_balance = self.balance_of(account, id);
-        self._set_balance(account, id, old_balance.saturating_add(amount));
-
-        // TransferSingle event
-    }
-
-    fn mint_batch(&mut self, account: &ActorId, ids: &[u128], amounts: &[u128]) {
-        if account == &ZERO_ID {
-            panic!("ERC1155: Mint to zero address")
-        }
-
-        if ids.len() != amounts.len() {
-            panic!("ERC1155: ids and amounts length mismatch")
-        }
-
-        for (i, ele) in ids.iter().enumerate() {
-            let amount = amounts[i];
-            let old_balance = self.balance_of(account, ele);
-            self._set_balance(account, ele, old_balance.saturating_add(amount));
-        }
-
-        // TransferBatch event
-    }
-
-    fn burn_batch(&mut self, ids: &[u128], amounts: &[u128]) {
-        let owner = &msg::source();
-
-        if ids.len() != amounts.len() {
-            panic!("ERC1155: ids and amounts length mismatch")
-        }
-
-        if !self.owner_of_batch(ids) {
-            panic!("ERC1155: have no ownership of ids")
-        }
-
-        for (i, ele) in ids.iter().enumerate() {
-            let amount = amounts[i];
-
-            let owner_balance = self.balance_of(owner, ele);
-
-            if owner_balance < amount {
-                panic!("ERC1155: burn amount exceeds balance")
-            }
-
-            self._set_balance(owner, ele, owner_balance.saturating_sub(amount));
-        }
-
-        // TransferBatch event
     }
 
     fn set_approval_for_all(&mut self, operator: &ActorId, approved: bool) {
@@ -200,9 +131,9 @@ impl ERC1155Token {
             panic!("ERC1155: insufficient balance for transfer")
         }
 
-        self._set_balance(from, id, from_balance.saturating_sub(amount));
+        self.set_balance(from, id, from_balance.saturating_sub(amount));
         let to_balance = self.balance_of(to, id);
-        self._set_balance(to, id, to_balance.saturating_add(amount));
+        self.set_balance(to, id, to_balance.saturating_add(amount));
 
         // TransferSingle event
     }
@@ -239,9 +170,87 @@ impl ERC1155Token {
                 panic!("ERC1155: insufficient balance for transfer")
             }
 
-            self._set_balance(from, ele, from_balance.saturating_sub(amount));
+            self.set_balance(from, ele, from_balance.saturating_sub(amount));
             let to_balance = self.balance_of(to, ele);
-            self._set_balance(to, ele, to_balance.saturating_add(amount));
+            self.set_balance(to, ele, to_balance.saturating_add(amount));
+        }
+
+        // TransferBatch event
+    }
+}
+
+impl ExtendERC1155TokenBase for ERC1155Token {
+    fn owner_of(&self, id: &u128) -> bool {
+        // https://forum.openzeppelin.com/t/erc1155-check-if-token-owner/8503/2
+        let owner = msg::source();
+
+        if self.balance_of(&owner, id) == 0u128 {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    fn owner_of_batch(&self, ids: &[u128]) -> bool {
+        for (_, ele) in ids.iter().enumerate() {
+            let res = self.owner_of(ele);
+            if !res {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    fn mint(&mut self, account: &ActorId, id: &u128, amount: u128) {
+        if account == &ZERO_ID {
+            panic!("ERC1155: Mint to zero address")
+        }
+        let old_balance = self.balance_of(account, id);
+        self.set_balance(account, id, old_balance.saturating_add(amount));
+
+        // TransferSingle event
+    }
+
+    fn mint_batch(&mut self, account: &ActorId, ids: &[u128], amounts: &[u128]) {
+        if account == &ZERO_ID {
+            panic!("ERC1155: Mint to zero address")
+        }
+
+        if ids.len() != amounts.len() {
+            panic!("ERC1155: ids and amounts length mismatch")
+        }
+
+        for (i, ele) in ids.iter().enumerate() {
+            let amount = amounts[i];
+            let old_balance = self.balance_of(account, ele);
+            self.set_balance(account, ele, old_balance.saturating_add(amount));
+        }
+
+        // TransferBatch event
+    }
+
+    fn burn_batch(&mut self, ids: &[u128], amounts: &[u128]) {
+        let owner = &msg::source();
+
+        if ids.len() != amounts.len() {
+            panic!("ERC1155: ids and amounts length mismatch")
+        }
+
+        if !self.owner_of_batch(ids) {
+            panic!("ERC1155: have no ownership of ids")
+        }
+
+        for (i, ele) in ids.iter().enumerate() {
+            let amount = amounts[i];
+
+            let owner_balance = self.balance_of(owner, ele);
+
+            if owner_balance < amount {
+                panic!("ERC1155: burn amount exceeds balance")
+            }
+
+            self.set_balance(owner, ele, owner_balance.saturating_sub(amount));
         }
 
         // TransferBatch event
@@ -392,76 +401,4 @@ pub unsafe extern "C" fn handle() {
             msg::reply(payload, 0);
         }
     }
-}
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct InitConfig {
-    pub name: String,
-    pub symbol: String,
-    pub base_uri: String,
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum State {
-    Name,
-    Symbol,
-    Uri,
-    BalanceOf(ActorId, u128),
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum StateReply {
-    Name(String),
-    Symbol(String),
-    Uri(String),
-    Balance(u128),
-}
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum Action {
-    Mint(ActorId, u128, u128),
-    BalanceOf(ActorId, u128),
-    BalanceOfBatch(Vec<ActorId>, Vec<u128>),
-    MintBatch(ActorId, Vec<u128>, Vec<u128>),
-    SafeTransferFrom(ActorId, ActorId, u128, u128),
-    SafeBatchTransferFrom(ActorId, ActorId, Vec<u128>, Vec<u128>),
-    SetApprovalForAll(ActorId, bool),
-    IsApprovedForAll(ActorId, ActorId),
-    BurnBatch(Vec<u128>, Vec<u128>),
-}
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct TransferSingleReply {
-    pub operator: ActorId,
-    pub from: ActorId,
-    pub to: ActorId,
-    pub id: u128,
-    pub amount: u128,
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct BalanceOfBatchReply {
-    pub account: ActorId,
-    pub id: u128,
-    pub amount: u128,
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum Event {
-    TransferSingle(TransferSingleReply),
-    Balance(u128),
-    BalanceOfBatch(Vec<BalanceOfBatchReply>),
-    MintOfBatch(Vec<BalanceOfBatchReply>),
-    TransferBatch {
-        operator: ActorId,
-        from: ActorId,
-        to: ActorId,
-        ids: Vec<u128>,
-        values: Vec<u128>,
-    },
-    ApprovalForAll {
-        owner: ActorId,
-        operator: ActorId,
-        approved: bool,
-    },
 }
