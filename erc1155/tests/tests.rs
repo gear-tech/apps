@@ -22,9 +22,9 @@ fn init(sys: &System) -> Program {
     );
 
     let init_config = lib::InitConfig {
-        name: String::from("MyToken"),
-        symbol: String::from("MTK"),
-        base_uri: String::from("baidu.so"),
+        name: String::from("Gear"),
+        symbol: String::from("Gear"),
+        base_uri: String::from("ipfs://"),
     };
 
     ft.send(USERS[0], init_config);
@@ -40,9 +40,9 @@ fn init_with_mint(sys: &System) {
     );
 
     let init_config = lib::InitConfig {
-        name: String::from("MyToken"),
-        symbol: String::from("MTK"),
-        base_uri: String::from("baidu.so"),
+        name: String::from("Gear"),
+        symbol: String::from("Gear"),
+        base_uri: String::from("ipfs://"),
     };
 
     let res = ft.send(USERS[0], init_config);
