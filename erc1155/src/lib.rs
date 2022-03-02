@@ -100,8 +100,6 @@ impl ERC1155TokenBase for ERC1155Token {
             .entry(owner)
             .or_default()
             .insert(*operator, approved);
-
-        // ApprovalForAll event
     }
 
     fn is_approved_for_all(&mut self, owner: &ActorId, operator: &ActorId) -> &bool {
@@ -134,8 +132,6 @@ impl ERC1155TokenBase for ERC1155Token {
         self.set_balance(from, id, from_balance.saturating_sub(amount));
         let to_balance = self.balance_of(to, id);
         self.set_balance(to, id, to_balance.saturating_add(amount));
-
-        // TransferSingle event
     }
 
     fn safe_batch_transfer_from(
@@ -174,14 +170,11 @@ impl ERC1155TokenBase for ERC1155Token {
             let to_balance = self.balance_of(to, ele);
             self.set_balance(to, ele, to_balance.saturating_add(amount));
         }
-
-        // TransferBatch event
     }
 }
 
 impl ExtendERC1155TokenBase for ERC1155Token {
     fn owner_of(&self, id: &u128) -> bool {
-        // https://forum.openzeppelin.com/t/erc1155-check-if-token-owner/8503/2
         let owner = msg::source();
 
         if self.balance_of(&owner, id) == 0u128 {
@@ -206,10 +199,8 @@ impl ExtendERC1155TokenBase for ERC1155Token {
         if account == &ZERO_ID {
             panic!("ERC1155: Mint to zero address")
         }
-        let old_balance = self.balance_of(account, id);
-        self.set_balance(account, id, old_balance.saturating_add(amount));
-
-        // TransferSingle event
+        let prev_balance = self.balance_of(account, id);
+        self.set_balance(account, id, prev_balance.saturating_add(amount));
     }
 
     fn mint_batch(&mut self, account: &ActorId, ids: &[u128], amounts: &[u128]) {
@@ -223,11 +214,9 @@ impl ExtendERC1155TokenBase for ERC1155Token {
 
         for (i, ele) in ids.iter().enumerate() {
             let amount = amounts[i];
-            let old_balance = self.balance_of(account, ele);
-            self.set_balance(account, ele, old_balance.saturating_add(amount));
+            let prev_balance = self.balance_of(account, ele);
+            self.set_balance(account, ele, prev_balance.saturating_add(amount));
         }
-
-        // TransferBatch event
     }
 
     fn burn_batch(&mut self, ids: &[u128], amounts: &[u128]) {
@@ -252,8 +241,6 @@ impl ExtendERC1155TokenBase for ERC1155Token {
 
             self.set_balance(owner, ele, owner_balance.saturating_sub(amount));
         }
-
-        // TransferBatch event
     }
 }
 
@@ -261,7 +248,6 @@ gstd::metadata! {
     title: "ERC1155",
     init:
         input: InitConfig,
-        // {"name": "GEAR Token", "symbol": "GRT", "base_uri": "baidu.so" }
     handle:
         input: Action,
         output: Event,
