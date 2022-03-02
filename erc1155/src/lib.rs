@@ -386,5 +386,16 @@ pub unsafe extern "C" fn handle() {
 
             msg::reply(payload, 0);
         }
+
+        Action::OwnerOf(id) => {
+            let res = ERC1155_TOKEN.owner_of(&id);
+            msg::reply(res, 0);
+        }
+
+        Action::OwnerOfBatch(ids) => {
+            let res = ERC1155_TOKEN.owner_of_batch(&ids);
+
+            msg::reply(res, 0);
+        }
     }
 }

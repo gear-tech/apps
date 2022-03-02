@@ -36,6 +36,8 @@ pub enum Action {
     SetApprovalForAll(ActorId, bool),
     IsApprovedForAll(ActorId, ActorId),
     BurnBatch(Vec<u128>, Vec<u128>),
+    OwnerOf(u128),
+    OwnerOfBatch(Vec<u128>),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]

@@ -336,8 +336,52 @@ fn burn_batch() {
     };
 
     let replies = vec![reply1, reply2];
-
     let codec = Event::BalanceOfBatch(replies).encode();
-
     assert!(res.contains(&(from, codec)));
+
+    // check ownership of ids
+    let failed_res = ft.send(user1, Action::BurnBatch(vec![1u128, 3u128], vec![10, 20]));
+    print!("main_failed {:?}", failed_res.main_failed());
+
+    assert!(failed_res.main_failed());
+}
+
+#[test]
+fn owner_of() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    let from = USERS[0];
+    let user1 = USERS[1];
+
+    ft.send(from, Action::Mint(user1.into(), 1u128, BALANCE));
+    let res = ft.send(user1, Action::OwnerOf(1u128));
+    let log = Log::builder().payload(true);
+    assert!(res.contains(&log));
+
+    let res = ft.send(user1, Action::OwnerOf(2u128));
+    let log = Log::builder().payload(false);
+    assert!(res.contains(&log));
+}
+
+#[test]
+fn owner_of_batch() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    let from = USERS[0];
+    let user1 = USERS[1];
+
+    ft.send(
+        from,
+        Action::MintBatch(user1.into(), vec![1u128, 2u128], vec![BALANCE, BALANCE]),
+    );
+
+    let res = ft.send(user1, Action::OwnerOfBatch(vec![1u128, 2u128]));
+    let log = Log::builder().payload(true);
+    assert!(res.contains(&log));
+
+    let res = ft.send(user1, Action::OwnerOfBatch(vec![3u128]));
+    let log = Log::builder().payload(false);
+    assert!(res.contains(&log));
 }
