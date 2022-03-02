@@ -248,29 +248,6 @@ impl ERC1155Token {
     }
 }
 
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct InitConfig {
-    pub name: String,
-    pub symbol: String,
-    pub base_uri: String,
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum State {
-    Name,
-    Symbol,
-    Uri,
-    BalanceOf(ActorId, u128),
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum StateReply {
-    Name(String),
-    Symbol(String),
-    Uri(String),
-    Balance(u128),
-}
-
 gstd::metadata! {
     title: "ERC1155",
     init:
@@ -324,27 +301,15 @@ pub unsafe extern "C" fn handle() {
                 amount: amount,
             };
 
-            msg::reply(
-                Event::TransferSingle(transfer_data),
-                exec::gas_available() - GAS_RESERVE,
-                0,
-            );
+            msg::reply(Event::TransferSingle(transfer_data), 0);
         }
         Action::BalanceOf(account, id) => {
             let balance = ERC1155_TOKEN.balance_of(&account, &id);
-            msg::reply(
-                Event::Balance(balance),
-                exec::gas_available() - GAS_RESERVE,
-                0,
-            );
+            msg::reply(Event::Balance(balance), 0);
         }
         Action::BalanceOfBatch(accounts, ids) => {
             let res = ERC1155_TOKEN.balance_of_batch(&accounts, &ids);
-            msg::reply(
-                Event::BalanceOfBatch(res),
-                exec::gas_available() - GAS_RESERVE,
-                0,
-            );
+            msg::reply(Event::BalanceOfBatch(res), 0);
         }
         Action::MintBatch(account, ids, amounts) => {
             ERC1155_TOKEN.mint_batch(&account, &ids, &amounts);
@@ -356,7 +321,7 @@ pub unsafe extern "C" fn handle() {
                 ids: ids,
                 values: amounts,
             };
-            msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
+            msg::reply(payload, 0);
         }
 
         Action::SafeTransferFrom(from, to, id, amount) => {
@@ -370,11 +335,7 @@ pub unsafe extern "C" fn handle() {
                 amount: amount,
             };
 
-            msg::reply(
-                Event::TransferSingle(transfer_data),
-                exec::gas_available() - GAS_RESERVE,
-                0,
-            );
+            msg::reply(Event::TransferSingle(transfer_data), 0);
         }
 
         Action::SafeBatchTransferFrom(from, to, ids, amounts) => {
@@ -388,7 +349,7 @@ pub unsafe extern "C" fn handle() {
                 values: amounts,
             };
 
-            msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
+            msg::reply(payload, 0);
         }
 
         Action::SetApprovalForAll(operator, approved) => {
@@ -402,7 +363,7 @@ pub unsafe extern "C" fn handle() {
                 approved: approved,
             };
 
-            msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
+            msg::reply(payload, 0);
         }
 
         Action::IsApprovedForAll(owner, operator) => {
@@ -414,7 +375,7 @@ pub unsafe extern "C" fn handle() {
                 approved: *approved,
             };
 
-            msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
+            msg::reply(payload, 0);
         }
 
         Action::BurnBatch(ids, amounts) => {
@@ -428,9 +389,32 @@ pub unsafe extern "C" fn handle() {
                 values: amounts,
             };
 
-            msg::reply(payload, exec::gas_available() - GAS_RESERVE, 0);
+            msg::reply(payload, 0);
         }
     }
+}
+
+#[derive(Debug, Decode, Encode, TypeInfo)]
+pub struct InitConfig {
+    pub name: String,
+    pub symbol: String,
+    pub base_uri: String,
+}
+
+#[derive(Debug, Encode, Decode, TypeInfo)]
+pub enum State {
+    Name,
+    Symbol,
+    Uri,
+    BalanceOf(ActorId, u128),
+}
+
+#[derive(Debug, Encode, Decode, TypeInfo)]
+pub enum StateReply {
+    Name(String),
+    Symbol(String),
+    Uri(String),
+    Balance(u128),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -454,6 +438,7 @@ pub struct TransferSingleReply {
     pub id: u128,
     pub amount: u128,
 }
+
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct BalanceOfBatchReply {
     pub account: ActorId,
