@@ -503,7 +503,7 @@ source = "git+https://github.com/gear-tech/gear.git#e81b56ad5dda57f444de87ed953e
 [[package]]
 name = "gear-backend-common"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#e81b56ad5dda57f444de87ed953ef231c42f3ac8"
+source = "git+https://github.com/gear-tech/gear.git?rev=e81b56a#e81b56ad5dda57f444de87ed953ef231c42f3ac8"
 dependencies = [
  "gear-core",
  "log",
@@ -512,7 +512,7 @@ dependencies = [
 [[package]]
 name = "gear-backend-wasmtime"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#e81b56ad5dda57f444de87ed953ef231c42f3ac8"
+source = "git+https://github.com/gear-tech/gear.git?rev=e81b56a#e81b56ad5dda57f444de87ed953ef231c42f3ac8"
 dependencies = [
  "gear-backend-common",
  "gear-core",
@@ -522,7 +522,7 @@ dependencies = [
 [[package]]
 name = "gear-core"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#e81b56ad5dda57f444de87ed953ef231c42f3ac8"
+source = "git+https://github.com/gear-tech/gear.git?rev=e81b56a#e81b56ad5dda57f444de87ed953ef231c42f3ac8"
 dependencies = [
  "anyhow",
  "blake2-rfc",
@@ -538,7 +538,7 @@ dependencies = [
 [[package]]
 name = "gear-core-processor"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#e81b56ad5dda57f444de87ed953ef231c42f3ac8"
+source = "git+https://github.com/gear-tech/gear.git?rev=e81b56a#e81b56ad5dda57f444de87ed953ef231c42f3ac8"
 dependencies = [
  "blake2-rfc",
  "gear-backend-common",
@@ -613,7 +613,7 @@ dependencies = [
 [[package]]
 name = "gtest"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#e81b56ad5dda57f444de87ed953ef231c42f3ac8"
+source = "git+https://github.com/gear-tech/gear.git?rev=e81b56a#e81b56ad5dda57f444de87ed953ef231c42f3ac8"
 dependencies = [
  "colored",
  "env_logger",
