@@ -2,7 +2,7 @@
 #![feature(const_btree_new)]
 
 use codec::{Decode, Encode};
-use gstd::{msg, prelude::*, ActorId};
+use gstd::{exec, msg, prelude::*, ActorId};
 pub mod base;
 use base::NonFungibleTokenBase;
 pub mod token;
@@ -13,7 +13,7 @@ use scale_info::TypeInfo;
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct NonFungibleToken {
     pub name: String,
     pub symbol: String,
@@ -32,18 +32,22 @@ impl NonFungibleTokenBase for NonFungibleToken {
         self.base_uri = base_uri;
     }
 
-    fn transfer(&mut self, from: &ActorId, to: &ActorId, token_id: U256) {
+    fn transfer(&mut self, to: &ActorId, token_id: U256) {
         if !self.exists(token_id) {
             panic!("NonFungibleToken: token does not exist");
         }
-        if from == to {
-            panic!("NonFungibleToken: Transfer to current owner");
-        }
+
         if to == &ZERO_ID {
             panic!("NonFungibleToken: Transfer to zero address.");
         }
 
-        match self.authorized_actor(token_id, from) {
+        let owner = self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID).clone();
+
+        if &owner == to {
+            panic!("NonFungibleToken: Transfer to current owner");
+        }
+
+        match self.authorized_actor(token_id, &owner) {
             AuthAccount::None => {
                 panic!("NonFungibleToken: is not an authorized source");
             }
@@ -53,11 +57,11 @@ impl NonFungibleTokenBase for NonFungibleToken {
             _ => {}
         }
 
-        let from_balance = *self.balances.get(from).unwrap_or(&U256::zero());
+        let from_balance = *self.balances.get(&owner).unwrap_or(&U256::zero());
         let to_balance = *self.balances.get(to).unwrap_or(&U256::zero());
 
         self.balances
-            .insert(*from, from_balance.saturating_sub(U256::one()));
+            .insert(owner, from_balance.saturating_sub(U256::one()));
         self.balances
             .insert(*to, to_balance.saturating_add(U256::one()));
 
@@ -65,7 +69,7 @@ impl NonFungibleTokenBase for NonFungibleToken {
 
         msg::reply(
             Event::Transfer {
-                from: *from,
+                from: owner,
                 to: *to,
                 token_id,
             },
@@ -73,23 +77,27 @@ impl NonFungibleTokenBase for NonFungibleToken {
         );
     }
 
-    fn approve(&mut self, owner: &ActorId, spender: &ActorId, token_id: U256) {
-        if spender == &ZERO_ID {
+    fn approve(&mut self, to: &ActorId, token_id: U256) {
+        if to == &ZERO_ID {
             panic!("NonFungibleToken: Approval to zero address.");
         }
-        if spender == owner {
+
+        let owner = self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID);
+
+        if to == owner {
             panic!("NonFungibleToken: Approval to current owner");
         }
-        if !self.is_token_owner(token_id, owner) {
+
+        if !self.is_token_owner(owner) {
             panic!("NonFungibleToken: is not owner");
         }
 
-        self.token_approvals.insert(token_id, *spender);
+        self.token_approvals.insert(token_id, *to);
 
         msg::reply(
             Event::Approval {
-                owner: *owner,
-                spender: *spender,
+                from: *owner,
+                to: *to,
                 token_id,
             },
             0,
@@ -140,16 +148,15 @@ impl NonFungibleToken {
         }
     }
 
-    pub fn is_token_owner(&self, token_id: U256, account: &ActorId) -> bool {
-        account == self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID)
+    pub fn is_token_owner(&self, owner: &ActorId) -> bool {
+        &msg::source() == owner || &exec::origin() == owner
     }
 
-    pub fn authorized_actor(&self, token_id: U256, account: &ActorId) -> AuthAccount {
-        let owner = self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID);
-        if owner == account {
+    pub fn authorized_actor(&self, token_id: U256, owner: &ActorId) -> AuthAccount {
+        if owner == &msg::source() || owner == &exec::origin() {
             return AuthAccount::Owner;
         }
-        if self.token_approvals.get(&token_id).unwrap_or(&ZERO_ID) == account {
+        if self.token_approvals.get(&token_id).unwrap_or(&ZERO_ID) == &msg::source() {
             return AuthAccount::ApprovedActor;
         }
         if self.operator_approval.contains_key(owner) {
@@ -171,8 +178,8 @@ pub enum Event {
         token_id: U256,
     },
     Approval {
-        owner: ActorId,
-        spender: ActorId,
+        from: ActorId,
+        to: ActorId,
         token_id: U256,
     },
     ApprovalForAll {

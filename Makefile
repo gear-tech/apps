@@ -7,6 +7,13 @@ all:
 
 check: all
 	@cargo +nightly test --release --workspace
+<<<<<<< HEAD
+=======
+	@cargo +nightly test --release --manifest-path ping/Cargo.toml
+	@cargo +nightly test --release --manifest-path fungible-token/Cargo.toml
+	@cargo +nightly test --release --manifest-path erc1155/Cargo.toml
+	@cargo +nightly test --release --manifest-path nft-marketplace/marketplace/Cargo.toml
+>>>>>>> update nft marketplace
 
 clean:
 	@echo ──────────── Clean ────────────────────────────

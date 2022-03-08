@@ -10,27 +10,8 @@ pub struct InitConfig {
     pub symbol: String,
 }
 
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct ApproveInput {
-    pub spender: ActorId,
-    pub amount: u128,
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct ApproveReply {
-    pub owner: ActorId,
-    pub spender: ActorId,
-    pub amount: u128,
-}
-
 #[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct TransferInput {
-    pub to: ActorId,
-    pub amount: u128,
-}
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum Action {
+pub enum FTAction {
     Mint(u128),
     Burn(u128),
     Transfer {
@@ -47,7 +28,7 @@ pub enum Action {
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum Event {
+pub enum FTEvent {
     Transfer {
         from: ActorId,
         to: ActorId,
