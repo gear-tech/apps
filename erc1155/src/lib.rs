@@ -3,7 +3,7 @@
 
 #[cfg(test)]
 use codec::Encode;
-use gstd::{debug, exec, msg, prelude::*, ActorId};
+use gstd::{debug, msg, prelude::*, ActorId};
 
 pub mod base;
 use base::{ERC1155TokenBase, ExtendERC1155TokenBase};
