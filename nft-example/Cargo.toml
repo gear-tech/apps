@@ -16,4 +16,4 @@ non-fungible-token = { path = "../non-fungible-token" }
 nft-example-io = { path = "io" }
 
 [dev-dependencies]
-gtest = { git = "https://github.com/gear-tech/gear.git", rev = "e81b56a"}
+gtest = { git = "https://github.com/gear-tech/gear.git", rev = "e81b56a" }
