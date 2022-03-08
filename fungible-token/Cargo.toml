@@ -15,7 +15,11 @@ sp-arithmetic = { default-features = false, git = "https://github.com/paritytech
 ft-io = { path = "io" }
 
 [dev-dependencies]
+<<<<<<< HEAD
 gtest = { git = "https://github.com/gear-tech/gear.git" }
+=======
+gtest = { git = "https://github.com/gear-tech/gear.git"}
+>>>>>>> update nft marketplace
 
 [build-dependencies]
 gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }
