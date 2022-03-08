@@ -11,7 +11,6 @@ use base::{ERC1155TokenBase, ExtendERC1155TokenBase};
 pub mod common;
 use common::*;
 
-const GAS_RESERVE: u64 = 500_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug)]

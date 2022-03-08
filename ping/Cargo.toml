@@ -12,6 +12,6 @@ gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
 gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }
 
 [dev-dependencies]
-gtest = { git = "https://github.com/gear-tech/gear.git" }
+gtest = { git = "https://github.com/gear-tech/gear.git", rev = "e81b56a" }
 
 [workspace]
