@@ -24,7 +24,8 @@ impl WasmProgram for FungibleToken {
                         from: 3.into(),
                         to: 3.into(),
                         amount: 10000,
-                    }.encode(),
+                    }
+                    .encode(),
                 ));
             }
             Action::BalanceOf(_) => {
@@ -41,11 +42,7 @@ impl WasmProgram for FungibleToken {
 
 fn init_dao(sys: &System) {
     sys.init_logger();
-    let dao = Program::from_file(
-        &sys,
-        "./target/wasm32-unknown-unknown/release/dao.wasm",
-    );
-
+    let dao = Program::current(&sys);
     let res = dao.send(
         100001,
         InitDao {

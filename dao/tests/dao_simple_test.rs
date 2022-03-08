@@ -34,10 +34,7 @@ fn init_fungible_token(sys: &System) {
 
 fn init_dao(sys: &System) {
     sys.init_logger();
-    let dao = Program::from_file(
-        &sys,
-        "./target/wasm32-unknown-unknown/release/dao.wasm",
-    );
+    let dao = Program::current(&sys);
 
     let res = dao.send(
         100001,

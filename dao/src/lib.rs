@@ -57,13 +57,13 @@ pub struct Member {
 static mut DAO: Option<Dao> = None;
 
 impl Dao {
-    // Adds members to whitelist
-    // Requirements:
-    // * Only admin can add actors to whitelist
-    // * Member ID cant be zero
-    // * Member can not be added to whitelist more than once
-    // Arguments:
-    // * `member`: valid actor ID
+    /// Adds members to whitelist
+    /// Requirements:
+    /// * Only admin can add actors to whitelist
+    /// * Member ID cant be zero
+    /// * Member can not be added to whitelist more than once
+    /// Arguments:
+    /// * `member`: valid actor ID
     fn add_to_whitelist(&mut self, member: &ActorId) {
         if self.admin != msg::source() {
             panic!("msg::source() must be DAO admin");
@@ -75,22 +75,19 @@ impl Dao {
             panic!("Member has already been added to the whitelist");
         }
         self.whitelist.push(*member);
-        msg::reply(
-            DaoEvent::MemberAddedToWhitelist(*member),
-            0,
-        );
+        msg::reply(DaoEvent::MemberAddedToWhitelist(*member), 0);
     }
 
-    // The proposal of joining the DAO.
-    // Requirements:
-    // * The proposal can be submitted only by the existing members or their delegate addresses
-    // * The applicant ID must be either a DAO member or is on  whitelist
-    // Arguments:
-    // * `applicant`: an actor, who wishes to become a DAO member
-    // * `token_tribute`: the number of tokens the applicant offered for shares in DAO
-    // * `shares_requested`: the amount of shares the applicant is requesting for his token tribute
-    // * `quorum`: a certain threshold of YES votes in order for the proposal to pass
-    // * `details`: the proposal description
+    /// The proposal of joining the DAO.
+    /// Requirements:
+    /// * The proposal can be submitted only by the existing members or their delegate addresses
+    /// * The applicant ID must be either a DAO member or is on  whitelist
+    /// Arguments:
+    /// * `applicant`: an actor, who wishes to become a DAO member
+    /// * `token_tribute`: the number of tokens the applicant offered for shares in DAO
+    /// * `shares_requested`: the amount of shares the applicant is requesting for his token tribute
+    /// * `quorum`: a certain threshold of YES votes in order for the proposal to pass
+    /// * `details`: the proposal description
     async fn submit_membership_proposal(
         &mut self,
         applicant: &ActorId,
@@ -99,17 +96,7 @@ impl Dao {
         quorum: u128,
         details: String,
     ) {
-        // check that `msg::source()` is either a DAO member or a delegate key
-        match self.member_by_delegate_key.get(&msg::source()) {
-            Some(member) => {
-                if !self.is_member(member) {
-                    panic!("account is not a DAO member");
-                }
-            }
-            None => {
-                panic!("account is not a delegate");
-            }
-        }
+        self.check_for_membership();
         // check that applicant is either in whitelist or a DAO member
         if !self.whitelist.contains(applicant) && !self.members.contains_key(applicant) {
             panic!("Applicant must be either in whitelist or be a DAO member");
@@ -131,7 +118,7 @@ impl Dao {
             let previous_starting_period = self
                 .proposals
                 .get(&(&self.proposal_id - 1))
-                .unwrap()
+                .expect("Error getting proposal")
                 .starting_period;
             if starting_period < previous_starting_period + self.period_duration {
                 starting_period = previous_starting_period + self.period_duration;
@@ -161,16 +148,16 @@ impl Dao {
         self.proposal_id = self.proposal_id.saturating_add(1);
     }
 
-    // The proposal of funding
-    // Requirements:
-    // * The proposal can be submitted only by the existing members or their delegate addresses
-    // * The receiver ID can't be the zero
-    // * The DAO must have enough funds to finance the proposal
-    // Arguments:
-    // * `receiver`: an actor that will be funded
-    // * `amount`: the number of ERC20 tokens that will be sent to the receiver
-    // * `quorum`: a certain threshold of YES votes in order for the proposal to pass
-    // * `details`: the proposal description
+    /// The proposal of funding
+    /// Requirements:
+    /// * The proposal can be submitted only by the existing members or their delegate addresses
+    /// * The receiver ID can't be the zero
+    /// * The DAO must have enough funds to finance the proposal
+    /// Arguments:
+    /// * `receiver`: an actor that will be funded
+    /// * `amount`: the number of ERC20 tokens that will be sent to the receiver
+    /// * `quorum`: a certain threshold of YES votes in order for the proposal to pass
+    /// * `details`: the proposal description
     async fn submit_funding_proposal(
         &mut self,
         applicant: &ActorId,
@@ -178,17 +165,7 @@ impl Dao {
         quorum: u128,
         details: String,
     ) {
-        // check that `msg::source()` is either a DAO member or a delegate key
-        match self.member_by_delegate_key.get(&msg::source()) {
-            Some(member) => {
-                if !self.is_member(member) {
-                    panic!("account is not a DAO member");
-                }
-            }
-            None => {
-                panic!("account is not a delegate");
-            }
-        }
+        self.check_for_membership();
 
         if applicant == &ZERO_ID {
             panic!("Proposal for the zero address");
@@ -238,14 +215,14 @@ impl Dao {
         self.proposal_id = self.proposal_id.saturating_add(1);
     }
 
-    // The member (or the delegate address of the member) submit his vote (YES or NO) on the proposal
-    // Requirements:
-    // * The proposal can be submitted only by the existing members or their delegate addresses
-    // * The member can vote on the proposal only once
-    // * Proposal must exist, the voting period must has started and not expired
-    // Arguments:
-    // * `proposal_id`: the proposal ID
-    // * `vote`: the member  a member vote (YES or NO)
+    /// The member (or the delegate address of the member) submit his vote (YES or NO) on the proposal
+    /// Requirements:
+    /// * The proposal can be submitted only by the existing members or their delegate addresses
+    /// * The member can vote on the proposal only once
+    /// * Proposal must exist, the voting period must has started and not expired
+    /// Arguments:
+    /// * `proposal_id`: the proposal ID
+    /// * `vote`: the member  a member vote (YES or NO)
     fn submit_vote(&mut self, proposal_id: u128, vote: Vote) {
         // check that `msg::source()` is either a DAO member or a delegate key
         match self.member_by_delegate_key.get(&msg::source()) {
@@ -260,7 +237,7 @@ impl Dao {
         }
 
         // checks that proposal exists, the voting period has started, not expired and that member did not vote on the proposal
-        match self.proposals.get(&proposal_id) {
+        let proposal = match self.proposals.get_mut(&proposal_id) {
             Some(proposal) => {
                 if exec::block_timestamp() > proposal.starting_period + self.voting_period_length {
                     panic!("proposal voting period has expired");
@@ -271,13 +248,13 @@ impl Dao {
                 if proposal.votes_by_member.contains_key(&msg::source()) {
                     panic!("account has already voted on that proposal");
                 }
+                proposal
             }
             None => {
                 panic!("proposal does not exist");
             }
-        }
+        };
 
-        let proposal = self.proposals.get_mut(&proposal_id).unwrap();
         let member_id = self.member_by_delegate_key.get(&msg::source()).unwrap();
         let member = self.members.get_mut(member_id).unwrap();
 
@@ -308,21 +285,21 @@ impl Dao {
         );
     }
 
-    // The proposal processing after the proposal completes during the grace period.
-    // If the proposal is accepted, the tribute tokens are deposited into the contract and new shares are minted and issued to the applicant.
-    // If the proposal is rejected, the tribute tokens are returned to the applicant.
-    // Requirements:
-    // * The previous proposal must be processed
-    // * The proposal must exist, be ready for processing
-    // * The proposal must not be cancelled, aborted or already be processed
-    // Arguments:
-    // * `proposal_id`: the proposal ID
+    /// The proposal processing after the proposal completes during the grace period.
+    /// If the proposal is accepted, the tribute tokens are deposited into the contract and new shares are minted and issued to the applicant.
+    /// If the proposal is rejected, the tribute tokens are returned to the applicant.
+    /// Requirements:
+    /// * The previous proposal must be processed
+    /// * The proposal must exist, be ready for processing
+    /// * The proposal must not be cancelled, aborted or already be processed
+    /// Arguments:
+    /// * `proposal_id`: the proposal ID
     async fn process_proposal(&mut self, proposal_id: u128) {
-        match self.proposals.get(&proposal_id) {
+        if proposal_id > 0 && !self.proposals.get(&(&proposal_id - 1)).unwrap().processed {
+            panic!("Previous proposal must be processed");
+        }
+        let proposal = match self.proposals.get_mut(&proposal_id) {
             Some(proposal) => {
-                if proposal_id > 0 && !self.proposals.get(&(&proposal_id - 1)).unwrap().processed {
-                    panic!("Previous proposal must be processed");
-                }
                 if proposal.processed || proposal.cancelled || proposal.aborted {
                     panic!("Proposal has already been processed, cancelled or aborted");
                 }
@@ -333,13 +310,13 @@ impl Dao {
                 {
                     panic!("Proposal is not ready to be processed");
                 }
+                proposal
             }
             None => {
                 panic!("proposal does not exist");
             }
-        }
+        };
 
-        let mut proposal = self.proposals.get(&proposal_id).unwrap().clone();
         proposal.processed = true;
         proposal.did_pass = proposal.yes_votes > proposal.no_votes
             && proposal.yes_votes * 10000 / self.total_shares >= proposal.quorum
@@ -385,17 +362,16 @@ impl Dao {
             },
             0,
         );
-        self.proposals.insert(proposal_id, proposal);
     }
 
-    // Withdraws the capital of the member
-    // Requirements:
-    // * `msg::source()` must be DAO member
-    // * The member must have sufficient amount
-    // * The latest proposal the member voted YES must be processed
-    // * Admin can ragequit only after transferring his role to another actor
-    // Arguments:
-    // * `amount`: The amount of shares the member would like to withdraw (the shares are converted to ERC20 tokens)
+    /// Withdraws the capital of the member
+    /// Requirements:
+    /// * `msg::source()` must be DAO member
+    /// * The member must have sufficient amount
+    /// * The latest proposal the member voted YES must be processed
+    /// * Admin can ragequit only after transferring his role to another actor
+    /// Arguments:
+    /// * `amount`: The amount of shares the member would like to withdraw (the shares are converted to ERC20 tokens)
     async fn ragequit(&mut self, amount: u128) {
         if self.admin == msg::source() {
             panic!("admin can not ragequit");
@@ -414,7 +390,13 @@ impl Dao {
         }
         member.shares = member.shares.saturating_sub(amount);
         let funds = self.redeemable_funds(amount).await;
-        transfer_tokens(&self.approved_token_program_id, &exec::program_id(), &msg::source(), funds).await;
+        transfer_tokens(
+            &self.approved_token_program_id,
+            &exec::program_id(),
+            &msg::source(),
+            funds,
+        )
+        .await;
         self.total_shares = self.total_shares.saturating_sub(amount);
         msg::reply(
             DaoEvent::RageQuit {
@@ -425,14 +407,14 @@ impl Dao {
         );
     }
 
-    // Cancels the proposal after the end of the voting period if there are no YES votes.
-    // Requirements:
-    // * `msg::source()` must be the proposer
-    // * It can be cancelled if the number of YES votes is less than number of NO votes or the required quorum is not achieved
-    // * The voting period must be over
-    // * The proposal must not be cancelled or aborted
-    // Arguments:
-    // * `proposal_id`: the proposal ID
+    /// Cancels the proposal after the end of the voting period if there are no YES votes.
+    /// Requirements:
+    /// * `msg::source()` must be the proposer
+    /// * It can be cancelled if the number of YES votes is less than number of NO votes or the required quorum is not achieved
+    /// * The voting period must be over
+    /// * The proposal must not be cancelled or aborted
+    /// Arguments:
+    /// * `proposal_id`: the proposal ID
     async fn cancel_proposal(&mut self, proposal_id: u128) {
         if !self.proposals.contains_key(&proposal_id) {
             panic!("proposal does not exist");
@@ -460,7 +442,13 @@ impl Dao {
         proposal.token_tribute = 0;
         proposal.cancelled = true;
 
-        transfer_tokens(&self.approved_token_program_id, &exec::program_id(), &proposal.applicant, amount).await;
+        transfer_tokens(
+            &self.approved_token_program_id,
+            &exec::program_id(),
+            &proposal.applicant,
+            amount,
+        )
+        .await;
 
         msg::reply(
             DaoEvent::Cancel {
@@ -471,14 +459,14 @@ impl Dao {
         );
     }
 
-    // Aborts the membership proposal. It can be used in case when applicant is disagree with the requested shares or the details the proposer  indicated by the proposer
-    // Requirements:
-    // * `msg::source()` must be the applicant
-    // * The proposal must be membership proposal
-    // * The proposal can be aborted during only the abort window
-    // * The proposal must not be aborted yet
-    // Arguments:
-    // * `proposal_id`: the proposal ID
+    /// Aborts the membership proposal. It can be used in case when applicant is disagree with the requested shares or the details the proposer  indicated by the proposer
+    /// Requirements:
+    /// * `msg::source()` must be the applicant
+    /// * The proposal must be membership proposal
+    /// * The proposal can be aborted during only the abort window
+    /// * The proposal must not be aborted yet
+    /// Arguments:
+    /// * `proposal_id`: the proposal ID
     async fn abort(&mut self, proposal_id: u128) {
         if !self.proposals.contains_key(&proposal_id) {
             panic!("proposal does not exist");
@@ -499,7 +487,13 @@ impl Dao {
         proposal.token_tribute = 0;
         proposal.aborted = true;
 
-        transfer_tokens(&self.approved_token_program_id, &exec::program_id(), &msg::source(), amount).await;
+        transfer_tokens(
+            &self.approved_token_program_id,
+            &exec::program_id(),
+            &msg::source(),
+            amount,
+        )
+        .await;
 
         msg::reply(
             DaoEvent::Abort {
@@ -511,11 +505,11 @@ impl Dao {
         );
     }
 
-    // Assigns the admin position to new actor
-    // Requirements:
-    // * Only admin can assign new admin
-    // Arguments:
-    // * `new_admin`: valid actor ID
+    /// Assigns the admin position to new actor
+    /// Requirements:
+    /// * Only admin can assign new admin
+    /// Arguments:
+    /// * `new_admin`: valid actor ID
     fn set_admin(&mut self, new_admin: &ActorId) {
         if self.admin != msg::source() {
             panic!("only admin can assign new admin");
@@ -524,20 +518,17 @@ impl Dao {
             panic!("new admin ID cant be zero");
         }
         self.admin = *new_admin;
-        msg::reply(
-            DaoEvent::AdminUpdated(*new_admin),
-            0,
-        );
+        msg::reply(DaoEvent::AdminUpdated(*new_admin), 0);
     }
 
-    // Sets the delegate key that is responsible for submitting proposals and voting
-    // The deleagate key defaults to member address unless updated
-    // Requirements:
-    // * `msg::source()` must be DAO member
-    // * The delegate key must not be zero address
-    // * A delegate key can be assigned only to one member
-    // Arguments:
-    // * `new_delegate_key`: the valid actor ID
+    /// Sets the delegate key that is responsible for submitting proposals and voting
+    /// The deleagate key defaults to member address unless updated
+    /// Requirements:
+    /// * `msg::source()` must be DAO member
+    /// * The delegate key must not be zero address
+    /// * A delegate key can be assigned only to one member
+    /// Arguments:
+    /// * `new_delegate_key`: the valid actor ID
     fn update_delegate_key(&mut self, new_delegate_key: &ActorId) {
         if !self.is_member(&msg::source()) {
             panic!("account is not a DAO member");
@@ -567,7 +558,7 @@ impl Dao {
         (share * balance) / self.total_shares
     }
 
-    //checks that account is DAO member
+    // checks that account is DAO member
     fn is_member(&self, account: &ActorId) -> bool {
         match self.members.get(account) {
             Some(member) => {
@@ -580,6 +571,15 @@ impl Dao {
             }
         }
         true
+    }
+
+    // check that `msg::source()` is either a DAO member or a delegate key
+    fn check_for_membership(&self) {
+        match self.member_by_delegate_key.get(&msg::source()) {
+            Some(member) if !self.is_member(member) => panic!("account is not a DAO member"),
+            None => panic!("account is not a delegate"),
+            _ => {}
+        }
     }
 }
 
@@ -625,7 +625,7 @@ pub unsafe extern "C" fn init() {
 #[gstd::async_main]
 async unsafe fn main() {
     let action: DaoAction = msg::load().expect("Could not load Action");
-    let dao: &mut Dao = unsafe {DAO.get_or_insert(Dao::default())};
+    let dao: &mut Dao = unsafe { DAO.get_or_insert(Dao::default()) };
     match action {
         DaoAction::AddToWhiteList(account) => dao.add_to_whitelist(&account),
         DaoAction::SubmitMembershipProposal {

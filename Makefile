@@ -11,6 +11,7 @@ all:
 check: all
 	@cargo +nightly test --release --workspace
 	@cargo +nightly test --release --manifest-path ping/Cargo.toml
+	@cargo +nightly test --release --manifest-path dao/Cargo.toml
 
 clean:
 	@echo ──────────── Clean ────────────────────────────
