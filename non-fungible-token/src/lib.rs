@@ -41,7 +41,7 @@ impl NonFungibleTokenBase for NonFungibleToken {
             panic!("NonFungibleToken: Transfer to zero address.");
         }
 
-        let owner = self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID).clone();
+        let owner = *self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID);
 
         if &owner == to {
             panic!("NonFungibleToken: Transfer to current owner");
