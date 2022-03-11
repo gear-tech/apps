@@ -13,7 +13,7 @@ all:
 check: all
 	@cargo +nightly test --release --workspace
 	@cargo +nightly test --release --manifest-path ping/Cargo.toml
-  @cargo +nightly test --release --manifest-path fungible-token/Cargo.toml
+	@cargo +nightly test --release --manifest-path fungible-token/Cargo.toml
 	@cargo +nightly test --release --manifest-path erc1155/Cargo.toml
 	@cargo +nightly test --release --manifest-path dao/Cargo.toml
 
