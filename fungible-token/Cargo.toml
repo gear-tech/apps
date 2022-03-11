@@ -15,9 +15,10 @@ sp-arithmetic = { default-features = false, git = "https://github.com/paritytech
 ft-io = {path = "io"}
 
 [dev-dependencies]
-gtest = { git = "https://github.com/gear-tech/gear.git", rev = "e81b56a" }
+gtest = { git = "https://github.com/gear-tech/gear.git"}
 
 [build-dependencies]
 gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }
 
 [workspace]
+
