@@ -2,7 +2,7 @@
 #![feature(const_btree_new)]
 
 use codec::{Decode, Encode};
-use gstd::{exec, msg, prelude::*, ActorId};
+use gstd::{msg, prelude::*, ActorId};
 pub mod base;
 use base::NonFungibleTokenBase;
 pub mod token;
@@ -11,7 +11,6 @@ use token::TokenMetadata;
 use primitive_types::U256;
 use scale_info::TypeInfo;
 
-const GAS_RESERVE: u64 = 500_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug)]
@@ -70,7 +69,6 @@ impl NonFungibleTokenBase for NonFungibleToken {
                 to: *to,
                 token_id,
             },
-            exec::gas_available() - GAS_RESERVE,
             0,
         );
     }
@@ -94,7 +92,6 @@ impl NonFungibleTokenBase for NonFungibleToken {
                 spender: *spender,
                 token_id,
             },
-            exec::gas_available() - GAS_RESERVE,
             0,
         );
     }
@@ -114,27 +111,18 @@ impl NonFungibleTokenBase for NonFungibleToken {
                 operator: *operator,
                 approved,
             },
-            exec::gas_available() - GAS_RESERVE,
             0,
         );
     }
 
     fn balance_of(&self, account: &ActorId) {
         let balance = *self.balances.get(account).unwrap_or(&U256::zero());
-        msg::reply(
-            Event::BalanceOf(balance),
-            exec::gas_available() - GAS_RESERVE,
-            0,
-        );
+        msg::reply(Event::BalanceOf(balance), 0);
     }
 
     fn owner_of(&self, token_id: U256) {
         let owner = self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID);
-        msg::reply(
-            Event::OwnerOf(*owner),
-            exec::gas_available() - GAS_RESERVE,
-            0,
-        );
+        msg::reply(Event::OwnerOf(*owner), 0);
     }
 }
 

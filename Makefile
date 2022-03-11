@@ -6,17 +6,22 @@ all:
 	@wasm-proc --path ./target/wasm32-unknown-unknown/release/*.wasm
 	@ls -la ./target/wasm32-unknown-unknown/release/*.wasm
 	@cargo build --release --manifest-path ping/Cargo.toml
+	@cargo +nightly build --release --manifest-path erc1155/Cargo.toml
 	@cp ./ping/target/wasm32-unknown-unknown/release/*.wasm ./target/wasm32-unknown-unknown/release/
+	@cp ./erc1155/target/wasm32-unknown-unknown/release/*.wasm ./target/wasm32-unknown-unknown/release/
 
 check: all
 	@cargo +nightly test --release --workspace
 	@cargo +nightly test --release --manifest-path ping/Cargo.toml
+  @cargo +nightly test --release --manifest-path fungible-token/Cargo.toml
+	@cargo +nightly test --release --manifest-path erc1155/Cargo.toml
 	@cargo +nightly test --release --manifest-path dao/Cargo.toml
 
 clean:
 	@echo ──────────── Clean ────────────────────────────
 	@rm -rvf target
 	@rm -rvf ping/target
+	@rm -rvf erc1155/target
 
 fmt:
 	@echo ──────────── Format ───────────────────────────

@@ -1,19 +1,21 @@
 [package]
-name = "nft-example"
+name = "erc1155"
 version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0"
 authors = ["Gear Technologies"]
-edition = "2018"
 
-[lib]
-crate-type = ["cdylib"]
+[build-dependencies]
+gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }
 
 [dependencies]
 gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
-primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info"]}
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
-non-fungible-token = { path = "../non-fungible-token" }
-nft-example-io = { path = "io" }
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info"] }
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git", rev = "e81b56a" }
+
+[workspace]

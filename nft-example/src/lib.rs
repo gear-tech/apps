@@ -2,7 +2,7 @@
 #![feature(const_btree_new)]
 
 use codec::Encode;
-use gstd::{debug, exec, msg, prelude::*, ActorId};
+use gstd::{debug, msg, prelude::*, ActorId};
 use primitive_types::U256;
 
 pub mod state;
@@ -13,7 +13,6 @@ pub use nft_example_io::{Action, Event, InitConfig};
 use non_fungible_token::base::NonFungibleTokenBase;
 use non_fungible_token::NonFungibleToken;
 
-const GAS_RESERVE: u64 = 500_000_000;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug)]
@@ -47,7 +46,6 @@ impl NFT {
                 to: msg::source(),
                 token_id: self.token_id,
             },
-            exec::gas_available() - GAS_RESERVE,
             0,
         );
         self.token_id = self.token_id.saturating_add(U256::one());
@@ -76,7 +74,6 @@ impl NFT {
                 to: ZERO_ID,
                 token_id,
             },
-            exec::gas_available() - GAS_RESERVE,
             0,
         );
     }
