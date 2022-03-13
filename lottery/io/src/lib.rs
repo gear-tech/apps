@@ -19,7 +19,7 @@ pub struct LotteryState {
 
 #[derive(Debug, Default, Encode, Decode, TypeInfo, Clone, Copy)]
 pub struct Player {
-    pub player_id: ActorId,
+    pub player: ActorId,
     pub balance: u128,
 }
 
