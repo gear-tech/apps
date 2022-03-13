@@ -7,10 +7,7 @@ const USERS: &'static [u64] = &[3, 4, 5];
 fn init_with_mint(sys: &System) {
     sys.init_logger();
 
-    let ft = Program::from_file(
-        &sys,
-        "./target/wasm32-unknown-unknown/release/fungible_token.wasm",
-    );
+    let ft = Program::current(&sys);
 
     let res = ft.send(
         USERS[0],

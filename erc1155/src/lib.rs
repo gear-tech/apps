@@ -62,7 +62,7 @@ impl ERC1155Token {
 
 impl ERC1155TokenBase for ERC1155Token {
     fn balance_of(&self, account: &ActorId, id: &u128) -> u128 {
-        return self.get_balance(account, id);
+        self.get_balance(account, id)
     }
 
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[u128]) -> Vec<BalanceOfBatchReply> {
@@ -74,18 +74,18 @@ impl ERC1155TokenBase for ERC1155Token {
 
         for (i, ele) in ids.iter().enumerate() {
             let account = accounts[i];
-            let amount = self.balance_of(&account, &ele);
+            let amount = self.balance_of(&account, ele);
 
             let obj = BalanceOfBatchReply {
-                account: account,
+                account,
                 id: *ele,
-                amount: amount,
+                amount,
             };
 
             arr.push(obj);
         }
 
-        return arr;
+        arr
     }
 
     fn set_approval_for_all(&mut self, operator: &ActorId, approved: bool) {
@@ -101,12 +101,11 @@ impl ERC1155TokenBase for ERC1155Token {
             .insert(*operator, approved);
     }
 
-    fn is_approved_for_all(&mut self, owner: &ActorId, operator: &ActorId) -> &bool {
-        self.operator_approvals
-            .entry(*owner)
-            .or_default()
-            .get(operator)
-            .unwrap_or(&false)
+    fn is_approved_for_all(&self, owner: &ActorId, operator: &ActorId) -> bool {
+        self.operator_approvals.contains_key(owner)
+            && *self.operator_approvals[owner]
+                .get(operator)
+                .unwrap_or(&false)
     }
 
     fn safe_transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &u128, amount: u128) {
@@ -114,7 +113,7 @@ impl ERC1155TokenBase for ERC1155Token {
             panic!("ERC1155: sender and recipient addresses are the same")
         }
 
-        if !(from == &msg::source() || *self.is_approved_for_all(from, &msg::source())) {
+        if !(from == &msg::source() || self.is_approved_for_all(from, &msg::source())) {
             panic!("ERC1155: caller is not owner nor approved")
         }
 
@@ -144,7 +143,7 @@ impl ERC1155TokenBase for ERC1155Token {
             panic!("ERC1155: sender and recipient addresses are the same")
         }
 
-        if !(from == &msg::source() || *self.is_approved_for_all(from, &msg::source())) {
+        if !(from == &msg::source() || self.is_approved_for_all(from, &msg::source())) {
             panic!("ERC1155: caller is not owner nor approved")
         }
 
@@ -176,11 +175,7 @@ impl ExtendERC1155TokenBase for ERC1155Token {
     fn owner_of(&self, id: &u128) -> bool {
         let owner = msg::source();
 
-        if self.balance_of(&owner, id) == 0u128 {
-            return false;
-        } else {
-            return true;
-        }
+        self.balance_of(&owner, id) != 0
     }
 
     fn owner_of_batch(&self, ids: &[u128]) -> bool {
@@ -191,7 +186,7 @@ impl ExtendERC1155TokenBase for ERC1155Token {
             }
         }
 
-        return true;
+        true
     }
 
     fn mint(&mut self, account: &ActorId, id: &u128, amount: u128) {
@@ -291,8 +286,8 @@ pub unsafe extern "C" fn handle() {
                 operator: msg::source(),
                 from: ZERO_ID,
                 to: account,
-                id: id,
-                amount: amount,
+                id,
+                amount,
             };
 
             msg::reply(Event::TransferSingle(transfer_data), 0);
@@ -312,7 +307,7 @@ pub unsafe extern "C" fn handle() {
                 operator: msg::source(),
                 from: ZERO_ID,
                 to: account,
-                ids: ids,
+                ids,
                 values: amounts,
             };
             msg::reply(payload, 0);
@@ -323,10 +318,10 @@ pub unsafe extern "C" fn handle() {
 
             let transfer_data = TransferSingleReply {
                 operator: msg::source(),
-                from: from,
-                to: to,
-                id: id,
-                amount: amount,
+                from,
+                to,
+                id,
+                amount,
             };
 
             msg::reply(Event::TransferSingle(transfer_data), 0);
@@ -337,9 +332,9 @@ pub unsafe extern "C" fn handle() {
 
             let payload = Event::TransferBatch {
                 operator: msg::source(),
-                from: from,
-                to: to,
-                ids: ids,
+                from,
+                to,
+                ids,
                 values: amounts,
             };
 
@@ -352,9 +347,9 @@ pub unsafe extern "C" fn handle() {
             let owner = msg::source();
 
             let payload = Event::ApprovalForAll {
-                owner: owner,
-                operator: operator,
-                approved: approved,
+                owner,
+                operator,
+                approved,
             };
 
             msg::reply(payload, 0);
@@ -364,9 +359,9 @@ pub unsafe extern "C" fn handle() {
             let approved = ERC1155_TOKEN.is_approved_for_all(&owner, &operator);
 
             let payload = Event::ApprovalForAll {
-                owner: owner,
-                operator: operator,
-                approved: *approved,
+                owner,
+                operator,
+                approved,
             };
 
             msg::reply(payload, 0);
@@ -379,7 +374,7 @@ pub unsafe extern "C" fn handle() {
                 operator: msg::source(),
                 from: msg::source(),
                 to: ZERO_ID,
-                ids: ids,
+                ids,
                 values: amounts,
             };
 
