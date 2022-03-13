@@ -50,7 +50,7 @@ fn balance_of_batch(&self, accounts: &[ActorId], ids: &[u128]) -> Vec<BalanceOfB
 fn set_approval_for_all(&mut self, operator: &ActorId, approved: bool);
 
 // Queries the approval status of an operator for a given owner
-fn is_approved_for_all(&mut self, account: &ActorId, operator: &ActorId) -> &bool;
+fn is_approved_for_all(&self, account: &ActorId, operator: &ActorId) -> &bool;
 
 // Transfers amount of tokens from address to other address, and MUST emit the TransferSingle event
 fn safe_transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &u128, amount: u128);
@@ -130,4 +130,3 @@ pub struct BalanceOfBatchReply {
 ## Ref
 
 https://docs.openzeppelin.com/contracts/4.x/api/token/erc1155
-

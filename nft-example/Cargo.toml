@@ -4,9 +4,6 @@ version = "0.1.0"
 authors = ["Gear Technologies"]
 edition = "2018"
 
-[lib]
-crate-type = ["cdylib"]
-
 [dependencies]
 gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
 primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info"]}
@@ -17,3 +14,6 @@ nft-example-io = { path = "io" }
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git", rev = "e81b56a" }
+
+[build-dependencies]
+gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }

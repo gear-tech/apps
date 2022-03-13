@@ -2,26 +2,15 @@
 
 all:
 	@echo ──────────── Build release ────────────────────
-	@cargo +nightly build --target wasm32-unknown-unknown --workspace --release
-	@wasm-proc --path ./target/wasm32-unknown-unknown/release/*.wasm
+	@cargo +nightly build --workspace --release
 	@ls -la ./target/wasm32-unknown-unknown/release/*.wasm
-	@cargo build --release --manifest-path ping/Cargo.toml
-	@cargo +nightly build --release --manifest-path erc1155/Cargo.toml
-	@cp ./ping/target/wasm32-unknown-unknown/release/*.wasm ./target/wasm32-unknown-unknown/release/
-	@cp ./erc1155/target/wasm32-unknown-unknown/release/*.wasm ./target/wasm32-unknown-unknown/release/
 
 check: all
 	@cargo +nightly test --release --workspace
-	@cargo +nightly test --release --manifest-path ping/Cargo.toml
-	@cargo +nightly test --release --manifest-path fungible-token/Cargo.toml
-	@cargo +nightly test --release --manifest-path erc1155/Cargo.toml
-	@cargo +nightly test --release --manifest-path dao/Cargo.toml
 
 clean:
 	@echo ──────────── Clean ────────────────────────────
 	@rm -rvf target
-	@rm -rvf ping/target
-	@rm -rvf erc1155/target
 
 fmt:
 	@echo ──────────── Format ───────────────────────────
@@ -33,7 +22,7 @@ fmt-check:
 
 linter:
 	@echo ──────────── Run linter ───────────────────────
-	@cargo +nightly clippy --target wasm32-unknown-unknown --workspace -- --no-deps -D warnings -A "clippy::missing_safety_doc"
+	@cargo +nightly clippy --workspace -- --no-deps -D warnings -A "clippy::missing_safety_doc"
 
 pre-check: fmt-check linter check
 
@@ -42,4 +31,3 @@ pre-commit: fmt linter check
 prepare:
 	@rustup toolchain add nightly
 	@rustup target add wasm32-unknown-unknown --toolchain nightly
-	@cargo install --locked --git https://github.com/gear-tech/gear wasm-proc
