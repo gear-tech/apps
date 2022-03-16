@@ -6,7 +6,7 @@ pub trait ERC1155TokenBase {
     fn balance_of(&self, account: &ActorId, id: &u128) -> u128;
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[u128]) -> Vec<BalanceOfBatchReply>;
     fn set_approval_for_all(&mut self, operator: &ActorId, approved: bool);
-    fn is_approved_for_all(&mut self, account: &ActorId, operator: &ActorId) -> &bool;
+    fn is_approved_for_all(&self, account: &ActorId, operator: &ActorId) -> bool;
     fn safe_transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &u128, amount: u128);
     fn safe_batch_transfer_from(
         &mut self,

@@ -17,7 +17,7 @@ const BALANCE: u128 = 100;
 fn init(sys: &System) -> Program {
     sys.init_logger();
 
-    let ft = Program::from_file(&sys, "./target/wasm32-unknown-unknown/release/erc1155.wasm");
+    let ft = Program::current(&sys);
 
     let init_config = InitConfig {
         name: String::from("Gear"),
@@ -32,7 +32,7 @@ fn init(sys: &System) -> Program {
 fn init_with_mint(sys: &System) {
     sys.init_logger();
 
-    let ft = Program::from_file(&sys, "./target/wasm32-unknown-unknown/release/erc1155.wasm");
+    let ft = Program::current(&sys);
 
     let init_config = InitConfig {
         name: String::from("Gear"),

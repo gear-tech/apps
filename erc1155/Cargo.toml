@@ -17,5 +17,3 @@ primitive-types = { version = "0.10.1", default-features = false, features = ["s
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git", rev = "e81b56a" }
-
-[workspace]
