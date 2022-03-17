@@ -6,7 +6,7 @@ use scale_info::TypeInfo;
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum DaoAction {
-    AddToWhiteList(ActorId),
+    RequestForMembership(u128),
     SubmitMembershipProposal {
         applicant: ActorId,
         token_tribute: u128,
@@ -34,7 +34,7 @@ pub enum DaoAction {
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum DaoEvent {
-    MemberAddedToWhitelist(ActorId),
+    RequestForMembership(ActorId),
     SubmitMembershipProposal {
         proposer: ActorId,
         applicant: ActorId,
@@ -93,3 +93,4 @@ pub enum Vote {
     Yes,
     No,
 }
+

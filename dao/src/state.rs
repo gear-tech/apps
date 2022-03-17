@@ -1,22 +1,38 @@
 use crate::{Member, Proposal};
 use codec::{Decode, Encode};
-use gstd::ActorId;
+use gstd::{ActorId, prelude::*};
 use scale_info::TypeInfo;
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
+pub enum Role {
+    Admin,
+    Member,
+    None,
+}
+
+#[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum State {
+    UserStatus(ActorId),
+    AllProposals,
     IsMember(ActorId),
-    IsInWhitelist(ActorId),
+    IsInWaitlist(ActorId),
+    AmountOfTokens(ActorId),
     ProposalId,
     ProposalInfo(u128),
     MemberInfo(ActorId),
 }
 
-#[derive(Debug, Encode, TypeInfo)]
+#[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum StateReply {
+    UserStatus(Role),
+    AllProposals(BTreeMap<u128, Proposal>),
     IsMember(bool),
-    IsInWhitelist(bool),
+    IsInWaitlist(bool),
+    AmountOfTokens(u128),
     ProposalId(u128),
-    ProposalInfo(Proposal),
+    ProposalInfo{
+        proposal_id: u128,
+        proposal: Proposal
+    },
     MemberInfo(Member),
 }

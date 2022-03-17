@@ -23,7 +23,7 @@ struct Dao {
     member_by_delegate_key: BTreeMap<ActorId, ActorId>,
     proposal_id: u128,
     proposals: BTreeMap<u128, Proposal>,
-    whitelist: Vec<ActorId>,
+    wait_list: BTreeMap<ActorId, u128>,
 }
 
 #[derive(Debug, Default, Clone, Decode, Encode, TypeInfo)]
@@ -57,25 +57,14 @@ pub struct Member {
 static mut DAO: Option<Dao> = None;
 
 impl Dao {
-    /// Adds members to whitelist
-    /// Requirements:
-    /// * Only admin can add actors to whitelist
-    /// * Member ID cant be zero
-    /// * Member can not be added to whitelist more than once
-    /// Arguments:
-    /// * `member`: valid actor ID
-    fn add_to_whitelist(&mut self, member: &ActorId) {
-        if self.admin != msg::source() {
-            panic!("msg::source() must be DAO admin");
+    
+    async fn request_for_membership(&mut self, amount: u128) {       
+        if self.wait_list.contains_key(&msg::source()) {
+            panic!("You have already requested for membership");
         }
-        if member == &ZERO_ID {
-            panic!("Member ID can not be zero");
-        }
-        if self.whitelist.contains(member) {
-            panic!("Member has already been added to the whitelist");
-        }
-        self.whitelist.push(*member);
-        msg::reply(DaoEvent::MemberAddedToWhitelist(*member), 0);
+        approve_tokens(&self.approved_token_program_id, &exec::program_id(), amount).await;
+        self.wait_list.insert(msg::source(), amount);
+        msg::reply(DaoEvent::RequestForMembership(msg::source()), 0);
     }
 
     /// The proposal of joining the DAO.
@@ -98,10 +87,9 @@ impl Dao {
     ) {
         self.check_for_membership();
         // check that applicant is either in whitelist or a DAO member
-        if !self.whitelist.contains(applicant) && !self.members.contains_key(applicant) {
-            panic!("Applicant must be either in whitelist or be a DAO member");
+        if !self.wait_list.contains_key(applicant) && !self.members.contains_key(applicant) {
+            panic!("Applicant must be either in wait_list or be a DAO member");
         }
-
         // transfer applicant tokens to DAO contract
         transfer_tokens(
             &self.approved_token_program_id,
@@ -627,7 +615,7 @@ async unsafe fn main() {
     let action: DaoAction = msg::load().expect("Could not load Action");
     let dao: &mut Dao = unsafe { DAO.get_or_insert(Dao::default()) };
     match action {
-        DaoAction::AddToWhiteList(account) => dao.add_to_whitelist(&account),
+        DaoAction::RequestForMembership(amount) => dao.request_for_membership(amount).await,
         DaoAction::SubmitMembershipProposal {
             applicant,
             token_tribute,
@@ -674,13 +662,30 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let state: State = msg::load().expect("failed to decode input argument");
     let dao: &mut Dao = DAO.get_or_insert(Dao::default());
     let encoded = match state {
+        State::UserStatus(account) => {
+            let role = if account == dao.admin {
+                Role::Admin
+            } else if dao.is_member(&account) {
+                Role::Member
+            } else {
+                Role::None
+            };
+            StateReply::UserStatus(role).encode()
+        }
+        State::AllProposals => StateReply::AllProposals(dao.proposals.clone()).encode(),
         State::IsMember(account) => StateReply::IsMember(dao.is_member(&account)).encode(),
-        State::IsInWhitelist(account) => {
-            StateReply::IsInWhitelist(dao.whitelist.contains(&account)).encode()
+        State::IsInWaitlist(account) => {
+            StateReply::IsInWaitlist(dao.wait_list.contains_key(&account)).encode()
+        }
+        State::AmountOfTokens(account) => {
+            StateReply::AmountOfTokens(*dao.wait_list.get(&account).expect("that account is not on wait list")).encode()
         }
         State::ProposalId => StateReply::ProposalId(dao.proposal_id).encode(),
-        State::ProposalInfo(input) => {
-            StateReply::ProposalInfo(dao.proposals.get(&input).unwrap().clone()).encode()
+        State::ProposalInfo(proposal_id) => {
+            StateReply::ProposalInfo{
+                proposal_id,
+                proposal: dao.proposals.get(&proposal_id).unwrap().clone()
+            }.encode()
         }
         State::MemberInfo(account) => {
             StateReply::MemberInfo(dao.members.get(&account).unwrap().clone()).encode()

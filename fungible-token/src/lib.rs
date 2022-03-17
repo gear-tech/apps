@@ -4,7 +4,7 @@
 mod tests;
 
 use ft_io::*;
-use gstd::{exec, msg, prelude::*, ActorId};
+use gstd::{exec, debug, msg, prelude::*, ActorId};
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
@@ -27,11 +27,16 @@ static mut FUNGIBLE_TOKEN: Option<FungibleToken> = None;
 impl FungibleToken {
     /// Executed on receiving `fungible-token-messages::MintInput`.
     fn mint(&mut self, amount: u128) {
+        debug!("msg::source() {:?}", msg::source());
+        let balance = self.balances.get(&msg::source()).unwrap_or(&0);
+        debug!("balance before {:?}", balance);
         self.balances
             .entry(msg::source())
             .and_modify(|balance| *balance += amount)
             .or_insert(amount);
         self.total_supply += amount;
+        let balance = self.balances.get(&msg::source()).unwrap_or(&0);
+        debug!("balance after {:?}", balance);
         msg::reply(
             Event::Transfer {
                 from: ZERO_ID,
