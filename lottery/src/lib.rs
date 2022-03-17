@@ -15,8 +15,10 @@ struct Lottery {
     lottery_state: LotteryState,
     ///Lottery owner
     lottery_owner: ActorId,
-    ///Players
+    ///Players by index
     players: BTreeMap<u32, Player>,
+    ///Players by timestamp
+    players_timestamp: BTreeMap<ActorId, u64>,
     ///Winners list
     lottery_history: BTreeMap<u32, ActorId>,
     ///Lottery Id
@@ -41,14 +43,20 @@ impl Lottery {
 
     fn enter(&mut self) {
         if self.lottery_state() && msg::value() > 0 {
-            let player = Player {
-                player_id: msg::source(),
-                balance: msg::value(),
-            };
+            if self.players_timestamp.get(&msg::source()) == None {
+                let player = Player {
+                    player_id: msg::source(),
+                    balance: msg::value(),
+                };
 
-            let player_index = self.players.len() as u32;
-            self.players.insert(player_index, player);
-            msg::reply(Event::PlayerAdded(player_index), 0);
+                let player_index = self.players.len() as u32;
+                self.players.insert(player_index, player);
+                self.players_timestamp
+                    .insert(msg::source(), exec::block_timestamp());
+                msg::reply(Event::PlayerAdded(player_index), 0);
+            } else {
+                debug!("Player {:?} already added", msg::source());
+            }
         }
     }
 
