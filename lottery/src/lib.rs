@@ -25,14 +25,9 @@ struct Lottery {
 
 impl Lottery {
     fn lottery_state(&mut self) -> bool {
-        if self.lottery_state.lottery_started
+        self.lottery_state.lottery_started
             && (self.lottery_state.lottery_start_time + self.lottery_state.lottery_duration)
                 > exec::block_timestamp()
-        {
-            return true;
-        }
-
-        return false;
     }
 
     fn start_lottery(&mut self, duration: u64) {
@@ -87,7 +82,7 @@ impl Lottery {
     }
 
     fn get_players(&mut self) {
-        if self.lottery_state() && self.players.len() > 0 {
+        if self.lottery_state() && !self.players.is_empty() {
             msg::reply(Event::Players(self.players.clone()), 0);
         }
     }
@@ -110,7 +105,7 @@ impl Lottery {
             && self.lottery_state.lottery_started
             && self.lottery_state.lottery_start_time + self.lottery_state.lottery_duration
                 <= exec::block_timestamp()
-            && self.players.len() > 0
+            && !self.players.is_empty()
         {
             let index: u32 = self.get_random_number() % (self.players.len() as u32);
 
@@ -124,9 +119,6 @@ impl Lottery {
             debug!("Winner: {}", index);
 
             self.lottery_state = LotteryState::default();
-            /*self.lottery_state.lottery_started = false;
-            self.lottery_state.lottery_start_time = 0;
-            self.lottery_state.lottery_duration = 0;*/
             self.players = BTreeMap::new();
         } else {
             debug!(
