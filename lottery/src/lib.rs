@@ -128,6 +128,7 @@ impl Lottery {
 
             self.lottery_state = LotteryState::default();
             self.players = BTreeMap::new();
+            self.players_timestamp = BTreeMap::new();
         } else {
             debug!(
                 "pick_winner() failed! {} {}",
