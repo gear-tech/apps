@@ -2,26 +2,21 @@
 name = "lottery"
 version = "0.1.0"
 edition = "2021"
+license = "GPL-3.0"
+authors = ["Gear Technologies"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-gcore = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
 gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
-
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
-hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
-primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info"]}
+primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info"] }
 sp-core = { version = "5.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable", default-features = false, features = ["full_crypto"] }
-lt-io = {path = "io"}
+lt-io = { path = "io" }
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git", rev = "e81b56a" }
 
 [build-dependencies]
 gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }
-
-[profile.release]
-lto = true
-opt-level = 's'
