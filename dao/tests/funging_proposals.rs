@@ -60,9 +60,7 @@ fn add_member(
     shares_requested: u128,
     quorum: u128,
 ) {
-    let res = dao.send(3, DaoAction::AddToWhiteList(applicant.into()));
-    assert!(!res.main_failed());
-
+   
     let res = dao.send(
         3,
         DaoAction::SubmitMembershipProposal {

@@ -100,12 +100,12 @@ impl FungibleToken {
             panic!("Approve to zero address");
         }
         self.allowances
-            .entry(msg::source())
+            .entry(exec::origin())
             .or_default()
             .insert(*to, amount);
         msg::reply(
             Event::Approve {
-                from: msg::source(),
+                from: exec::origin(),
                 to: *to,
                 amount,
             },
@@ -117,6 +117,7 @@ impl FungibleToken {
         if from == &msg::source()
             || from == &exec::origin()
             || self.balances.get(&msg::source()).unwrap_or(&0) >= &amount
+            || self.balances.get(&exec::origin()).unwrap_or(&0) >= &amount
         {
             return true;
         }

@@ -7,7 +7,7 @@ fn init_fungible_token(sys: &System) {
     sys.init_logger();
     let ft = Program::from_file(
         &sys,
-        "../target/wasm32-unknown-unknown/release/fungible_token.wasm",
+        "../fungible-token/target/wasm32-unknown-unknown/release/fungible_token.wasm",
     );
 
     let res = ft.send(
@@ -21,14 +21,6 @@ fn init_fungible_token(sys: &System) {
     assert!(res.log().is_empty());
 
     let res = ft.send(4, Action::Mint(10000000));
-    assert!(!res.main_failed());
-    let res = ft.send(
-        4,
-        Action::Approve {
-            to: 2.into(),
-            amount: 10000000,
-        },
-    );
     assert!(!res.main_failed());
 }
 
@@ -50,12 +42,11 @@ fn init_dao(sys: &System) {
     );
 
     assert!(res.log().is_empty());
-
-    let res = dao.send(3, DaoAction::AddToWhiteList(4.into()));
-    assert!(res.contains(&(3, DaoEvent::MemberAddedToWhitelist(4.into()).encode())));
 }
 
 fn create_membership_proposal(dao: &Program, proposal_id: u128) {
+    let res = dao.send(4, DaoAction::RequestForMembership(1000));
+    assert!(!res.main_failed());
     let res = dao.send(
         3,
         DaoAction::SubmitMembershipProposal {
