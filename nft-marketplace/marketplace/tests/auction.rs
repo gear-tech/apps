@@ -66,7 +66,7 @@ fn create_auction() {
     sys.init_logger();
     before_each_test(&sys);
     let market = sys.get_program(3);
-    let res = start_auction(&market, None, 1000, 60000, 86400000);
+    let res = start_auction(&market, None, 1000, 60_000, 86_400_000);
     assert!(res.contains(&(
         USERS[0],
         MarketEvent::AuctionCreated {
@@ -86,23 +86,23 @@ fn create_auction_failures() {
     let market = sys.get_program(3);
 
     // must fail since the bid period is less than 1 minute
-    let res = start_auction(&market, None, 1000, 50000, 86400000);
+    let res = start_auction(&market, None, 1_000, 50_000, 86_400_000);
     assert!(res.main_failed());
 
     // must fail since the bid period is less than 1 minute
-    let res = start_auction(&market, None, 1000, 60000, 50000);
+    let res = start_auction(&market, None, 1_000, 60_000, 50_000);
     assert!(res.main_failed());
 
     // must fail since the min price is equal to zero
-    let res = start_auction(&market, None, 0, 60000, 86400000);
+    let res = start_auction(&market, None, 0, 60_000, 86_400_000);
     assert!(res.main_failed());
 
     // start auction
-    let res = start_auction(&market, None, 1000, 60000, 86400000);
+    let res = start_auction(&market, None, 1_000, 60_000, 86_400_000);
     assert!(!res.main_failed());
 
     // must fail since the auction is already on
-    let res = start_auction(&market, None, 1000, 60000, 86400000);
+    let res = start_auction(&market, None, 1_000, 60_000, 86_400_000);
     assert!(res.main_failed());
 }
 
@@ -113,16 +113,16 @@ fn add_bid() {
     before_each_test(&sys);
     let market = sys.get_program(3);
     // start auction
-    let res = start_auction(&market, None, 100000, 60000, 86400000);
+    let res = start_auction(&market, None, 100_000, 60_000, 86_400_000);
     assert!(!res.main_failed());
 
-    let res = bid(&market, USERS[0], 100001);
+    let res = bid(&market, USERS[0], 100_001);
     assert!(res.contains(&(
         USERS[0],
         MarketEvent::BidAdded {
             nft_contract_id: 2.into(),
             token_id: 0.into(),
-            price: 100001,
+            price: 100_001,
         }
         .encode()
     )));
@@ -135,16 +135,16 @@ fn add_bid_failures() {
     before_each_test(&sys);
     let market = sys.get_program(3);
     // start auction
-    let res = start_auction(&market, None, 100000, 60000, 86400000);
+    let res = start_auction(&market, None, 100_000, 60_000, 86_400_000);
     assert!(!res.main_failed());
     // must fail since the price is equal to the current bid price
-    let res = bid(&market, USERS[0], 100000);
+    let res = bid(&market, USERS[0], 100_000);
     assert!(res.main_failed());
 
     sys.spend_blocks(86400001);
 
     // must fail since the auction has ended
-    let res = bid(&market, USERS[0], 200000);
+    let res = bid(&market, USERS[0], 200_000);
     assert!(res.main_failed());
 }
 
@@ -154,12 +154,12 @@ fn settle_auction() {
     sys.init_logger();
     before_each_test(&sys);
     let market = sys.get_program(3);
-    let res = start_auction(&market, None, 100000, 60000, 86400000);
+    let res = start_auction(&market, None, 100_000, 60_000, 86_400_000);
     assert!(!res.main_failed());
 
     // Users add bids
     USERS.iter().enumerate().for_each(|(i, user)| {
-        let res = bid(&market, *user, 100001 + i as u128);
+        let res = bid(&market, *user, 100_001 + i as u128);
         assert!(!res.main_failed());
     });
 
@@ -217,7 +217,7 @@ fn auction_is_cancelled() {
     sys.init_logger();
     before_each_test(&sys);
     let market = sys.get_program(3);
-    let res = start_auction(&market, None, 100000, 60000, 86400000);
+    let res = start_auction(&market, None, 100_000, 60_000, 86_400_000);
     assert!(!res.main_failed());
 
     sys.spend_blocks(86400001);
@@ -246,7 +246,7 @@ fn settle_auction_failures() {
     sys.init_logger();
     before_each_test(&sys);
     let market = sys.get_program(3);
-    let res = start_auction(&market, None, 100000, 60000, 86400000);
+    let res = start_auction(&market, None, 100_000, 60_000, 86_400_000);
     assert!(!res.main_failed());
 
     // must fail since the auction is not over
@@ -300,22 +300,22 @@ fn auction_with_ft_token() {
     let market = sys.get_program(3);
     let res = market.send(USERS[0], MarketAction::AddFTContract(1.into()));
     assert!(res.log().is_empty());
-    let res = start_auction(&market, Some(1.into()), 10000, 60000, 86400000);
+    let res = start_auction(&market, Some(1.into()), 10_000, 60_000, 86_400_000);
     assert!(!res.main_failed());
 
     // Mints tokens for users
     USERS.iter().for_each(|user| {
-        let res = ft.send(*user, FTAction::Mint(100000));
+        let res = ft.send(*user, FTAction::Mint(100_000));
         assert!(!res.main_failed());
     });
 
     // Users add bids
     USERS.iter().enumerate().for_each(|(i, user)| {
-        let res = bid(&market, *user, 10100 + 100 * i as u128);
+        let res = bid(&market, *user, 10_100 + 100 * i as u128);
         assert!(!res.main_failed());
     });
 
-    sys.spend_blocks(86400000);
+    sys.spend_blocks(86_400_000);
 
     let res = market.send(
         USERS[0],
@@ -347,15 +347,15 @@ fn auction_with_ft_token() {
     // check the balance of seller
     let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[0].into()));
     println!("{:?}", res.decoded_log::<FTEvent>());
-    assert!(res.contains(&(USERS[0], FTEvent::Balance(110296).encode())));
+    assert!(res.contains(&(USERS[0], FTEvent::Balance(110_296).encode())));
 
     // check the balance of buyer
     let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[3].into()));
-    assert!(res.contains(&(USERS[0], FTEvent::Balance(89600).encode())));
+    assert!(res.contains(&(USERS[0], FTEvent::Balance(89_600).encode())));
 
     // check the balances of user who don't win auctions
     let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[1].into()));
-    assert!(res.contains(&(USERS[0], FTEvent::Balance(100000).encode())));
+    assert!(res.contains(&(USERS[0], FTEvent::Balance(100_000).encode())));
 
     // Checks NFT item on the marketplace
     let res = market.send(

@@ -36,7 +36,7 @@ fn buy() {
     assert!(!res.main_failed());
     // add nft to market
     let market = sys.get_program(3);
-    add_market_data(&market, None, USERS[0], 0, Some(100000));
+    add_market_data(&market, None, USERS[0], 0, Some(100_000));
 
     let res = market.send_with_value(
         USERS[1],
@@ -88,7 +88,7 @@ fn buy_with_tokens() {
     before_each_test(&sys);
     let ft = sys.get_program(1);
     // mint ft
-    let res = ft.send(USERS[1], FTAction::Mint(10000));
+    let res = ft.send(USERS[1], FTAction::Mint(10_000));
     assert!(!res.main_failed());
     let nft = sys.get_program(2);
     // mint nft
@@ -102,7 +102,7 @@ fn buy_with_tokens() {
     assert!(!res.main_failed());
     // add nft to market
     let market = sys.get_program(3);
-    add_market_data(&market, Some(1.into()), USERS[0], 0, Some(1000));
+    add_market_data(&market, Some(1.into()), USERS[0], 0, Some(1_000));
 
     let res = market.send(
         USERS[1],
@@ -189,7 +189,7 @@ fn buy_failures() {
 
     assert!(res.main_failed());
 
-    add_market_data(&market, None, USERS[0], 0, Some(1000));
+    add_market_data(&market, None, USERS[0], 0, Some(1_000));
     // must fail since that the attached value is not equal to the indicated price
     let res = market.send_with_value(
         USERS[1],
