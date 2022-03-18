@@ -19,21 +19,13 @@ pub struct Player {
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum Action {
-    ///New player
     Enter,
-    ///Start lottery(lottery end time)
     StartLottery(u64),
-    ///Lottery state
     LotteryState,
-    ///Pick wiiner
     PickWinner,
-    ///Get balance(index)
     BalanceOf(u32),
-    ///Get players list
     GetPlayers,
-    ///Remove player
     LeaveLottery(u32),
-    ///Add balance
     AddValue(u32),
 }
 
@@ -43,7 +35,6 @@ pub enum Event {
     Winner(u32),
     Balance(u128),
     Players(BTreeMap<u32, Player>),
-    ///Player added(Index)
     PlayerAdded(u32),
 }
 

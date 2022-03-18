@@ -11,17 +11,11 @@ use sp_core::hashing::blake2_256;
 
 #[derive(Debug, Default, Encode, Decode, TypeInfo)]
 struct Lottery {
-    ///Lottery state
     lottery_state: LotteryState,
-    ///Lottery owner
     lottery_owner: ActorId,
-    ///Players by index
     players: BTreeMap<u32, Player>,
-    ///Players by timestamp
     players_timestamp: BTreeMap<ActorId, u64>,
-    ///Winners list
     lottery_history: BTreeMap<u32, ActorId>,
-    ///Lottery Id
     lottery_id: u32,
 }
 
@@ -216,8 +210,6 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
 
 gstd::metadata! {
     title: "Lottery",
-        init:
-
         handle:
             input: Action,
             output: Event,
