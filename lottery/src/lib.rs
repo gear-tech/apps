@@ -210,10 +210,10 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
 
 gstd::metadata! {
     title: "Lottery",
-        handle:
-            input: Action,
-            output: Event,
-        state:
-            input: State,
-            output: StateReply,
+    handle:
+        input: Action,
+        output: Event,
+    state:
+        input: State,
+        output: StateReply,
 }
