@@ -66,6 +66,7 @@ impl Lottery {
                 if player.player_id == msg::source() {
                     msg::send_bytes(player.player_id, b"LeaveLottery", player.balance);
                     self.players.remove(&index);
+                    self.players_timestamp.remove(&msg::source());
                 }
             }
         }
