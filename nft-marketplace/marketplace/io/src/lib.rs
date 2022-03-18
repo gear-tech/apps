@@ -26,7 +26,7 @@ pub struct Auction {
     pub started_at: u64,
     pub ended_at: u64,
     pub current_price: u128,
-    pub bids: Option<Vec<Bid>>,
+    pub bids: Vec<Bid>,
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo, Clone)]

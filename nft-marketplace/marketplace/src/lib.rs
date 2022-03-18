@@ -130,9 +130,6 @@ gstd::metadata! {
         handle:
             input: MarketAction,
             output: MarketEvent,
-        state:
-            input: State,
-            output: StateReply,
 }
 
 #[gstd::async_main]
@@ -243,29 +240,4 @@ pub unsafe extern "C" fn init() {
         ..Market::default()
     };
     MARKET = Some(market);
-}
-
-// #[no_mangle]
-// pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
-//     let query: State = msg::load().expect("failed to decode input argument");
-//     let encoded = match query {
-//         State::ItemInfo => {
-
-//         }
-//     };
-//     let result = gstd::macros::util::to_wasm_ptr(&(encoded[..]));
-
-//     core::mem::forget(encoded);
-
-//     result
-// }
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum State {
-    ItemInfo,
-}
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum StateReply {
-    ItemInfo,
 }

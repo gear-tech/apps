@@ -9,21 +9,14 @@ use primitive_types::{H256, U256};
 use sp_core::{hashing, H256 as spH256};
 
 fn get_hash(nft_contract_id: &ActorId, ft_contract_id: Option<ActorId>, price: u128) -> spH256 {
-    let buf: [u8; 32] = (*nft_contract_id).into();
-    let nft_conract_vec: Vec<u8> = buf.iter().flat_map(|val| val.to_be_bytes()).collect();
-    let mut price_vec: Vec<u8> = vec![];
-    for i in 0..3 {
-        price_vec.extend_from_slice(&(price >> (32 * i) as u32).to_be_bytes());
-    }
-    let hash = if let Some(ft) = ft_contract_id {
-        let buf: [u8; 32] = ft.into();
-        let ft_contract_vec: Vec<u8> = buf.iter().flat_map(|val| val.to_be_bytes()).collect();
-        hashing::blake2_256(&[nft_conract_vec, price_vec, ft_contract_vec].concat()).into()
-    } else {
-        hashing::blake2_256(&[nft_conract_vec, price_vec].concat()).into()
-    };
-    hash
+    let nft_conract_vec: Vec<u8> = <[u8; 32]>::from(*nft_contract_id).into();
+    let price_vec: Vec<u8> = price.to_be_bytes().into();
+    let ft_contract_vec: Vec<u8> = ft_contract_id
+        .map(|id| <[u8; 32]>::from(id).into())
+        .unwrap_or_default();
+    hashing::blake2_256(&[nft_conract_vec, price_vec, ft_contract_vec].concat()).into()
 }
+
 impl Market {
     /// Adds a price offer
     /// Requirements:

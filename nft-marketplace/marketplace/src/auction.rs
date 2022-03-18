@@ -6,7 +6,7 @@ use crate::{
 use gstd::{exec, msg, prelude::*, ActorId};
 use market_io::*;
 use primitive_types::{H256, U256};
-const MIN_BID_PERIOD: u64 = 60000;
+const MIN_BID_PERIOD: u64 = 60_000;
 
 impl Market {
     /// Creates an auction for selected item
@@ -49,7 +49,7 @@ impl Market {
             started_at: exec::block_timestamp(),
             ended_at: exec::block_timestamp() + duration,
             current_price: min_price,
-            bids: None,
+            bids: vec![],
         };
         self.items
             .entry(contract_and_token_id)
@@ -97,47 +97,10 @@ impl Market {
         if auction.ended_at > exec::block_timestamp() {
             panic!("Auction is not over");
         }
+        item.auction = None;
+        let mut bids = auction.bids;
 
-        let mut bids = auction.bids.unwrap_or_default();
-
-        if !bids.is_empty() {
-            let highest_bid = &bids[bids.len() - 1].clone();
-            bids.pop();
-            for bid in bids {
-                transfer_payment(&exec::program_id(), &bid.id, item.ft_contract_id, bid.price)
-                    .await;
-            }
-            // fee for treasury
-            let treasury_fee = highest_bid.price * self.treasury_fee / 10_000u128;
-            transfer_payment(
-                &exec::program_id(),
-                &self.treasury_id,
-                item.ft_contract_id,
-                treasury_fee,
-            )
-            .await;
-            let payouts = nft_payouts(
-                nft_contract_id,
-                &item.owner_id,
-                highest_bid.price - treasury_fee,
-            )
-            .await;
-            for (account, amount) in payouts.iter() {
-                transfer_payment(&exec::program_id(), account, item.ft_contract_id, *amount).await;
-            }
-
-            item.owner_id = highest_bid.id;
-            // transfer NFT
-            nft_transfer(nft_contract_id, &highest_bid.id, token_id).await;
-            msg::reply(
-                MarketEvent::AuctionSettled {
-                    nft_contract_id: *nft_contract_id,
-                    token_id,
-                    price: highest_bid.price,
-                },
-                0,
-            );
-        } else {
+        if bids.is_empty() {
             msg::reply(
                 MarketEvent::AuctionCancelled {
                     nft_contract_id: *nft_contract_id,
@@ -145,8 +108,45 @@ impl Market {
                 },
                 0,
             );
+
+            return;
         }
-        item.auction = None;
+
+        let highest_bid = &bids[bids.len() - 1].clone();
+        bids.pop();
+        for bid in bids {
+            transfer_payment(&exec::program_id(), &bid.id, item.ft_contract_id, bid.price).await;
+        }
+        // fee for treasury
+        let treasury_fee = highest_bid.price * self.treasury_fee / 10_000u128;
+        transfer_payment(
+            &exec::program_id(),
+            &self.treasury_id,
+            item.ft_contract_id,
+            treasury_fee,
+        )
+        .await;
+        let payouts = nft_payouts(
+            nft_contract_id,
+            &item.owner_id,
+            highest_bid.price - treasury_fee,
+        )
+        .await;
+        for (account, amount) in payouts.iter() {
+            transfer_payment(&exec::program_id(), account, item.ft_contract_id, *amount).await;
+        }
+
+        item.owner_id = highest_bid.id;
+        // transfer NFT
+        nft_transfer(nft_contract_id, &highest_bid.id, token_id).await;
+        msg::reply(
+            MarketEvent::AuctionSettled {
+                nft_contract_id: *nft_contract_id,
+                token_id,
+                price: highest_bid.price,
+            },
+            0,
+        );
     }
 
     /// Adds a bid to an ongoing auction
@@ -184,17 +184,13 @@ impl Market {
             price,
         )
         .await;
-
-        let mut bids = auction.bids.unwrap_or_default();
-
-        bids.push(Bid {
+        auction.bids.push(Bid {
             id: msg::source(),
             price,
         });
         if auction.ended_at <= exec::block_timestamp() + auction.bid_period {
             auction.ended_at = exec::block_timestamp() + auction.bid_period;
         }
-        auction.bids = Some(bids);
         auction.current_price = price;
         item.auction = Some(auction);
         msg::reply(
