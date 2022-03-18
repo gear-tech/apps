@@ -13,6 +13,7 @@ pub enum Role {
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum State {
     UserStatus(ActorId),
+    WaitList,
     AllProposals,
     IsMember(ActorId),
     IsInWaitlist(ActorId),
@@ -25,6 +26,7 @@ pub enum State {
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum StateReply {
     UserStatus(Role),
+    WaitList(BTreeMap<ActorId, u128>),
     AllProposals(BTreeMap<u128, Proposal>),
     IsMember(bool),
     IsInWaitlist(bool),

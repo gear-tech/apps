@@ -322,6 +322,7 @@ impl Dao {
                 .entry(proposal.applicant)
                 .or_insert(proposal.applicant);
             self.total_shares = self.total_shares.saturating_add(proposal.shares_requested);
+            self.wait_list.remove(&proposal.applicant);
         } else {
             transfer_tokens(
                 &self.approved_token_program_id,
@@ -673,6 +674,7 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
             StateReply::UserStatus(role).encode()
         }
         State::AllProposals => StateReply::AllProposals(dao.proposals.clone()).encode(),
+        State::WaitList => StateReply::WaitList(dao.wait_list.clone()).encode(),
         State::IsMember(account) => StateReply::IsMember(dao.is_member(&account)).encode(),
         State::IsInWaitlist(account) => {
             StateReply::IsInWaitlist(dao.wait_list.contains_key(&account)).encode()
