@@ -26,7 +26,6 @@ pub enum Action {
     BalanceOf(u32),
     GetPlayers,
     LeaveLottery(u32),
-    AddValue(u32),
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]

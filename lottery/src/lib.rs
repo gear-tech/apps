@@ -1,7 +1,10 @@
 #![no_std]
 
 #[cfg(test)]
-mod tests;
+mod simple_tests;
+
+#[cfg(test)]
+mod panic_tests;
 
 use codec::{Decode, Encode};
 use gstd::{debug, exec, msg, prelude::*, ActorId};
@@ -20,24 +23,30 @@ struct Lottery {
 }
 
 impl Lottery {
-    fn lottery_state(&mut self) -> bool {
+    fn lottery_is_on(&mut self) -> bool {
         self.lottery_state.lottery_started
             && (self.lottery_state.lottery_start_time + self.lottery_state.lottery_duration)
                 > exec::block_timestamp()
     }
 
     fn start_lottery(&mut self, duration: u64) {
-        if msg::source() == self.lottery_owner && !self.lottery_state() {
+        if msg::source() == self.lottery_owner && !self.lottery_is_on() {
             self.lottery_state.lottery_started = true;
             self.lottery_state.lottery_start_time = exec::block_timestamp();
             self.lottery_state.lottery_duration = duration;
             self.lottery_id += 1;
+        } else {
+            panic!(
+                "start_lottery(): Lottery on: {}  Owner message: {}",
+                self.lottery_is_on(),
+                msg::source() == self.lottery_owner
+            );
         }
     }
 
     fn enter(&mut self) {
-        if self.lottery_state() && msg::value() > 0 {
-            if self.players_timestamp.get(&msg::source()) == None {
+        if self.lottery_is_on() && msg::value() > 0 {
+            if !self.players_timestamp.contains_key(&msg::source()) {
                 let player = Player {
                     player_id: msg::source(),
                     balance: msg::value(),
@@ -49,44 +58,60 @@ impl Lottery {
                     .insert(msg::source(), exec::block_timestamp());
                 msg::reply(Event::PlayerAdded(player_index), 0);
             } else {
-                debug!("Player {:?} already added", msg::source());
+                panic!("enter(): Player {:?} already added", msg::source());
             }
+        } else {
+            panic!(
+                "enter(): Lottery on: {}  Value: {}",
+                self.lottery_is_on(),
+                msg::value()
+            );
         }
     }
 
     fn leave_lottery(&mut self, index: u32) {
-        if self.lottery_state() {
+        if self.lottery_is_on() {
             if let Some(player) = self.players.get(&index) {
                 if player.player_id == msg::source() {
                     msg::send_bytes(player.player_id, b"LeaveLottery", player.balance);
                     self.players.remove(&index);
                     self.players_timestamp.remove(&msg::source());
+                } else {
+                    panic!(
+                        "leave_lottery(): ActorId's does not match: player: {:?}  msg::source(): {:?}",
+                        player.player_id,
+                        msg::source()
+                    );
                 }
+            } else {
+                panic!("leave_lottery(): Player {} not found", index);
             }
-        }
-    }
-
-    fn add_value(&mut self, index: u32) {
-        if self.lottery_state() {
-            self.players.entry(index).and_modify(|item| {
-                if item.player_id == msg::source() {
-                    item.balance = item.balance.saturating_add(msg::value());
-                }
-            });
+        } else {
+            panic!("leave_lottery(): Lottery on: {}", self.lottery_is_on());
         }
     }
 
     fn get_balance(&mut self, index: u32) {
-        if self.lottery_state() {
+        if self.lottery_is_on() {
             if let Some(player) = self.players.get(&index) {
                 msg::reply(Event::Balance(player.balance), 0);
+            } else {
+                panic!("get_balance(): Player {} not found", index);
             }
+        } else {
+            panic!("get_balance(): Lottery on: {}", self.lottery_is_on());
         }
     }
 
     fn get_players(&mut self) {
-        if self.lottery_state() && !self.players.is_empty() {
+        if self.lottery_is_on() && !self.players.is_empty() {
             msg::reply(Event::Players(self.players.clone()), 0);
+        } else {
+            panic!(
+                "get_players(): Lottery on: {}  players.is_empty(): {}",
+                self.lottery_is_on(),
+                self.players.is_empty()
+            );
         }
     }
 
@@ -117,6 +142,8 @@ impl Lottery {
                 self.lottery_history
                     .insert(self.lottery_id, win_player.player_id);
                 msg::reply(Event::Winner(index), 0);
+            } else {
+                panic!("pick_winner(): Player {} not found", index);
             }
 
             debug!("Winner: {}", index);
@@ -125,10 +152,12 @@ impl Lottery {
             self.players = BTreeMap::new();
             self.players_timestamp = BTreeMap::new();
         } else {
-            debug!(
-                "pick_winner() failed! {} {}",
-                self.lottery_state.lottery_start_time + self.lottery_state.lottery_duration,
-                exec::block_timestamp()
+            panic!(
+                "pick_winner(): Owner message: {}  lottery_duration: {}  players.is_empty(): {}",
+                msg::source() == self.lottery_owner,
+                self.lottery_state.lottery_start_time + self.lottery_state.lottery_duration
+                    > exec::block_timestamp(),
+                self.players.is_empty()
             );
         }
     }
@@ -169,10 +198,6 @@ pub unsafe extern "C" fn handle() {
 
         Action::LeaveLottery(index) => {
             lottery.leave_lottery(index);
-        }
-
-        Action::AddValue(index) => {
-            lottery.add_value(index);
         }
     }
 }
