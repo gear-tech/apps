@@ -46,7 +46,9 @@ impl Lottery {
 
     fn enter(&mut self) {
         if self.lottery_is_on() && msg::value() > 0 {
-            if !self.players_timestamp.contains_key(&msg::source()) {
+            if self.players_timestamp.contains_key(&msg::source()) {
+                panic!("enter(): Player {:?} already added", msg::source());
+            } else {
                 let player = Player {
                     player_id: msg::source(),
                     balance: msg::value(),
@@ -57,8 +59,6 @@ impl Lottery {
                 self.players_timestamp
                     .insert(msg::source(), exec::block_timestamp());
                 msg::reply(Event::PlayerAdded(player_index), 0);
-            } else {
-                panic!("enter(): Player {:?} already added", msg::source());
             }
         } else {
             panic!(
