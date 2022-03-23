@@ -23,12 +23,19 @@ struct Lottery {
 }
 
 impl Lottery {
+    // checks that lottery has started and lottery time has not expired
     fn lottery_is_on(&mut self) -> bool {
         self.lottery_state.lottery_started
             && (self.lottery_state.lottery_start_time + self.lottery_state.lottery_duration)
                 > exec::block_timestamp()
     }
 
+    /// Launches a lottery
+    /// Requirements:
+    /// * Only owner can launch lottery
+    /// * Lottery must not have been launched earlier
+    /// Arguments:
+    /// * `duration`: lottery duration in milliseconds
     fn start_lottery(&mut self, duration: u64) {
         if msg::source() == self.lottery_owner && !self.lottery_is_on() {
             self.lottery_state.lottery_started = true;
@@ -44,6 +51,11 @@ impl Lottery {
         }
     }
 
+    /// Adding a lottery player
+    /// Requirements:
+    /// * Lottery has started and lottery time has not expired
+    /// * Contribution must be greater than zero
+    /// * Player cannot be added again
     fn enter(&mut self) {
         if self.lottery_is_on() && msg::value() > 0 {
             if let collections::btree_map::Entry::Vacant(new_player) =
@@ -70,6 +82,13 @@ impl Lottery {
         }
     }
 
+    /// Removes player from lottery
+    /// Requirements:
+    /// * Lottery has started and lottery time has not expired
+    /// * Player must be on the player list
+    /// * Player can only remove himself
+    /// Arguments:
+    /// * `index`: lottery player index
     fn leave_lottery(&mut self, index: u32) {
         if self.lottery_is_on() {
             if let Some(player) = self.players.get(&index) {
@@ -92,6 +111,12 @@ impl Lottery {
         }
     }
 
+    /// Gets the player's balance
+    /// Requirements:
+    /// * Lottery has started and lottery time has not expired
+    /// * Player must be on the player list
+    /// Arguments:
+    /// * `index`: lottery player index
     fn get_balance(&mut self, index: u32) {
         if self.lottery_is_on() {
             if let Some(player) = self.players.get(&index) {
@@ -104,6 +129,10 @@ impl Lottery {
         }
     }
 
+    /// Gets a list of players
+    /// Requirements:
+    /// * Lottery has started and lottery time has not expired
+    /// * List of players must not be empty
     fn get_players(&mut self) {
         if self.lottery_is_on() && !self.players.is_empty() {
             msg::reply(Event::Players(self.players.clone()), 0);
@@ -116,6 +145,7 @@ impl Lottery {
         }
     }
 
+    // Random number generation from block timestamp
     fn get_random_number(&mut self) -> u32 {
         let timestamp: u64 = exec::block_timestamp();
         let code_hash: sp_core::H256 = blake2_256(&timestamp.to_be_bytes()).into();
@@ -129,6 +159,11 @@ impl Lottery {
         number
     }
 
+    /// Lottery winner calculation
+    /// Requirements:
+    /// * Only owner can pick the winner
+    /// * Lottery has started and lottery time is expired
+    /// * List of players must not be empty
     fn pick_winner(&mut self) {
         if msg::source() == self.lottery_owner
             && self.lottery_state.lottery_started
