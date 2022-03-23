@@ -43,6 +43,7 @@ pub struct Proposal {
     pub token_tribute: u128,
     pub details: String,
     pub starting_period: u64,
+    pub ended_at: u64,
     pub max_total_shares_at_yes_vote: u128,
     pub votes_by_member: BTreeMap<ActorId, Vote>,
 }
@@ -121,6 +122,7 @@ impl Dao {
             token_tribute,
             details,
             starting_period,
+            ended_at: starting_period + self.voting_period_length,
             ..Proposal::default()
         };
         self.proposals.insert(self.proposal_id, proposal);
@@ -186,6 +188,7 @@ impl Dao {
             amount,
             details,
             starting_period,
+            ended_at: starting_period + self.voting_period_length,
             ..Proposal::default()
         };
 
