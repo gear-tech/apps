@@ -3,6 +3,7 @@
 
 use codec::Encode;
 use gstd::{debug, msg, prelude::*, ActorId};
+use gstd::any::Any;
 use primitive_types::U256;
 
 pub mod state;
@@ -12,7 +13,7 @@ pub use nft_example_io::{Action, Event, InitConfig};
 
 use non_fungible_token::base::NonFungibleTokenBase;
 use non_fungible_token::NonFungibleToken;
-
+type Ihello = fn() -> ();
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug)]
@@ -20,12 +21,14 @@ pub struct NFT {
     pub token: NonFungibleToken,
     pub token_id: U256,
     pub owner: ActorId,
+    pub functions_map: BTreeMap<String, Ihello>,
 }
 
 static mut CONTRACT: NFT = NFT {
     token: NonFungibleToken::new(),
     token_id: U256::zero(),
     owner: ZERO_ID,
+    functions_map: BTreeMap::new(),
 };
 
 impl NFT {
@@ -49,6 +52,10 @@ impl NFT {
             0,
         );
         self.token_id = self.token_id.saturating_add(U256::one());
+        self.functions_map.insert(
+            "mint".to_string(),
+            &self.mint()
+        );
     }
 
     fn burn(&mut self, token_id: U256) {
@@ -91,9 +98,31 @@ gstd::metadata! {
             output: StateReply,
 }
 
+pub trait Call {
+    fn call(&self, action: &Action) -> ();
+}
+
+// macro_rules! call_action {
+//     ($struct:ident, $action:ident) => {
+//         impl Call for $struct {
+//             fn call(&self, action: &Action) -> () {
+//                 match $action {
+
+//                 }
+//                 ()
+//             }
+//         }
+//     }
+// }
+//call_action!(NFT, Action);
+
 #[no_mangle]
 pub unsafe extern "C" fn handle() {
     let action: Action = msg::load().expect("Could not load Action");
+  //  CONTRACT.call(&action);
+  let s: String = "Hello, World".to_string();
+    let any: Box<dyn Any> = Box::new(s);
+   // dfdf!(action, contract);
     match action {
         Action::Mint => {
             CONTRACT.mint();
