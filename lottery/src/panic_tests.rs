@@ -7,7 +7,7 @@ use codec::Encode;
 use gstd::BTreeMap;
 use gtest::{Program, System};
 use lt_io::*;
-const USERS: &'static [u64] = &[3, 4, 5];
+const USERS: &'static [u64] = &[3, 4, 5, 0];
 
 fn init(sys: &System) {
     sys.init_logger();
@@ -17,6 +17,16 @@ fn init(sys: &System) {
     let res = ft.send_bytes_with_value(USERS[0], b"Init", 10000);
 
     assert!(res.log().is_empty());
+}
+
+#[test]
+fn zero_address() {
+    let sys = System::new();
+    init(&sys);
+    let lt = sys.get_program(1);
+
+    lt.send(USERS[3], Action::StartLottery(20000));
+    lt.send(USERS[0], Action::LotteryState);
 }
 
 #[test]

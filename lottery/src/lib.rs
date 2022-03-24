@@ -12,6 +12,8 @@ use lt_io::*;
 use scale_info::TypeInfo;
 use sp_core::hashing::blake2_256;
 
+const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
+
 #[derive(Debug, Default, Encode, Decode, TypeInfo)]
 struct Lottery {
     lottery_state: LotteryState,
@@ -203,6 +205,10 @@ static mut LOTTERY: Option<Lottery> = None;
 
 #[no_mangle]
 pub unsafe extern "C" fn handle() {
+    if msg::source() == ZERO_ID {
+        panic!("Message from zero address");
+    }
+
     let action: Action = msg::load().expect("Could not load Action");
     let lottery: &mut Lottery = LOTTERY.get_or_insert(Lottery::default());
 
