@@ -5,9 +5,7 @@ members = [
     "dao",
     "erc1155",
     "fungible-token",
-    "gear-feeds-router",
     "nft-example",
-    "non-fungible-token",
     "ping",
 ]
 

@@ -1,0 +1,11 @@
+[package]
+name = "utils"
+version = "1.5.0"
+edition = "2021"
+
+[lib]
+name = "utils"
+path = "src/lib.rs"
+crate-type = [
+    "rlib",
+]

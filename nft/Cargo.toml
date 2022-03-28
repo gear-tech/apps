@@ -9,8 +9,8 @@ gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
 primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info"]}
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
-nft-example-io = { path = "io" }
-nft-derive = { path = "nft-derive" }
+gear-contract-libraries = { path = "../gear-contract-libraries" }
+derive_trait = { path = "../gear-contract-libraries/derive_trait/" }
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git", rev = "e81b56a" }

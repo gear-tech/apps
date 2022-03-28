@@ -10,6 +10,7 @@ gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
 primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info"] }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
+non_fungible_token = { path = "non_fungible_token/" }
 
 [build-dependencies]
 gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }
