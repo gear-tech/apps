@@ -19,7 +19,7 @@ where
     F: FnOnce(&mut T),
 {
     if instance.get().owner != msg::source() {
-        panic!();
+        panic!("Only owner can call that method");
     }
     body(instance)
 }

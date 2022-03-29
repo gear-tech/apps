@@ -5,6 +5,43 @@
 /// The second argument is the name of the trait for which derive will be generated.
 /// The third argument is the name of the marker for the derive macro. This marker specifies
 /// for derive macro which field will be returned by the implementation for the storage trait.
+///
+/// # Usage:
+/// declare_derive_storage_trait!(derive_nft_storage, NFTStorage, NFTStorageField);
+///
+/// # Explanation:
+/// Let's define trait and struct.
+/// ```
+/// pub trait NFTStorage {
+///     fn get(&self) -> &NFTData;
+///     fn get_mut(&mut self) -> &mut NFTData;
+/// }
+/// #[derive(NFTStorage)]
+/// pub struct NFT {
+///     #[NFTStorageField]
+///     pub token: NFTData,
+///     ...,
+/// }
+/// ```
+/// The code above will be expanded into:
+/// ```
+/// pub trait NFTStorage {
+///     fn get(&self) -> &NFTData;
+///     fn get_mut(&mut self) -> &mut NFTData;
+/// }
+/// pub struct NFT {
+///     #[NFTStorageField]
+///     pub token: NFTData,
+///     ...,
+/// }
+/// impl NFTStorage for NFT {
+///     fn get(&self) -> &NFTData {
+///         &self.token
+///     }
+///     fn get_mut(&mut self) -> &mut NFTData {
+///         &mut self.token
+///     }
+/// }
 #[macro_export]
 macro_rules! declare_derive_storage_trait {
     ($derive_name:ident,$trait_name:ident,$trait_field_specifier:ident) => {
