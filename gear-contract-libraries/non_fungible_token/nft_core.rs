@@ -4,7 +4,7 @@ use crate::non_fungible_token::io::{NFTEvent};
 use crate::non_fungible_token::traits::{NonFungibleTokenAssert, NonFungibleTokenBase};
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
-pub use derive_trait::{NFTStorage,  ActionParser};
+pub use storage_traits::{NFTStorage};
 
 pub trait NFTStorage {
     fn get(&self) -> &NFTData;

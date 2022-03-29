@@ -221,12 +221,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
 
 [[package]]
-name = "convert_case"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb4a24b1aaf0fd0ce8b45161144d6f42cd91677fd5940fd431183eb023b3a2b8"
-
-[[package]]
 name = "cpp_demangle"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -395,7 +389,7 @@ version = "0.99.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4fb810d30a7c1953f91334de7244731fc3f3c10d7fe163338a35b9f640960321"
 dependencies = [
- "convert_case 0.4.0",
+ "convert_case",
  "proc-macro2",
  "quote",
  "rustc_version",
@@ -404,14 +398,7 @@ dependencies = [
 
 [[package]]
 name = "derive_trait"
-version = "0.1.0"
-dependencies = [
- "convert_case 0.5.0",
- "proc-macro2",
- "quote",
- "syn",
- "utils",
-]
+version = "1.5.0"
 
 [[package]]
 name = "dlmalloc"
@@ -562,12 +549,13 @@ dependencies = [
 name = "gear-contract-libraries"
 version = "0.1.0"
 dependencies = [
- "derive_trait",
  "gstd",
  "hex",
+ "modifier",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
+ "storage_traits",
 ]
 
 [[package]]
@@ -827,6 +815,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "modifier"
+version = "0.1.0"
+dependencies = [
+ "convert_case",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "more-asserts"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -836,7 +834,6 @@ checksum = "7843ec2de400bcbc6a6328c958dc38e5359da6e93e72e37bc5246bf1ae776389"
 name = "nft-example"
 version = "0.1.0"
 dependencies = [
- "derive_trait",
  "gear-contract-libraries",
  "gear-wasm-builder",
  "gstd",
@@ -1243,6 +1240,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
+name = "storage_traits"
+version = "0.1.0"
+dependencies = [
+ "convert_case",
+ "derive_trait",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "str-buf"
 version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1326,10 +1334,6 @@ name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
-
-[[package]]
-name = "utils"
-version = "1.5.0"
 
 [[package]]
 name = "version_check"

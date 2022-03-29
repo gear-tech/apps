@@ -1,0 +1,19 @@
+[package]
+name = "storage_traits"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+syn = { version = "1.0" }
+quote = "1.0"
+proc-macro2 = "1"
+derive_trait = { path = "../derive_trait/" }
+convert_case = { vesion = "0.5.0" }
+
+
+[lib]
+name = "storage_traits"
+path = "src/lib.rs"
+proc-macro = true
+
+

@@ -64,4 +64,3 @@ macro_rules! declare_derive_storage_trait {
     };
 }
 
-

@@ -18,7 +18,7 @@ codec = { package = "parity-scale-codec", version = "2.0.0", default-features = 
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info"]}
-derive_trait = { path = "./derive_trait/" }
-
+storage_traits = { path = "./utils/storage_traits" }
+modifier = { path = "./utils/modifier" }
 
 [workspace]

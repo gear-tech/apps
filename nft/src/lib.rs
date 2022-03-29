@@ -7,18 +7,22 @@ use primitive_types::U256;
 use gear_contract_libraries::non_fungible_token::traits::NonFungibleTokenBase;
 use gear_contract_libraries::non_fungible_token::nft_core::*;
 use gear_contract_libraries::non_fungible_token::io::*;
+use gear_contract_libraries::access::owner_access::*;
 
-#[derive(Debug, Default, NFTStorage)]
+#[derive(Debug, Default, NFTStorage, OwnableStorage)]
 pub struct NFT {
     #[NFTStorageField]
     pub token: NFTData,
     pub token_id: U256,
-    pub owner: ActorId,
+    #[OwnableStorageField]
+    pub owner: OwnableData,
 }
 
 static mut CONTRACT: Option<NFT> = None;
 
-impl  NFT {
+impl  NFT {   
+
+    #[modifier(only_owner)]
     fn mint_token(&mut self) {
         self.mint(&msg::source(), self.token_id);
         self.token_id = self.token_id.saturating_add(U256::one());
@@ -62,7 +66,7 @@ pub unsafe extern "C" fn init() {
     nft.token.name = config.name;
     nft.token.symbol = config.symbol;
     nft.token.base_uri = config.base_uri;
-    nft.owner = msg::source();
+    nft.owner = OwnableData{ owner: msg::source()};
  }
 
  #[derive(Debug, Encode, Decode, TypeInfo)]

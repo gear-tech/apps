@@ -57,14 +57,7 @@ dependencies = [
 
 [[package]]
 name = "derive_trait"
-version = "0.1.0"
-dependencies = [
- "convert_case",
- "proc-macro2",
- "quote",
- "syn",
- "utils",
-]
+version = "1.5.0"
 
 [[package]]
 name = "dlmalloc"
@@ -151,7 +144,7 @@ dependencies = [
 [[package]]
 name = "galloc"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#9fd91a056c61c023cda6a0073753beffbff1bc6b"
+source = "git+https://github.com/gear-tech/gear.git#efe8db92e5c8fb3ac9c4dbac35151053f86d91c7"
 dependencies = [
  "dlmalloc",
 ]
@@ -159,24 +152,25 @@ dependencies = [
 [[package]]
 name = "gcore"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#9fd91a056c61c023cda6a0073753beffbff1bc6b"
+source = "git+https://github.com/gear-tech/gear.git#efe8db92e5c8fb3ac9c4dbac35151053f86d91c7"
 
 [[package]]
 name = "gear-contract-libraries"
 version = "0.1.0"
 dependencies = [
- "derive_trait",
  "gstd",
  "hex",
+ "modifier",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
+ "storage_traits",
 ]
 
 [[package]]
 name = "gstd"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#9fd91a056c61c023cda6a0073753beffbff1bc6b"
+source = "git+https://github.com/gear-tech/gear.git#efe8db92e5c8fb3ac9c4dbac35151053f86d91c7"
 dependencies = [
  "bs58",
  "futures",
@@ -192,7 +186,7 @@ dependencies = [
 [[package]]
 name = "gstd-codegen"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#9fd91a056c61c023cda6a0073753beffbff1bc6b"
+source = "git+https://github.com/gear-tech/gear.git#efe8db92e5c8fb3ac9c4dbac35151053f86d91c7"
 dependencies = [
  "quote",
  "syn",
@@ -236,6 +230,16 @@ version = "0.1.16"
 source = "git+https://github.com/grishasobol/rust-libc-print.git#b300804809e7a5f1c8fab4d2d11bcea29217bc70"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "modifier"
+version = "0.1.0"
+dependencies = [
+ "convert_case",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -361,6 +365,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
+name = "storage_traits"
+version = "0.1.0"
+dependencies = [
+ "convert_case",
+ "derive_trait",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "str-buf"
 version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -368,9 +383,9 @@ checksum = "5d3f6746ae4fb2c851c6ad2fdaa1090f6777315bc7522b2a2bc5897e091eefb2"
 
 [[package]]
 name = "syn"
-version = "1.0.89"
+version = "1.0.90"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea297be220d52398dcc07ce15a209fce436d361735ac1db700cab3b6cdfb9f54"
+checksum = "704df27628939572cd88d33f171cd6f896f4eaca85252c6e0a72d8d8287ee86f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -423,10 +438,6 @@ name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
-
-[[package]]
-name = "utils"
-version = "1.5.0"
 
 [[package]]
 name = "winapi"
