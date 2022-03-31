@@ -179,7 +179,6 @@ impl ERC1155TokenBase for ERC1155Token {
 impl ExtendERC1155TokenBase for ERC1155Token {
     fn owner_of(&self, id: &u128) -> bool {
         let owner = msg::source();
-
         self.balance_of(&owner, id) != 0
     }
 
@@ -190,7 +189,6 @@ impl ExtendERC1155TokenBase for ERC1155Token {
                 return false;
             }
         }
-
         true
     }
 
@@ -216,41 +214,41 @@ impl ExtendERC1155TokenBase for ERC1155Token {
     }
 
     fn burn(&mut self, id: &u128, amount: u128) {
-        if !self.owner_of(id) {
-            panic!("ERC1155: have no ownership of the id")
+        let owner = &msg::source();
+        if self.can_burn(owner, id, amount) {
+            self.set_balance(&msg::source(), id, self.get_balance(owner, id).saturating_sub(amount));
         }
-        let owner_balance = self.balance_of(&msg::source(), id);
-        if owner_balance < amount {
-            panic!("ERC1155: burn amount exceeds balance")
-        }
-        self.set_balance(&msg::source(), id, owner_balance.saturating_sub(amount));
     }
 
     fn burn_batch(&mut self, ids: &[u128], amounts: &[u128]) {
-        let owner = &msg::source();
-
         if ids.len() != amounts.len() {
             panic!("ERC1155: ids and amounts length mismatch")
         }
 
-        if !self.owner_of_batch(ids) {
-            panic!("ERC1155: have no ownership of ids")
-        }
-
-        for (i, ele) in ids.iter().enumerate() {
-            let amount = amounts[i];
-
-            let owner_balance = self.balance_of(owner, ele);
-
-            if owner_balance < amount {
-                panic!("ERC1155: burn amount exceeds balance")
+        ids.iter().enumerate().for_each(|(_s, x)| {
+            if !self.can_burn(&msg::source(), x, amounts[_s]) {
+                panic!("ERC1155: all batch element should be burnable");
             }
-            self.set_balance(owner, ele, owner_balance.saturating_sub(amount));
-        }
+        });
+
+        ids.iter()
+            .enumerate()
+            .for_each(|(_s, x)| self.burn(x, amounts[_s]));
     }
 
     fn uri(&self, id: u128) -> String {
         self.base_uri.clone().replace("{id}", &format!("{}", id))
+    }
+
+    fn can_burn(&mut self, owner: &ActorId, id: &u128, amount: u128) -> bool {
+        if !self.owner_of(id) {
+           return false;
+        }
+        let owner_balance = self.balance_of(owner, id);
+        if owner_balance < amount {
+            return false;
+        }
+        true
     }
 }
 

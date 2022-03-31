@@ -26,4 +26,5 @@ pub trait ExtendERC1155TokenBase {
     fn owner_of(&self, id: &u128) -> bool;
     fn owner_of_batch(&self, ids: &[u128]) -> bool;
     fn uri(&self, id: u128) -> String;
+    fn can_burn(&mut self, owner: &ActorId, id: &u128, amount: u128) -> bool;
 }
