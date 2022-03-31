@@ -39,6 +39,7 @@ pub enum Action {
     BurnBatch(Vec<u128>, Vec<u128>),
     OwnerOf(u128),
     OwnerOfBatch(Vec<u128>),
+    URI(u128),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -75,4 +76,5 @@ pub enum Event {
         operator: ActorId,
         approved: bool,
     },
+    URI(String),
 }

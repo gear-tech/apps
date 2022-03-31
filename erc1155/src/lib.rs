@@ -3,7 +3,7 @@
 
 #[cfg(test)]
 use codec::Encode;
-use gstd::{debug, msg, exec, prelude::*, ActorId};
+use gstd::{debug, exec, msg, prelude::*, ActorId};
 
 pub mod base;
 use base::{ERC1155TokenBase, ExtendERC1155TokenBase};
@@ -74,18 +74,18 @@ impl ERC1155TokenBase for ERC1155Token {
             panic!("ERC1155: accounts and ids length mismatch")
         }
 
-        ids.iter().enumerate()
-            .map(|(_s, x)| {
-                BalanceOfBatchReply{
-                    account: accounts[_s],
-                    id: *x,
-                    amount: *self
-                        .balances
-                        .get(x)
-                        .and_then(|m| m.get(&accounts[_s]))
-                        .unwrap_or(&0)
-                }
-            }).collect::<Vec<BalanceOfBatchReply>>()
+        ids.iter()
+            .enumerate()
+            .map(|(_s, x)| BalanceOfBatchReply {
+                account: accounts[_s],
+                id: *x,
+                amount: *self
+                    .balances
+                    .get(x)
+                    .and_then(|m| m.get(&accounts[_s]))
+                    .unwrap_or(&0),
+            })
+            .collect::<Vec<BalanceOfBatchReply>>()
     }
 
     fn set_approval_for_all(&mut self, operator: &ActorId, approved: bool) {
@@ -154,17 +154,24 @@ impl ERC1155TokenBase for ERC1155Token {
             panic!("ERC1155: ids and amounts length mismatch")
         }
 
+        ids.iter().enumerate().for_each(|(_s, x)| {
+            if !self.can_transfer(from, x, amounts[_s]) {
+                panic!("ERC1155: all batch element should be transerfable");
+            }
+        });
+
         ids.iter()
             .enumerate()
-            .for_each(|( _s, x )| self.safe_transfer_from(from, to, x, amounts[_s]));
+            .for_each(|(_s, x)| self.safe_transfer_from(from, to, x, amounts[_s]));
     }
 
     fn can_transfer(&mut self, from: &ActorId, id: &u128, amount: u128) -> bool {
         if from == &msg::source()
             || from == &exec::origin()
-            || self.get_balance(&msg::source(), id) >= amount {
-                return true;
-            }
+            || self.get_balance(&msg::source(), id) >= amount
+        {
+            return true;
+        }
         false
     }
 }
@@ -205,7 +212,7 @@ impl ExtendERC1155TokenBase for ERC1155Token {
         }
         ids.iter()
             .enumerate()
-            .for_each(|( _s, x )| self.mint(account, x, amounts[_s]));
+            .for_each(|(_s, x)| self.mint(account, x, amounts[_s]));
     }
 
     fn burn(&mut self, id: &u128, amount: u128) {
@@ -240,6 +247,10 @@ impl ExtendERC1155TokenBase for ERC1155Token {
             }
             self.set_balance(owner, ele, owner_balance.saturating_sub(amount));
         }
+    }
+
+    fn uri(&self, id: u128) -> String {
+        self.base_uri.clone().replace("{id}", &format!("{}", id))
     }
 }
 
@@ -288,15 +299,13 @@ pub unsafe extern "C" fn handle() {
         Action::Mint(account, id, amount) => {
             ERC1155_TOKEN.mint(&account, &id, amount);
             msg::reply(
-                Event::TransferSingle(
-                    TransferSingleReply {
+                Event::TransferSingle(TransferSingleReply {
                     operator: msg::source(),
                     from: ZERO_ID,
                     to: account,
                     id,
                     amount,
-                    }
-                ),
+                }),
                 0,
             );
         }
@@ -328,15 +337,13 @@ pub unsafe extern "C" fn handle() {
         Action::SafeTransferFrom(from, to, id, amount) => {
             ERC1155_TOKEN.safe_transfer_from(&from, &to, &id, amount);
             msg::reply(
-                Event::TransferSingle(
-                    TransferSingleReply {
-                        operator: msg::source(),
-                        from,
-                        to,
-                        id,
-                        amount,
-                    }
-                ),
+                Event::TransferSingle(TransferSingleReply {
+                    operator: msg::source(),
+                    from,
+                    to,
+                    id,
+                    amount,
+                }),
                 0,
             );
         }
@@ -382,15 +389,13 @@ pub unsafe extern "C" fn handle() {
         Action::Burn(id, amount) => {
             ERC1155_TOKEN.burn(&id, amount);
             msg::reply(
-                Event::TransferSingle(
-                    TransferSingleReply {
-                        operator: msg::source(),
-                        from: msg::source(),
-                        to: ZERO_ID,
-                        id,
-                        amount,
-                    },
-                ),
+                Event::TransferSingle(TransferSingleReply {
+                    operator: msg::source(),
+                    from: msg::source(),
+                    to: ZERO_ID,
+                    id,
+                    amount,
+                }),
                 0,
             );
         }
@@ -417,6 +422,11 @@ pub unsafe extern "C" fn handle() {
         Action::OwnerOfBatch(ids) => {
             let res = ERC1155_TOKEN.owner_of_batch(&ids);
             msg::reply(res, 0);
+        }
+
+        Action::URI(id) => {
+            let res = ERC1155_TOKEN.uri(id);
+            msg::reply(Event::URI(res), 0);
         }
     }
 }
