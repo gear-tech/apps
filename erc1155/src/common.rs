@@ -35,6 +35,7 @@ pub enum Action {
     SafeBatchTransferFrom(ActorId, ActorId, Vec<u128>, Vec<u128>),
     SetApprovalForAll(ActorId, bool),
     IsApprovedForAll(ActorId, ActorId),
+    Burn(u128, u128),
     BurnBatch(Vec<u128>, Vec<u128>),
     OwnerOf(u128),
     OwnerOfBatch(Vec<u128>),
