@@ -216,7 +216,11 @@ impl ExtendERC1155TokenBase for ERC1155Token {
     fn burn(&mut self, id: &u128, amount: u128) {
         let owner = &msg::source();
         if self.can_burn(owner, id, amount) {
-            self.set_balance(&msg::source(), id, self.get_balance(owner, id).saturating_sub(amount));
+            self.set_balance(
+                &msg::source(),
+                id,
+                self.get_balance(owner, id).saturating_sub(amount),
+            );
         }
     }
 
@@ -242,7 +246,7 @@ impl ExtendERC1155TokenBase for ERC1155Token {
 
     fn can_burn(&mut self, owner: &ActorId, id: &u128, amount: u128) -> bool {
         if !self.owner_of(id) {
-           return false;
+            return false;
         }
         let owner_balance = self.balance_of(owner, id);
         if owner_balance < amount {
