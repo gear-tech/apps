@@ -304,6 +304,24 @@ fn is_approved_for_all() {
 }
 
 #[test]
+fn burn() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    let from = USERS[0];
+    let user1 = USERS[1];
+
+    ft.send(from, Action::Mint(user1.into(), TOKEN_ID, BALANCE));
+
+    ft.send(user1, Action::Burn(TOKEN_ID, 10));
+
+    let res = ft.send(USERS[0], Action::BalanceOf(user1.into(), TOKEN_ID));
+
+    let codec = Event::Balance(BALANCE - 10).encode();
+    assert!(res.contains(&(from, codec)));
+}
+
+#[test]
 fn burn_batch() {
     let sys = System::new();
     let ft = init(&sys);
