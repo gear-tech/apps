@@ -3,7 +3,7 @@
 
 #[cfg(test)]
 use codec::Encode;
-use gstd::{debug, msg, prelude::*, ActorId};
+use gstd::{debug, msg, exec, prelude::*, ActorId};
 
 pub mod base;
 use base::{ERC1155TokenBase, ExtendERC1155TokenBase};
@@ -79,7 +79,7 @@ impl ERC1155TokenBase for ERC1155Token {
                 BalanceOfBatchReply{
                     account: accounts[_s],
                     id: *x,
-                    amount:*self
+                    amount: *self
                         .balances
                         .get(x)
                         .and_then(|m| m.get(&accounts[_s]))
@@ -126,22 +126,9 @@ impl ERC1155TokenBase for ERC1155Token {
         if from_balance < amount {
             panic!("ERC1155: insufficient balance for transfer")
         }
-
         self.set_balance(from, id, from_balance.saturating_sub(amount));
         let to_balance = self.balance_of(to, id);
         self.set_balance(to, id, to_balance.saturating_add(amount));
-        // self.balances
-        //         .entry(*id)
-        //         .or_default()
-        //         .entry(*from)
-        //         .and_modify(|balance| *balance = from_balance.saturating_add(amount))
-        //         .or_insert(from_balance.saturating_add(amount));
-        // self.balances
-        //         .entry(*id)
-        //         .or_default()
-        //         .entry(*to)
-        //         .and_modify(|balance| *balance = self.balance_of(to, id).saturating_add(amount))
-        //         .or_insert(self.balance_of(to, id).saturating_add(amount));
     }
 
     fn safe_batch_transfer_from(
@@ -170,6 +157,15 @@ impl ERC1155TokenBase for ERC1155Token {
         ids.iter()
             .enumerate()
             .for_each(|( _s, x )| self.safe_transfer_from(from, to, x, amounts[_s]));
+    }
+
+    fn can_transfer(&mut self, from: &ActorId, id: &u128, amount: u128) -> bool {
+        if from == &msg::source()
+            || from == &exec::origin()
+            || self.get_balance(&msg::source(), id) >= amount {
+                return true;
+            }
+        false
     }
 }
 
@@ -216,7 +212,6 @@ impl ExtendERC1155TokenBase for ERC1155Token {
         if !self.owner_of(id) {
             panic!("ERC1155: have no ownership of the id")
         }
-
         let owner_balance = self.balance_of(&msg::source(), id);
         if owner_balance < amount {
             panic!("ERC1155: burn amount exceeds balance")
@@ -364,7 +359,7 @@ pub unsafe extern "C" fn handle() {
             ERC1155_TOKEN.set_approval_for_all(&operator, approved);
             msg::reply(
                 Event::ApprovalForAll {
-                    msg::source(),
+                    owner: msg::source(),
                     operator,
                     approved,
                 },
@@ -385,15 +380,15 @@ pub unsafe extern "C" fn handle() {
         }
 
         Action::Burn(id, amount) => {
-            ERC1155_TOKEN.burn(&id, &amount);
+            ERC1155_TOKEN.burn(&id, amount);
             msg::reply(
                 Event::TransferSingle(
-                    Event::TransferSingle {
-                    operator: msg::source(),
-                    from: msg::source(),
-                    to: ZERO_ID,
-                    id,
-                    amount,
+                    TransferSingleReply {
+                        operator: msg::source(),
+                        from: msg::source(),
+                        to: ZERO_ID,
+                        id,
+                        amount,
                     },
                 ),
                 0,

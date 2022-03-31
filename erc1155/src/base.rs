@@ -15,6 +15,7 @@ pub trait ERC1155TokenBase {
         ids: &[u128],
         amounts: &[u128],
     );
+    fn can_transfer(&mut self, from: &ActorId, id: &u128, amount: u128) -> bool;
 }
 
 pub trait ExtendERC1155TokenBase {
