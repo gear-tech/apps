@@ -2,6 +2,14 @@ use codec::{Decode, Encode};
 use gstd::{prelude::*, ActorId};
 use scale_info::TypeInfo;
 
+#[derive(Debug, Decode, Encode, TypeInfo, Default, Clone)]
+pub struct TokenMetadata {
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub media: Option<String>,
+    pub reference: Option<String>,
+}
+
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub struct InitConfig {
     pub name: String,
@@ -27,10 +35,10 @@ pub enum StateReply {
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum Action {
-    Mint(ActorId, u128, u128),
+    Mint(ActorId, u128, u128, Option<TokenMetadata>),
     BalanceOf(ActorId, u128),
     BalanceOfBatch(Vec<ActorId>, Vec<u128>),
-    MintBatch(ActorId, Vec<u128>, Vec<u128>),
+    MintBatch(ActorId, Vec<u128>, Vec<u128>, Vec<Option<TokenMetadata>>),
     SafeTransferFrom(ActorId, ActorId, u128, u128),
     SafeBatchTransferFrom(ActorId, ActorId, Vec<u128>, Vec<u128>),
     SetApprovalForAll(ActorId, bool),
@@ -40,6 +48,7 @@ pub enum Action {
     OwnerOf(u128),
     OwnerOfBatch(Vec<u128>),
     URI(u128),
+    MetadataOf(u128),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -77,4 +86,5 @@ pub enum Event {
         approved: bool,
     },
     URI(String),
+    MetadataOf(TokenMetadata),
 }

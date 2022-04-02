@@ -20,6 +20,7 @@ pub struct ERC1155Token {
     pub base_uri: String,
     pub balances: BTreeMap<u128, BTreeMap<ActorId, u128>>,
     pub operator_approvals: BTreeMap<ActorId, BTreeMap<ActorId, bool>>,
+    pub token_metadata: BTreeMap<u128, TokenMetadata>,
 }
 
 static mut ERC1155_TOKEN: ERC1155Token = ERC1155Token {
@@ -28,6 +29,7 @@ static mut ERC1155_TOKEN: ERC1155Token = ERC1155Token {
     base_uri: String::new(),
     balances: BTreeMap::new(),
     operator_approvals: BTreeMap::new(),
+    token_metadata: BTreeMap::new(),
 };
 
 impl ERC1155Token {
@@ -62,11 +64,7 @@ impl ERC1155Token {
 
 impl ERC1155TokenBase for ERC1155Token {
     fn balance_of(&self, account: &ActorId, id: &u128) -> u128 {
-        *self
-            .balances
-            .get(id)
-            .and_then(|m| m.get(account))
-            .unwrap_or(&0)
+        self.get_balance(account, id)
     }
 
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[u128]) -> Vec<BalanceOfBatchReply> {
@@ -76,13 +74,13 @@ impl ERC1155TokenBase for ERC1155Token {
 
         ids.iter()
             .enumerate()
-            .map(|(_s, x)| BalanceOfBatchReply {
-                account: accounts[_s],
+            .map(|(idx, x)| BalanceOfBatchReply {
+                account: accounts[idx],
                 id: *x,
                 amount: *self
                     .balances
                     .get(x)
-                    .and_then(|m| m.get(&accounts[_s]))
+                    .and_then(|m| m.get(&accounts[idx]))
                     .unwrap_or(&0),
             })
             .collect::<Vec<BalanceOfBatchReply>>()
@@ -154,15 +152,15 @@ impl ERC1155TokenBase for ERC1155Token {
             panic!("ERC1155: ids and amounts length mismatch")
         }
 
-        ids.iter().enumerate().for_each(|(_s, x)| {
-            if !self.can_transfer(from, x, amounts[_s]) {
+        ids.iter().enumerate().for_each(|(idx, x)| {
+            if !self.can_transfer(from, x, amounts[idx]) {
                 panic!("ERC1155: all batch element should be transerfable");
             }
         });
 
         ids.iter()
             .enumerate()
-            .for_each(|(_s, x)| self.safe_transfer_from(from, to, x, amounts[_s]));
+            .for_each(|(idx, x)| self.safe_transfer_from(from, to, x, amounts[idx]));
     }
 
     fn can_transfer(&mut self, from: &ActorId, id: &u128, amount: u128) -> bool {
@@ -192,15 +190,28 @@ impl ExtendERC1155TokenBase for ERC1155Token {
         true
     }
 
-    fn mint(&mut self, account: &ActorId, id: &u128, amount: u128) {
+    fn mint(&mut self, account: &ActorId, id: &u128, amount: u128, meta: Option<TokenMetadata>) {
         if account == &ZERO_ID {
             panic!("ERC1155: Mint to zero address")
+        }
+        if let Some(metadata) = meta {
+            // Off you go...
+            if amount > 1 {
+                panic!("ERC1155: Mint metadata to a fungible token")
+            }
+            self.token_metadata.insert(*id, metadata.clone());
         }
         let prev_balance = self.balance_of(account, id);
         self.set_balance(account, id, prev_balance.saturating_add(amount));
     }
 
-    fn mint_batch(&mut self, account: &ActorId, ids: &[u128], amounts: &[u128]) {
+    fn mint_batch(
+        &mut self,
+        account: &ActorId,
+        ids: &[u128],
+        amounts: &[u128],
+        meta: &[Option<TokenMetadata>],
+    ) {
         if account == &ZERO_ID {
             panic!("ERC1155: Mint to zero address")
         }
@@ -210,7 +221,7 @@ impl ExtendERC1155TokenBase for ERC1155Token {
         }
         ids.iter()
             .enumerate()
-            .for_each(|(_s, x)| self.mint(account, x, amounts[_s]));
+            .for_each(|(idx, x)| self.mint(account, x, amounts[idx], meta[idx].clone()));
     }
 
     fn burn(&mut self, id: &u128, amount: u128) {
@@ -229,15 +240,15 @@ impl ExtendERC1155TokenBase for ERC1155Token {
             panic!("ERC1155: ids and amounts length mismatch")
         }
 
-        ids.iter().enumerate().for_each(|(_s, x)| {
-            if !self.can_burn(&msg::source(), x, amounts[_s]) {
+        ids.iter().enumerate().for_each(|(idx, x)| {
+            if !self.can_burn(&msg::source(), x, amounts[idx]) {
                 panic!("ERC1155: all batch element should be burnable");
             }
         });
 
         ids.iter()
             .enumerate()
-            .for_each(|(_s, x)| self.burn(x, amounts[_s]));
+            .for_each(|(idx, x)| self.burn(x, amounts[idx]));
     }
 
     fn uri(&self, id: u128) -> String {
@@ -245,14 +256,16 @@ impl ExtendERC1155TokenBase for ERC1155Token {
     }
 
     fn can_burn(&mut self, owner: &ActorId, id: &u128, amount: u128) -> bool {
-        if !self.owner_of(id) {
-            return false;
-        }
-        let owner_balance = self.balance_of(owner, id);
-        if owner_balance < amount {
-            return false;
-        }
-        true
+        self.owner_of(id) && self.balance_of(owner, id) >= amount
+    }
+
+    fn get_metadata(&mut self, id: u128) -> TokenMetadata {
+        self.token_metadata
+            .get(&id)
+            .unwrap_or(&TokenMetadata {
+                ..Default::default()
+            })
+            .clone()
     }
 }
 
@@ -298,8 +311,8 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
 pub unsafe extern "C" fn handle() {
     let action: Action = msg::load().expect("Could not load Action");
     match action {
-        Action::Mint(account, id, amount) => {
-            ERC1155_TOKEN.mint(&account, &id, amount);
+        Action::Mint(account, id, amount, meta) => {
+            ERC1155_TOKEN.mint(&account, &id, amount, meta);
             msg::reply(
                 Event::TransferSingle(TransferSingleReply {
                     operator: msg::source(),
@@ -322,8 +335,8 @@ pub unsafe extern "C" fn handle() {
             msg::reply(Event::BalanceOfBatch(res), 0);
         }
 
-        Action::MintBatch(account, ids, amounts) => {
-            ERC1155_TOKEN.mint_batch(&account, &ids, &amounts);
+        Action::MintBatch(account, ids, amounts, metas) => {
+            ERC1155_TOKEN.mint_batch(&account, &ids, &amounts, &metas);
             msg::reply(
                 Event::TransferBatch {
                     operator: msg::source(),
@@ -429,6 +442,11 @@ pub unsafe extern "C" fn handle() {
         Action::URI(id) => {
             let res = ERC1155_TOKEN.uri(id);
             msg::reply(Event::URI(res), 0);
+        }
+
+        Action::MetadataOf(id) => {
+            let res = ERC1155_TOKEN.get_metadata(id);
+            msg::reply(Event::MetadataOf(res), 0);
         }
     }
 }

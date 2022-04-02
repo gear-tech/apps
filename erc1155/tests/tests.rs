@@ -46,7 +46,10 @@ fn init_with_mint(sys: &System) {
 
     assert!(res.log().is_empty());
 
-    let res = ft.send(USERS[0], Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE));
+    let res = ft.send(
+        USERS[0],
+        Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE, None),
+    );
 
     assert!(res.contains(&(
         USERS[0],
@@ -72,7 +75,10 @@ fn balance() {
     let sys = System::new();
     let ft = init(&sys);
 
-    ft.send(USERS[0], Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE));
+    ft.send(
+        USERS[0],
+        Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE, None),
+    );
 
     let res = ft.send(USERS[1], Action::BalanceOf(USERS[1].into(), TOKEN_ID));
 
@@ -84,8 +90,8 @@ fn balance_of_batch() {
     let sys = System::new();
     let ft = init(&sys);
 
-    ft.send(USERS[0], Action::Mint(USERS[1].into(), 1, BALANCE));
-    ft.send(USERS[0], Action::Mint(USERS[2].into(), 2, BALANCE));
+    ft.send(USERS[0], Action::Mint(USERS[1].into(), 1, BALANCE, None));
+    ft.send(USERS[0], Action::Mint(USERS[2].into(), 2, BALANCE, None));
 
     let accounts: Vec<ActorId> = vec![USERS[1].into(), USERS[2].into()];
 
@@ -120,7 +126,12 @@ fn mint_batch() {
 
     let res = ft.send(
         USERS[0],
-        Action::MintBatch(USERS[1].into(), vec![1u128, 2u128], vec![BALANCE, BALANCE]),
+        Action::MintBatch(
+            USERS[1].into(),
+            vec![1u128, 2u128],
+            vec![BALANCE, BALANCE],
+            vec![None, None],
+        ),
     );
 
     let codec = Event::TransferBatch {
@@ -140,7 +151,10 @@ fn safe_transfer_from() {
     let sys = System::new();
     let ft = init(&sys);
 
-    ft.send(USERS[0], Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE));
+    ft.send(
+        USERS[0],
+        Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE, None),
+    );
 
     let from = USERS[1];
     let to = USERS[2];
@@ -201,7 +215,12 @@ fn safe_batch_transfer_from() {
 
     ft.send(
         from,
-        Action::MintBatch(to.into(), vec![1u128, 2u128], vec![BALANCE, BALANCE]),
+        Action::MintBatch(
+            to.into(),
+            vec![1u128, 2u128],
+            vec![BALANCE, BALANCE],
+            vec![None, None],
+        ),
     );
 
     let ret = ft.send(
@@ -235,7 +254,7 @@ fn set_approval_for_all() {
     let operator = USERS[1];
     let other = USERS[2];
 
-    ft.send(owner, Action::Mint(owner.into(), TOKEN_ID, BALANCE));
+    ft.send(owner, Action::Mint(owner.into(), TOKEN_ID, BALANCE, None));
 
     let failed_res = ft.send(
         operator,
@@ -311,7 +330,7 @@ fn burn() {
     let from = USERS[0];
     let user1 = USERS[1];
 
-    ft.send(from, Action::Mint(user1.into(), TOKEN_ID, BALANCE));
+    ft.send(from, Action::Mint(user1.into(), TOKEN_ID, BALANCE, None));
 
     ft.send(user1, Action::Burn(TOKEN_ID, 10));
 
@@ -331,7 +350,12 @@ fn burn_batch() {
 
     ft.send(
         from,
-        Action::MintBatch(user1.into(), vec![1u128, 2u128], vec![BALANCE, BALANCE]),
+        Action::MintBatch(
+            user1.into(),
+            vec![1u128, 2u128],
+            vec![BALANCE, BALANCE],
+            vec![None, None],
+        ),
     );
 
     ft.send(user1, Action::BurnBatch(vec![1u128, 2u128], vec![10, 20]));
@@ -374,7 +398,7 @@ fn owner_of() {
     let from = USERS[0];
     let user1 = USERS[1];
 
-    ft.send(from, Action::Mint(user1.into(), 1u128, BALANCE));
+    ft.send(from, Action::Mint(user1.into(), 1u128, BALANCE, None));
     let res = ft.send(user1, Action::OwnerOf(1u128));
     let log = Log::builder().payload(true);
     assert!(res.contains(&log));
@@ -394,7 +418,12 @@ fn owner_of_batch() {
 
     ft.send(
         from,
-        Action::MintBatch(user1.into(), vec![1u128, 2u128], vec![BALANCE, BALANCE]),
+        Action::MintBatch(
+            user1.into(),
+            vec![1u128, 2u128],
+            vec![BALANCE, BALANCE],
+            vec![None, None],
+        ),
     );
 
     let res = ft.send(user1, Action::OwnerOfBatch(vec![1u128, 2u128]));
@@ -412,7 +441,7 @@ fn uri() {
     let ft = init(&sys);
     let res = ft.send(
         USERS[0],
-        Action::Mint(USERS[1].into(), NFT_TOKEN_ID, NFT_BALANCE),
+        Action::Mint(USERS[1].into(), NFT_TOKEN_ID, NFT_BALANCE, None),
     );
     assert!(res.contains(&(
         USERS[0],
@@ -427,4 +456,40 @@ fn uri() {
     )));
     let res = ft.send(USERS[0], Action::URI(NFT_TOKEN_ID));
     assert!(res.contains(&(USERS[0], Event::URI(String::from("ipfs://2.json")).encode())));
+}
+
+#[test]
+fn token_metadata() {
+    let sys = System::new();
+    let ft = init(&sys);
+    let meta = TokenMetadata {
+        title: Some(String::from("Kitty")),
+        description: Some(String::from("Just a test kitty")),
+        media: Some(String::from("www.example.com/nfts/kitty.png")),
+        reference: Some(String::from("www.example.com/nfts/kitty")),
+    };
+    let res = ft.send(
+        USERS[0],
+        Action::Mint(
+            USERS[1].into(),
+            NFT_TOKEN_ID,
+            NFT_BALANCE,
+            Some(meta.clone()),
+        ),
+    );
+    assert!(res.contains(&(
+        USERS[0],
+        Event::TransferSingle(TransferSingleReply {
+            operator: USERS[0].into(),
+            from: ZERO_ID,
+            to: USERS[1].into(),
+            id: NFT_TOKEN_ID,
+            amount: NFT_BALANCE,
+        })
+        .encode()
+    )));
+
+    let res = ft.send(USERS[0], Action::MetadataOf(NFT_TOKEN_ID));
+    let codec = Event::MetadataOf(meta.clone()).encode();
+    assert!(res.contains(&(USERS[0], codec)));
 }
