@@ -199,7 +199,7 @@ impl ExtendERC1155TokenBase for ERC1155Token {
             if amount > 1 {
                 panic!("ERC1155: Mint metadata to a fungible token")
             }
-            self.token_metadata.insert(*id, metadata.clone());
+            self.token_metadata.insert(*id, metadata);
         }
         let prev_balance = self.balance_of(account, id);
         self.set_balance(account, id, prev_balance.saturating_add(amount));
