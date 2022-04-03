@@ -64,8 +64,7 @@ impl Lottery {
     fn player_exist(&mut self) -> bool {
         self.players
             .values()
-            .find(|player| player.player_id == msg::source())
-            .is_some()
+            .any(|player| player.player_id == msg::source())
     }
 
     /// Transfers `amount` tokens from `sender` account to `recipient` account.
@@ -73,13 +72,13 @@ impl Lottery {
     /// * `from`: sender account
     /// * `to`: recipient account
     /// * `amount`: amount of tokens
-    async fn transfer_tokens(&mut self, from: &ActorId, to: &ActorId, amount: u128) {
+    async fn transfer_tokens(&mut self, from: &ActorId, to: &ActorId, amount_tokens: u128) {
         let _transfer_response: FtEvent = msg::send_and_wait_for_reply(
             self.token_address.unwrap(),
             FtAction::Transfer {
                 from: *from,
                 to: *to,
-                amount: amount,
+                amount: amount_tokens,
             },
             0,
         )
