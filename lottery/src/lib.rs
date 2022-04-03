@@ -243,7 +243,6 @@ impl Lottery {
             self.token_address = None;
             self.lottery_state = LotteryState::default();
             self.players = BTreeMap::new();
-            self.players_timestamp = BTreeMap::new();
         } else {
             panic!(
                 "pick_winner(): Owner message: {}  lottery_duration: {}  players.is_empty(): {}",
