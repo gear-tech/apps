@@ -2,6 +2,7 @@
 extern crate std;
 #[cfg(test)]
 use std::println;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use codec::Encode;
 use gstd::BTreeMap;
@@ -12,9 +13,9 @@ const USERS: &'static [u64] = &[3, 4, 5, 0];
 fn init(sys: &System) {
     sys.init_logger();
 
-    let ft = Program::current(&sys);
+    let lt = Program::current(&sys);
 
-    let res = ft.send_bytes_with_value(USERS[0], b"Init", 10000);
+    let res = lt.send_bytes_with_value(USERS[0], b"Init", 10000);
 
     assert!(res.log().is_empty());
 }
@@ -25,23 +26,66 @@ fn zero_address() {
     init(&sys);
     let lt = sys.get_program(1);
 
-    lt.send(USERS[3], Action::StartLottery(20000));
+    let res = lt.send(
+        USERS[3],
+        Action::StartLottery {
+            duration: 5000,
+            token_address: None,
+        },
+    );
+    assert!(res.main_failed());
+
     lt.send(USERS[0], Action::LotteryState);
 }
 
 #[test]
 fn start_lottery() {
+    let time = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_secs();
+
+    let state = LotteryState {
+        lottery_started: true,
+        lottery_start_time: time,
+        lottery_duration: 5000,
+    };
+
     let sys = System::new();
     init(&sys);
     let lt = sys.get_program(1);
 
-    let res = lt.send(USERS[0], Action::StartLottery(20000));
+    let res = lt.send(
+        USERS[0],
+        Action::StartLottery {
+            duration: 5000,
+            token_address: None,
+        },
+    );
     assert!(res.log().is_empty());
 
-    lt.send(USERS[1], Action::StartLottery(30000));
-    lt.send(USERS[0], Action::StartLottery(40000));
+    let res = lt.send(
+        USERS[1],
+        Action::StartLottery {
+            duration: 30000,
+            token_address: None,
+        },
+    );
+    assert!(res.main_failed());
 
-    lt.send(USERS[0], Action::LotteryState);
+    let res = lt.send(
+        USERS[0],
+        Action::StartLottery {
+            duration: 40000,
+            token_address: None,
+        },
+    );
+    assert!(res.main_failed());
+
+    println!("time: {}", time);
+
+    let res = lt.send(USERS[0], Action::LotteryState);
+    assert!(res.contains(&(USERS[0], Event::LotteryState(state).encode())));
 }
 
 #[test]
@@ -50,18 +94,26 @@ fn enter() {
     init(&sys);
     let lt = sys.get_program(1);
 
-    lt.send_with_value(USERS[1], Action::Enter, 3000);
+    let res = lt.send_with_value(USERS[1], Action::Enter(3000), 3000);
+    assert!(res.main_failed());
 
-    let res = lt.send(USERS[0], Action::StartLottery(20000));
+    let res = lt.send(
+        USERS[0],
+        Action::StartLottery {
+            duration: 5000,
+            token_address: None,
+        },
+    );
     assert!(res.log().is_empty());
 
-    let res = lt.send_with_value(USERS[0], Action::Enter, 1000);
+    let res = lt.send_with_value(USERS[0], Action::Enter(1000), 1000);
     assert!(res.contains(&(USERS[0], Event::PlayerAdded(0).encode())));
 
-    let res = lt.send_with_value(USERS[1], Action::Enter, 2000);
+    let res = lt.send_with_value(USERS[1], Action::Enter(2000), 2000);
     assert!(res.contains(&(USERS[1], Event::PlayerAdded(1).encode())));
 
-    lt.send_with_value(USERS[1], Action::Enter, 3000);
+    let res = lt.send_with_value(USERS[1], Action::Enter(3000), 3000);
+    assert!(res.main_failed());
 }
 
 #[test]
@@ -70,22 +122,31 @@ fn pick_winner() {
     init(&sys);
     let lt = sys.get_program(1);
 
-    lt.send(USERS[0], Action::PickWinner);
+    let res = lt.send(USERS[0], Action::PickWinner);
+    assert!(res.main_failed());
 
-    let res = lt.send(USERS[0], Action::StartLottery(5000));
+    let res = lt.send(
+        USERS[0],
+        Action::StartLottery {
+            duration: 5000,
+            token_address: None,
+        },
+    );
     assert!(res.log().is_empty());
 
-    lt.send(USERS[0], Action::PickWinner);
+    let res = lt.send(USERS[0], Action::PickWinner);
+    assert!(res.main_failed());
 
-    let res = lt.send_with_value(USERS[0], Action::Enter, 1000);
+    let res = lt.send_with_value(USERS[0], Action::Enter(1000), 1000);
     assert!(res.contains(&(USERS[0], Event::PlayerAdded(0).encode())));
 
-    let res = lt.send_with_value(USERS[1], Action::Enter, 2000);
+    let res = lt.send_with_value(USERS[1], Action::Enter(2000), 2000);
     assert!(res.contains(&(USERS[1], Event::PlayerAdded(1).encode())));
 
     sys.spend_blocks(5000);
 
-    lt.send(USERS[1], Action::PickWinner);
+    let res = lt.send(USERS[1], Action::PickWinner);
+    assert!(res.main_failed());
 
     let res = lt.send(USERS[0], Action::PickWinner);
 
@@ -121,15 +182,22 @@ fn get_players() {
     init(&sys);
     let lt = sys.get_program(1);
 
-    lt.send(USERS[0], Action::GetPlayers);
+    let res = lt.send(USERS[0], Action::GetPlayers);
+    assert!(res.main_failed());
 
-    let res = lt.send(USERS[0], Action::StartLottery(20000));
+    let res = lt.send(
+        USERS[0],
+        Action::StartLottery {
+            duration: 5000,
+            token_address: None,
+        },
+    );
     assert!(res.log().is_empty());
 
-    let res = lt.send_with_value(USERS[0], Action::Enter, 1000);
+    let res = lt.send_with_value(USERS[0], Action::Enter(1000), 1000);
     assert!(res.contains(&(USERS[0], Event::PlayerAdded(0).encode())));
 
-    let res = lt.send_with_value(USERS[1], Action::Enter, 2000);
+    let res = lt.send_with_value(USERS[1], Action::Enter(2000), 2000);
     assert!(res.contains(&(USERS[1], Event::PlayerAdded(1).encode())));
 
     let res = lt.send(USERS[0], Action::GetPlayers);
@@ -151,22 +219,32 @@ fn leave_lottery() {
     init(&sys);
     let lt = sys.get_program(1);
 
-    lt.send(USERS[1], Action::LeaveLottery(1));
+    let res = lt.send(USERS[1], Action::LeaveLottery(1));
+    assert!(res.main_failed());
 
-    let res = lt.send(USERS[0], Action::StartLottery(20000));
+    let res = lt.send(
+        USERS[0],
+        Action::StartLottery {
+            duration: 5000,
+            token_address: None,
+        },
+    );
     assert!(res.log().is_empty());
 
-    lt.send(USERS[1], Action::LeaveLottery(1));
+    let res = lt.send(USERS[1], Action::LeaveLottery(1));
+    assert!(res.main_failed());
 
-    let res = lt.send_with_value(USERS[0], Action::Enter, 1000);
+    let res = lt.send_with_value(USERS[0], Action::Enter(1000), 1000);
     assert!(res.contains(&(USERS[0], Event::PlayerAdded(0).encode())));
 
-    let res = lt.send_with_value(USERS[1], Action::Enter, 2000);
+    let res = lt.send_with_value(USERS[1], Action::Enter(2000), 2000);
     assert!(res.contains(&(USERS[1], Event::PlayerAdded(1).encode())));
 
-    lt.send(USERS[1], Action::LeaveLottery(1));
+    let res = lt.send(USERS[1], Action::LeaveLottery(1));
+    assert!(!res.main_failed());
 
-    lt.send(USERS[1], Action::LeaveLottery(0));
+    let res = lt.send(USERS[1], Action::LeaveLottery(0));
+    assert!(res.main_failed());
 
     let res = lt.send(USERS[0], Action::GetPlayers);
     assert!(res.contains(&(USERS[0], Event::Players(map.clone()).encode())));
@@ -178,17 +256,25 @@ fn get_balance() {
     init(&sys);
     let lt = sys.get_program(1);
 
-    lt.send(USERS[1], Action::BalanceOf(1));
+    let res = lt.send(USERS[1], Action::BalanceOf(1));
+    assert!(res.main_failed());
 
-    let res = lt.send(USERS[0], Action::StartLottery(20000));
+    let res = lt.send(
+        USERS[0],
+        Action::StartLottery {
+            duration: 5000,
+            token_address: None,
+        },
+    );
     assert!(res.log().is_empty());
 
-    lt.send(USERS[1], Action::BalanceOf(1));
+    let res = lt.send(USERS[1], Action::BalanceOf(1));
+    assert!(res.main_failed());
 
-    let res = lt.send_with_value(USERS[0], Action::Enter, 1000);
+    let res = lt.send_with_value(USERS[0], Action::Enter(1000), 1000);
     assert!(res.contains(&(USERS[0], Event::PlayerAdded(0).encode())));
 
-    let res = lt.send_with_value(USERS[1], Action::Enter, 2000);
+    let res = lt.send_with_value(USERS[1], Action::Enter(2000), 2000);
     assert!(res.contains(&(USERS[1], Event::PlayerAdded(1).encode())));
 
     let res = lt.send(USERS[0], Action::BalanceOf(0));
