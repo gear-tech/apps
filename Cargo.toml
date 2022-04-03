@@ -9,6 +9,7 @@ members = [
     "nft-example",
     "non-fungible-token",
     "ping",
+    "lottery",
 ]
 
 [profile.release]
