@@ -239,7 +239,7 @@ impl ExtendERC1155TokenBase for ERC1155Token {
 
         ids.iter()
             .enumerate()
-            .for_each(|(idx, x)| self.burn(x, amounts[idx]));
+            .for_each(|(i, id)| self.burn(id, amounts[i]));
     }
 
     fn uri(&self, id: TokenId) -> String {
