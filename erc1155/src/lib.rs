@@ -149,9 +149,6 @@ impl ERC1155TokenBase for ERC1155Token {
         }
 
         for (id, amount) in ids.iter().zip(amounts) {
-            if !self.can_burn(&msg::source(), id, *amount) {
-                panic!("ERC1155: all batch element should be burnable");
-            }
             if !self.can_transfer(from, id, *amount) {
                 panic!("ERC1155: all batch element should be transerfable");
             }
