@@ -158,6 +158,7 @@ impl Lottery {
 
     /// Gets the player's balance
     /// Requirements:
+    /// * Only owner can request a balance
     /// * Lottery has started and lottery time has not expired
     /// * Player must be on the player list
     /// Arguments:

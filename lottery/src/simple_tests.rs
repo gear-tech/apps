@@ -104,8 +104,6 @@ fn pick_winner() {
         res.contains(&(USERS[0], Event::Winner(0).encode()))
             || res.contains(&(USERS[0], Event::Winner(1).encode()))
     );
-
-    lt.send(USERS[0], Action::LotteryState);
 }
 
 #[test]
