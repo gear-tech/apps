@@ -1,8 +1,9 @@
 use gstd::{prelude::*, ActorId};
 
 use crate::common::BalanceOfBatchReply;
-use crate::common::TokenMetadata;
 use crate::common::TokenId;
+use crate::common::TokenMetadata;
+
 pub trait ERC1155TokenBase {
     fn balance_of(&self, account: &ActorId, id: &TokenId) -> u128;
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[TokenId]) -> Vec<BalanceOfBatchReply>;
