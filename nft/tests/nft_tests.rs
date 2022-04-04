@@ -6,10 +6,7 @@ const USERS: &'static [u64] = &[3, 4, 5];
 fn init_with_mint(sys: &System) {
     sys.init_logger();
 
-    let nft = Program::from_file(
-        &sys,
-        "../../apps/target/wasm32-unknown-unknown/release/nft_example.wasm",
-    );
+    let nft = Program::current(&sys);
 
     let res = nft.send(
         USERS[0],

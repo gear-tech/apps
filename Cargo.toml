@@ -6,6 +6,7 @@ members = [
     "erc1155",
     "fungible-token",
     "ping",
+    "timestamp",
 ]
 
 [profile.release]

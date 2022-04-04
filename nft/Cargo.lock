@@ -397,10 +397,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "derive_trait"
-version = "1.5.0"
-
-[[package]]
 name = "dlmalloc"
 version = "0.1.4"
 source = "git+https://github.com/gear-tech/dlmalloc-rust.git?rev=e76ae98#e76ae9869ea4d386e758d7ed5d983ba2a25d7629"
@@ -551,11 +547,9 @@ version = "0.1.0"
 dependencies = [
  "gstd",
  "hex",
- "modifier",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
- "storage_traits",
 ]
 
 [[package]]
@@ -812,16 +806,6 @@ checksum = "a92518e98c078586bc6c934028adcca4c92a53d6a958196de835170a01d84e4b"
 dependencies = [
  "adler",
  "autocfg",
-]
-
-[[package]]
-name = "modifier"
-version = "0.1.0"
-dependencies = [
- "convert_case",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -1238,17 +1222,6 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
-
-[[package]]
-name = "storage_traits"
-version = "0.1.0"
-dependencies = [
- "convert_case",
- "derive_trait",
- "proc-macro2",
- "quote",
- "syn",
-]
 
 [[package]]
 name = "str-buf"

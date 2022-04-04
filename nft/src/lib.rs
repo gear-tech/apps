@@ -1,34 +1,27 @@
 #![no_std]
-#![feature(const_btree_new)]
 
 use codec::Encode;
-use gstd::{debug, msg, prelude::*, ActorId};
+use gear_contract_libraries::non_fungible_token::{io::*, nft_core::*};
+use gstd::{msg, prelude::*, ActorId};
 use primitive_types::U256;
-use gear_contract_libraries::non_fungible_token::traits::NonFungibleTokenBase;
-use gear_contract_libraries::non_fungible_token::nft_core::*;
-use gear_contract_libraries::non_fungible_token::io::*;
-use gear_contract_libraries::access::owner_access::*;
 
-#[derive(Debug, Default, NFTStorage, OwnableStorage)]
+#[derive(Debug, Default)]
 pub struct NFT {
-    #[NFTStorageField]
-    pub token: NFTData,
+    pub token: NFTState,
     pub token_id: U256,
-    #[OwnableStorageField]
-    pub owner: OwnableData,
+    pub owner: ActorId,
 }
 
-static mut CONTRACT: Option<NFT> = None;
-
-impl  NFT {   
-
-    #[modifier(only_owner)]
-    fn mint_token(&mut self) {
-        self.mint(&msg::source(), self.token_id);
-        self.token_id = self.token_id.saturating_add(U256::one());
+impl StateKeeper for NFT {
+    fn get(&self) -> &NFTState {
+        &self.token
+    }
+    fn get_mut(&mut self) -> &mut NFTState {
+        &mut self.token
     }
 }
 
+static mut CONTRACT: Option<NFT> = None;
 
 gstd::metadata! {
     title: "NFT",
@@ -41,22 +34,9 @@ gstd::metadata! {
 
 #[no_mangle]
 pub unsafe extern "C" fn handle() {
-    let action: NFTAction = msg::load().expect("Could not load Action");
+    let action: Vec<u8> = msg::load().expect("Could not load msg");
     let nft = CONTRACT.get_or_insert(NFT::default());
-    match action {
-        NFTAction::Mint => {
-            nft.mint_token();
-        }
-        NFTAction::Burn(token_id) => {
-            nft.burn(token_id);
-        }
-        NFTAction::Transfer { to, token_id } => {
-            nft.transfer(&to, token_id);
-        }
-        NFTAction::Approve { to, token_id } => {
-            nft.approve(&to, token_id);
-        }
-    }
+    MyNFTCore::proc(nft, action);
 }
 
 #[no_mangle]
@@ -66,13 +46,40 @@ pub unsafe extern "C" fn init() {
     nft.token.name = config.name;
     nft.token.symbol = config.symbol;
     nft.token.base_uri = config.base_uri;
-    nft.owner = OwnableData{ owner: msg::source()};
- }
+    nft.owner = msg::source();
+}
 
- #[derive(Debug, Encode, Decode, TypeInfo)]
- pub enum NFTAction {
-     Mint,
-     Burn(U256),
-     Transfer { to: ActorId, token_id: U256 },
-     Approve { to: ActorId, token_id: U256 },
- }
+#[derive(Debug, Encode, Decode, TypeInfo)]
+pub enum MyNFTAction {
+    Mint,
+    Base(NFTAction),
+}
+
+pub trait MyNFTCore: NFTCore {
+    fn mint(&mut self);
+
+    fn proc(&mut self, bytes: Vec<u8>) -> Option<()> {
+        if bytes.len() < 2 {
+            return None;
+        }
+        if bytes[0] == 0 {
+            let mut bytes = bytes;
+            bytes.remove(0);
+            return <Self as MyNFTCore>::proc(self, bytes);
+        }
+        let action = MyNFTAction::decode(&mut &bytes[..]).ok()?;
+        match action {
+            MyNFTAction::Mint => <Self as MyNFTCore>::mint(self),
+            MyNFTAction::Base(_) => unreachable!(),
+        }
+        Some(())
+    }
+}
+impl NonFungibleTokenAssert for NFT {}
+impl NFTCore for NFT {}
+impl MyNFTCore for NFT {
+    fn mint(&mut self) {
+        NFTCore::mint(self, &msg::source(), self.token_id);
+        self.token_id = self.token_id.saturating_add(U256::one());
+    }
+}
