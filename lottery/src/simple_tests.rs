@@ -212,6 +212,6 @@ fn get_balance() {
     let res = lt.send(USERS[0], Action::BalanceOf(0));
     assert!(res.contains(&(USERS[0], Event::Balance(1000).encode())));
 
-    let res = lt.send(USERS[1], Action::BalanceOf(1));
-    assert!(res.contains(&(USERS[1], Event::Balance(2000).encode())));
+    let res = lt.send(USERS[0], Action::BalanceOf(1));
+    assert!(res.contains(&(USERS[0], Event::Balance(2000).encode())));
 }

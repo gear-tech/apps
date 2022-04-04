@@ -61,7 +61,7 @@ impl Lottery {
     }
 
     // checks that the player is already participating in the lottery
-    fn player_exist(&mut self) -> bool {
+    fn player_exists(&mut self) -> bool {
         self.players
             .values()
             .any(|player| player.player_id == msg::source())
@@ -94,7 +94,7 @@ impl Lottery {
     /// Arguments:
     /// * `amount`: value or tokens to participate in the lottery
     async fn enter(&mut self, amount: u128) {
-        if self.lottery_is_on() && !self.player_exist() && amount > 0 {
+        if self.lottery_is_on() && !self.player_exists() && amount > 0 {
             let player = Player {
                 player_id: msg::source(),
                 balance: amount,
@@ -113,9 +113,9 @@ impl Lottery {
             msg::reply(Event::PlayerAdded(player_index), 0);
         } else {
             panic!(
-                "enter(): Lottery on: {}  player exist: {} amount: {}",
+                "enter(): Lottery on: {}  player exists: {} amount: {}",
                 self.lottery_is_on(),
-                self.player_exist(),
+                self.player_exists(),
                 amount
             );
         }
@@ -129,30 +129,30 @@ impl Lottery {
     /// Arguments:
     /// * `index`: lottery player index
     async fn leave_lottery(&mut self, index: u32) {
-        if self.lottery_is_on() {
-            if let Some(player) = self.players.get(&index) {
-                if player.player_id == msg::source() {
-                    if self.token_address.is_some() {
-                        let balance = player.balance;
-                        self.transfer_tokens(&exec::program_id(), &msg::source(), balance)
-                            .await;
-                    } else {
-                        msg::send_bytes(player.player_id, b"LeaveLottery", player.balance);
-                    }
-
-                    self.players.remove(&index);
-                } else {
-                    panic!(
-                        "leave_lottery(): ActorId's does not match: player: {:?}  msg::source(): {:?}",
-                        player.player_id,
-                        msg::source()
-                    );
-                }
-            } else {
-                panic!("leave_lottery(): Player {} not found", index);
-            }
-        } else {
+        if !self.lottery_is_on() {
             panic!("leave_lottery(): Lottery on: {}", self.lottery_is_on());
+        }
+
+        if let Some(player) = self.players.get(&index) {
+            if player.player_id != msg::source() {
+                panic!(
+                    "leave_lottery(): ActorId's does not match: player: {:?}  msg::source(): {:?}",
+                    player.player_id,
+                    msg::source()
+                );
+            }
+
+            if self.token_address.is_some() {
+                let balance = player.balance;
+                self.transfer_tokens(&exec::program_id(), &msg::source(), balance)
+                    .await;
+            } else {
+                msg::send_bytes(player.player_id, b"LeaveLottery", player.balance);
+            }
+
+            self.players.remove(&index);
+        } else {
+            panic!("leave_lottery(): Player {} not found", index);
         }
     }
 
@@ -163,7 +163,7 @@ impl Lottery {
     /// Arguments:
     /// * `index`: lottery player index
     fn get_balance(&mut self, index: u32) {
-        if self.lottery_is_on() {
+        if msg::source() == self.lottery_owner && self.lottery_is_on() {
             if let Some(player) = self.players.get(&index) {
                 msg::reply(Event::Balance(player.balance), 0);
             } else {
@@ -257,7 +257,7 @@ impl Lottery {
 static mut LOTTERY: Option<Lottery> = None;
 
 #[gstd::async_main]
-async unsafe fn main() {
+async fn main() {
     if msg::source() == ZERO_ID {
         panic!("Message from zero address");
     }
@@ -278,7 +278,7 @@ async unsafe fn main() {
         }
 
         Action::LotteryState => {
-            msg::reply(Event::LotteryState(lottery.lottery_state), 0);
+            msg::reply(Event::LotteryState(lottery.lottery_state.clone()), 0);
             debug!("LotteryState: {:?}", lottery.lottery_state);
         }
 

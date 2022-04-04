@@ -10,7 +10,7 @@ pub struct FtInitConfig {
     pub symbol: String,
 }
 
-#[derive(Debug, Default, Encode, Decode, TypeInfo, Clone, Copy)]
+#[derive(Debug, Default, Encode, Decode, TypeInfo, Clone)]
 pub struct LotteryState {
     pub lottery_started: bool,
     pub lottery_start_time: u64,

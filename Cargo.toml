@@ -6,10 +6,10 @@ members = [
     "erc1155",
     "fungible-token",
     "gear-feeds-router",
+    "lottery",
     "nft-example",
     "non-fungible-token",
     "ping",
-    "lottery",
 ]
 
 [profile.release]
