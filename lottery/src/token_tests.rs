@@ -151,6 +151,4 @@ fn pick_winner() {
     let res = ft.send(USERS[2], FtAction::BalanceOf(USERS[1].into()));
     println!("Balance(u128): {:?}", res.decoded_log::<FtEvent>());
     assert!(res.contains(&(USERS[2], FtEvent::Balance(0).encode())));
-
-    lt.send(USERS[2], Action::LotteryState);
 }
