@@ -21,7 +21,7 @@ pub trait ERC1155TokenBase {
 }
 
 pub trait ExtendERC1155TokenBase {
-    fn mint(&mut self, account: &ActorId, id: &u128, amount: u128, meta: Option<TokenMetadata>);
+    fn mint(&mut self, account: &ActorId, id: &TokenId, amount: u128, meta: Option<TokenMetadata>);
     fn mint_batch(
         &mut self,
         account: &ActorId,
@@ -29,7 +29,7 @@ pub trait ExtendERC1155TokenBase {
         amounts: &[u128],
         meta: Vec<Option<TokenMetadata>>,
     );
-    fn burn(&mut self, ids: &TokenId, amount: u128);
+    fn burn(&mut self, id: &TokenId, amount: u128);
     fn burn_batch(&mut self, ids: &[TokenId], amounts: &[u128]);
     fn is_owner_of(&self, id: &TokenId) -> bool;
     fn is_owner_of_batch(&self, ids: &[TokenId]) -> bool;

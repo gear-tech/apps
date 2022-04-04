@@ -36,7 +36,7 @@ pub enum StateReply {
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum Action {
-    Mint(ActorId, u128, u128, Option<TokenMetadata>),
+    Mint(ActorId, TokenId, u128, Option<TokenMetadata>),
     BalanceOf(ActorId, TokenId),
     BalanceOfBatch(Vec<ActorId>, Vec<TokenId>),
     MintBatch(ActorId, Vec<u128>, Vec<TokenId>, Vec<Option<TokenMetadata>>),
