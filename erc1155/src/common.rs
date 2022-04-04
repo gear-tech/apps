@@ -1,6 +1,7 @@
 use codec::{Decode, Encode};
 use gstd::{prelude::*, ActorId};
 use scale_info::TypeInfo;
+pub type TokenId = u128;
 
 #[derive(Debug, Decode, Encode, TypeInfo, Default, Clone)]
 pub struct TokenMetadata {
@@ -30,25 +31,25 @@ pub enum StateReply {
     Name(String),
     Symbol(String),
     Uri(String),
-    Balance(u128),
+    Balance(TokenId),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum Action {
     Mint(ActorId, u128, u128, Option<TokenMetadata>),
-    BalanceOf(ActorId, u128),
-    BalanceOfBatch(Vec<ActorId>, Vec<u128>),
-    MintBatch(ActorId, Vec<u128>, Vec<u128>, Vec<Option<TokenMetadata>>),
-    SafeTransferFrom(ActorId, ActorId, u128, u128),
-    SafeBatchTransferFrom(ActorId, ActorId, Vec<u128>, Vec<u128>),
+    BalanceOf(ActorId, TokenId),
+    BalanceOfBatch(Vec<ActorId>, Vec<TokenId>),
+    MintBatch(ActorId, Vec<u128>, Vec<TokenId>, Vec<Option<TokenMetadata>>),
+    SafeTransferFrom(ActorId, ActorId, TokenId, u128),
+    SafeBatchTransferFrom(ActorId, ActorId, Vec<TokenId>, Vec<u128>),
     SetApprovalForAll(ActorId, bool),
     IsApprovedForAll(ActorId, ActorId),
-    Burn(u128, u128),
-    BurnBatch(Vec<u128>, Vec<u128>),
-    OwnerOf(u128),
-    OwnerOfBatch(Vec<u128>),
-    URI(u128),
-    MetadataOf(u128),
+    Burn(TokenId, u128),
+    BurnBatch(Vec<TokenId>, Vec<u128>),
+    OwnerOf(TokenId),
+    OwnerOfBatch(Vec<TokenId>),
+    URI(TokenId),
+    MetadataOf(TokenId),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -56,14 +57,14 @@ pub struct TransferSingleReply {
     pub operator: ActorId,
     pub from: ActorId,
     pub to: ActorId,
-    pub id: u128,
+    pub id: TokenId,
     pub amount: u128,
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct BalanceOfBatchReply {
     pub account: ActorId,
-    pub id: u128,
+    pub id: TokenId,
     pub amount: u128,
 }
 
@@ -77,7 +78,7 @@ pub enum Event {
         operator: ActorId,
         from: ActorId,
         to: ActorId,
-        ids: Vec<u128>,
+        ids: Vec<TokenId>,
         values: Vec<u128>,
     },
     ApprovalForAll {
