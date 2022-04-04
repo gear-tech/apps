@@ -16,4 +16,4 @@ hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 primitive-types = { version = "0.10.1", default-features = false, features = ["scale-info"] }
 
 [dev-dependencies]
-gtest = { git = "https://github.com/gear-tech/gear.git", rev = "e81b56a" }
+gtest = { git = "https://github.com/gear-tech/gear.git" }
