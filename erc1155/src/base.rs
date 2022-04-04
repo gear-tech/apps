@@ -16,23 +16,23 @@ pub trait ERC1155TokenBase {
         ids: &[u128],
         amounts: &[u128],
     );
-    fn can_transfer(&mut self, from: &ActorId, id: &u128, amount: u128) -> bool;
+    fn can_transfer(&self, from: &ActorId, id: &u128, amount: u128) -> bool;
 }
 
 pub trait ExtendERC1155TokenBase {
-    fn mint(&mut self, account: &ActorId, id: &u128, amount: u128, meta: Option<TokenMetadata>);
+    fn mint(&mut self, account: &ActorId, id: &u128, amount: u128, meta: &Option<TokenMetadata>);
     fn mint_batch(
         &mut self,
         account: &ActorId,
         ids: &[u128],
         amounts: &[u128],
-        meta: &[Option<TokenMetadata>],
+        meta: Vec<Option<TokenMetadata>>,
     );
     fn burn(&mut self, ids: &u128, amount: u128);
     fn burn_batch(&mut self, ids: &[u128], amounts: &[u128]);
-    fn owner_of(&self, id: &u128) -> bool;
-    fn owner_of_batch(&self, ids: &[u128]) -> bool;
+    fn is_owner_of(&self, id: &u128) -> bool;
+    fn is_owner_of_batch(&self, ids: &[u128]) -> bool;
     fn uri(&self, id: u128) -> String;
     fn can_burn(&mut self, owner: &ActorId, id: &u128, amount: u128) -> bool;
-    fn get_metadata(&mut self, id: u128) -> TokenMetadata;
+    fn get_metadata(&self, id: u128) -> TokenMetadata;
 }

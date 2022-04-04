@@ -73,17 +73,13 @@ impl ERC1155TokenBase for ERC1155Token {
         }
 
         ids.iter()
-            .enumerate()
-            .map(|(idx, x)| BalanceOfBatchReply {
-                account: accounts[idx],
-                id: *x,
-                amount: *self
-                    .balances
-                    .get(x)
-                    .and_then(|m| m.get(&accounts[idx]))
-                    .unwrap_or(&0),
+            .zip(accounts)
+            .map(|(id, account)| BalanceOfBatchReply {
+                account: *account,
+                id: *id,
+                amount: self.get_balance(account, id),
             })
-            .collect::<Vec<BalanceOfBatchReply>>()
+            .collect()
     }
 
     fn set_approval_for_all(&mut self, operator: &ActorId, approved: bool) {
@@ -152,45 +148,43 @@ impl ERC1155TokenBase for ERC1155Token {
             panic!("ERC1155: ids and amounts length mismatch")
         }
 
-        ids.iter().enumerate().for_each(|(idx, x)| {
-            if !self.can_transfer(from, x, amounts[idx]) {
+        for (id, amount) in ids.iter().zip(amounts) {
+            if !self.can_burn(&msg::source(), id, *amount) {
+                panic!("ERC1155: all batch element should be burnable");
+            }
+            if !self.can_transfer(from, id, *amount) {
                 panic!("ERC1155: all batch element should be transerfable");
             }
-        });
+        }
 
         ids.iter()
             .enumerate()
             .for_each(|(idx, x)| self.safe_transfer_from(from, to, x, amounts[idx]));
     }
 
-    fn can_transfer(&mut self, from: &ActorId, id: &u128, amount: u128) -> bool {
-        if from == &msg::source()
+    fn can_transfer(&self, from: &ActorId, id: &u128, amount: u128) -> bool {
+        from == &msg::source()
             || from == &exec::origin()
             || self.get_balance(&msg::source(), id) >= amount
-        {
-            return true;
-        }
-        false
     }
 }
 
 impl ExtendERC1155TokenBase for ERC1155Token {
-    fn owner_of(&self, id: &u128) -> bool {
+    fn is_owner_of(&self, id: &u128) -> bool {
         let owner = msg::source();
         self.balance_of(&owner, id) != 0
     }
 
-    fn owner_of_batch(&self, ids: &[u128]) -> bool {
-        for (_, ele) in ids.iter().enumerate() {
-            let res = self.owner_of(ele);
-            if !res {
+    fn is_owner_of_batch(&self, ids: &[u128]) -> bool {
+        for ele in ids {
+            if !self.is_owner_of(ele) {
                 return false;
             }
         }
         true
     }
 
-    fn mint(&mut self, account: &ActorId, id: &u128, amount: u128, meta: Option<TokenMetadata>) {
+    fn mint(&mut self, account: &ActorId, id: &u128, amount: u128, meta: &Option<TokenMetadata>) {
         if account == &ZERO_ID {
             panic!("ERC1155: Mint to zero address")
         }
@@ -199,7 +193,7 @@ impl ExtendERC1155TokenBase for ERC1155Token {
             if amount > 1 {
                 panic!("ERC1155: Mint metadata to a fungible token")
             }
-            self.token_metadata.insert(*id, metadata);
+            self.token_metadata.insert(*id, metadata.clone());
         }
         let prev_balance = self.balance_of(account, id);
         self.set_balance(account, id, prev_balance.saturating_add(amount));
@@ -210,7 +204,7 @@ impl ExtendERC1155TokenBase for ERC1155Token {
         account: &ActorId,
         ids: &[u128],
         amounts: &[u128],
-        meta: &[Option<TokenMetadata>],
+        meta: Vec<Option<TokenMetadata>>,
     ) {
         if account == &ZERO_ID {
             panic!("ERC1155: Mint to zero address")
@@ -221,7 +215,7 @@ impl ExtendERC1155TokenBase for ERC1155Token {
         }
         ids.iter()
             .enumerate()
-            .for_each(|(idx, x)| self.mint(account, x, amounts[idx], meta[idx].clone()));
+            .for_each(|(idx, x)| self.mint(account, x, amounts[idx], &meta[idx]));
     }
 
     fn burn(&mut self, id: &u128, amount: u128) {
@@ -240,11 +234,11 @@ impl ExtendERC1155TokenBase for ERC1155Token {
             panic!("ERC1155: ids and amounts length mismatch")
         }
 
-        ids.iter().enumerate().for_each(|(idx, x)| {
-            if !self.can_burn(&msg::source(), x, amounts[idx]) {
+        for (id, amount) in ids.iter().zip(amounts) {
+            if !self.can_burn(&msg::source(), id, *amount) {
                 panic!("ERC1155: all batch element should be burnable");
             }
-        });
+        }
 
         ids.iter()
             .enumerate()
@@ -256,10 +250,10 @@ impl ExtendERC1155TokenBase for ERC1155Token {
     }
 
     fn can_burn(&mut self, owner: &ActorId, id: &u128, amount: u128) -> bool {
-        self.owner_of(id) && self.balance_of(owner, id) >= amount
+        self.is_owner_of(id) && self.balance_of(owner, id) >= amount
     }
 
-    fn get_metadata(&mut self, id: u128) -> TokenMetadata {
+    fn get_metadata(&self, id: u128) -> TokenMetadata {
         self.token_metadata
             .get(&id)
             .unwrap_or(&TokenMetadata {
@@ -312,7 +306,7 @@ pub unsafe extern "C" fn handle() {
     let action: Action = msg::load().expect("Could not load Action");
     match action {
         Action::Mint(account, id, amount, meta) => {
-            ERC1155_TOKEN.mint(&account, &id, amount, meta);
+            ERC1155_TOKEN.mint(&account, &id, amount, &meta);
             msg::reply(
                 Event::TransferSingle(TransferSingleReply {
                     operator: msg::source(),
@@ -336,7 +330,7 @@ pub unsafe extern "C" fn handle() {
         }
 
         Action::MintBatch(account, ids, amounts, metas) => {
-            ERC1155_TOKEN.mint_batch(&account, &ids, &amounts, &metas);
+            ERC1155_TOKEN.mint_batch(&account, &ids, &amounts, metas);
             msg::reply(
                 Event::TransferBatch {
                     operator: msg::source(),
@@ -430,12 +424,12 @@ pub unsafe extern "C" fn handle() {
         }
 
         Action::OwnerOf(id) => {
-            let res = ERC1155_TOKEN.owner_of(&id);
+            let res = ERC1155_TOKEN.is_owner_of(&id);
             msg::reply(res, 0);
         }
 
         Action::OwnerOfBatch(ids) => {
-            let res = ERC1155_TOKEN.owner_of_batch(&ids);
+            let res = ERC1155_TOKEN.is_owner_of_batch(&ids);
             msg::reply(res, 0);
         }
 
