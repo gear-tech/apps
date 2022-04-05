@@ -58,7 +58,7 @@ pub struct Member {
 static mut DAO: Option<Dao> = None;
 
 impl Dao {
-    
+     
     async fn request_for_membership(&mut self, amount: u128) {       
         if self.wait_list.contains_key(&msg::source()) {
             panic!("You have already requested for membership");
@@ -694,6 +694,10 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
         }
         State::MemberInfo(account) => {
             StateReply::MemberInfo(dao.members.get(&account).unwrap().clone()).encode()
+        }
+        State::MemberPower(account) => {
+            let member = dao.members.get(&account).expect("Member does not exist");
+            StateReply::MemberPower(member.shares).encode()
         }
     };
     let result = gstd::macros::util::to_wasm_ptr(&(encoded[..]));

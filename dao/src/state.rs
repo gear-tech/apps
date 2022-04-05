@@ -21,6 +21,7 @@ pub enum State {
     ProposalId,
     ProposalInfo(u128),
     MemberInfo(ActorId),
+    MemberPower(ActorId),
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
@@ -37,4 +38,5 @@ pub enum StateReply {
         proposal: Proposal
     },
     MemberInfo(Member),
+    MemberPower(u128),
 }
