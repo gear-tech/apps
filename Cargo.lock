@@ -582,11 +582,7 @@ dependencies = [
 [[package]]
 name = "galloc"
 version = "0.1.0"
-<<<<<<< HEAD
 source = "git+https://github.com/gear-tech/gear.git#109fb5433283c41c599341997004d81767d09599"
-=======
-source = "git+https://github.com/gear-tech/gear.git#0a43dbce2a3c564607712c752e5b313c8315108f"
->>>>>>> update nft marketplace
 dependencies = [
  "dlmalloc",
 ]
@@ -594,11 +590,7 @@ dependencies = [
 [[package]]
 name = "gcore"
 version = "0.1.0"
-<<<<<<< HEAD
 source = "git+https://github.com/gear-tech/gear.git#109fb5433283c41c599341997004d81767d09599"
-=======
-source = "git+https://github.com/gear-tech/gear.git#0a43dbce2a3c564607712c752e5b313c8315108f"
->>>>>>> update nft marketplace
 
 [[package]]
 name = "gear-backend-common"
@@ -707,13 +699,8 @@ dependencies = [
 
 [[package]]
 name = "gear-wasm-builder"
-<<<<<<< HEAD
 version = "0.1.2"
 source = "git+https://github.com/gear-tech/gear.git#109fb5433283c41c599341997004d81767d09599"
-=======
-version = "0.1.1"
-source = "git+https://github.com/gear-tech/gear.git#0a43dbce2a3c564607712c752e5b313c8315108f"
->>>>>>> update nft marketplace
 dependencies = [
  "anyhow",
  "cargo_metadata",
@@ -754,11 +741,7 @@ checksum = "78cc372d058dcf6d5ecd98510e7fbc9e5aec4d21de70f65fea8fecebcd881bd4"
 [[package]]
 name = "gstd"
 version = "0.1.0"
-<<<<<<< HEAD
 source = "git+https://github.com/gear-tech/gear.git#109fb5433283c41c599341997004d81767d09599"
-=======
-source = "git+https://github.com/gear-tech/gear.git#0a43dbce2a3c564607712c752e5b313c8315108f"
->>>>>>> update nft marketplace
 dependencies = [
  "bs58",
  "futures",
@@ -774,11 +757,7 @@ dependencies = [
 [[package]]
 name = "gstd-codegen"
 version = "0.1.0"
-<<<<<<< HEAD
 source = "git+https://github.com/gear-tech/gear.git#109fb5433283c41c599341997004d81767d09599"
-=======
-source = "git+https://github.com/gear-tech/gear.git#0a43dbce2a3c564607712c752e5b313c8315108f"
->>>>>>> update nft marketplace
 dependencies = [
  "quote",
  "syn",
