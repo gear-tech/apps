@@ -24,6 +24,8 @@ pub enum State {
     Symbol,
     Uri,
     BalanceOf(ActorId, u128),
+    URI(TokenId),
+    MetadataOf(TokenId),
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
@@ -32,6 +34,8 @@ pub enum StateReply {
     Symbol(String),
     Uri(String),
     Balance(TokenId),
+    URI(String),
+    MetadataOf(TokenMetadata),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -48,8 +52,6 @@ pub enum Action {
     BurnBatch(Vec<TokenId>, Vec<u128>),
     OwnerOf(TokenId),
     OwnerOfBatch(Vec<TokenId>),
-    URI(TokenId),
-    MetadataOf(TokenId),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -86,6 +88,4 @@ pub enum Event {
         operator: ActorId,
         approved: bool,
     },
-    URI(String),
-    MetadataOf(TokenMetadata),
 }

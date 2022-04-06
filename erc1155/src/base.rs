@@ -5,12 +5,11 @@ use crate::common::TokenId;
 use crate::common::TokenMetadata;
 
 pub trait ERC1155TokenBase {
-    fn balance_of(&self, account: &ActorId, id: &TokenId) -> u128;
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[TokenId]) -> Vec<BalanceOfBatchReply>;
     fn set_approval_for_all(&mut self, operator: &ActorId, approved: bool);
     fn is_approved_for_all(&self, account: &ActorId, operator: &ActorId) -> bool;
-    fn safe_transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128);
-    fn safe_batch_transfer_from(
+    fn transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128);
+    fn batch_transfer_from(
         &mut self,
         from: &ActorId,
         to: &ActorId,
