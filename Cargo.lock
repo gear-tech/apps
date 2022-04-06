@@ -576,11 +576,7 @@ dependencies = [
 [[package]]
 name = "galloc"
 version = "0.1.0"
-<<<<<<< HEAD
 source = "git+https://github.com/gear-tech/gear.git#68938866a6ec70a3611dbca35312cbe2bd14f41a"
-=======
-source = "git+https://github.com/gear-tech/gear.git#109fb5433283c41c599341997004d81767d09599"
->>>>>>> fixed conflicts
 dependencies = [
  "dlmalloc",
 ]
@@ -588,20 +584,7 @@ dependencies = [
 [[package]]
 name = "gcore"
 version = "0.1.0"
-<<<<<<< HEAD
 source = "git+https://github.com/gear-tech/gear.git#68938866a6ec70a3611dbca35312cbe2bd14f41a"
-=======
-source = "git+https://github.com/gear-tech/gear.git#109fb5433283c41c599341997004d81767d09599"
-
-[[package]]
-name = "gear-backend-common"
-version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git?rev=e81b56a#e81b56ad5dda57f444de87ed953ef231c42f3ac8"
-dependencies = [
- "gear-core 0.1.0 (git+https://github.com/gear-tech/gear.git?rev=e81b56a)",
- "log",
-]
->>>>>>> fixed conflicts
 
 [[package]]
 name = "gear-backend-common"
@@ -667,11 +650,7 @@ dependencies = [
 [[package]]
 name = "gear-wasm-builder"
 version = "0.1.2"
-<<<<<<< HEAD
 source = "git+https://github.com/gear-tech/gear.git#68938866a6ec70a3611dbca35312cbe2bd14f41a"
-=======
-source = "git+https://github.com/gear-tech/gear.git#109fb5433283c41c599341997004d81767d09599"
->>>>>>> fixed conflicts
 dependencies = [
  "anyhow",
  "cargo_metadata",
@@ -707,11 +686,7 @@ dependencies = [
 [[package]]
 name = "gstd"
 version = "0.1.0"
-<<<<<<< HEAD
 source = "git+https://github.com/gear-tech/gear.git#68938866a6ec70a3611dbca35312cbe2bd14f41a"
-=======
-source = "git+https://github.com/gear-tech/gear.git#109fb5433283c41c599341997004d81767d09599"
->>>>>>> fixed conflicts
 dependencies = [
  "bs58",
  "futures",
@@ -727,11 +702,7 @@ dependencies = [
 [[package]]
 name = "gstd-codegen"
 version = "0.1.0"
-<<<<<<< HEAD
 source = "git+https://github.com/gear-tech/gear.git#68938866a6ec70a3611dbca35312cbe2bd14f41a"
-=======
-source = "git+https://github.com/gear-tech/gear.git#109fb5433283c41c599341997004d81767d09599"
->>>>>>> fixed conflicts
 dependencies = [
  "quote",
  "syn",
