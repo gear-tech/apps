@@ -6,12 +6,12 @@ authors = ["Gear Technologies"]
 license = "GPL-3.0"
 
 [dependencies]
-gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
-primitive-types = { version = "0.11.1", default-features = false, features = ["scale-info"]}
 codec = { package = "parity-scale-codec", version = "3.1.2", default-features = false, features = ["derive", "full"] }
-scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
 dao-io = { path = "io" }
 ft-io = { path = "../fungible-token/io" }
+gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
+primitive-types = { version = "0.11.1", default-features = false, features = ["scale-info"]}
+scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git" }

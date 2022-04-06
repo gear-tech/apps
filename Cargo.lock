@@ -442,7 +442,6 @@ dependencies = [
  "gear-wasm-builder",
  "gstd",
  "gtest",
- "hex",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
@@ -502,7 +501,6 @@ dependencies = [
  "gear-wasm-builder",
  "gstd",
  "gtest",
- "hex",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
@@ -916,7 +914,6 @@ name = "non-fungible-token"
 version = "0.1.0"
 dependencies = [
  "gstd",
- "hex",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
