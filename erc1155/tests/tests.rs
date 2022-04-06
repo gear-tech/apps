@@ -13,8 +13,6 @@ const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 const USERS: &'static [u64] = &[3, 4, 5];
 const TOKEN_ID: u128 = 1;
 const BALANCE: u128 = 100;
-const NFT_TOKEN_ID: u128 = 2;
-const NFT_BALANCE: u128 = 1;
 
 fn init(sys: &System) -> Program {
     sys.init_logger();
@@ -433,63 +431,4 @@ fn owner_of_batch() {
     let res = ft.send(user1, Action::OwnerOfBatch(vec![3u128]));
     let log = Log::builder().payload(false);
     assert!(res.contains(&log));
-}
-
-#[test]
-fn uri() {
-    let sys = System::new();
-    let ft = init(&sys);
-    let res = ft.send(
-        USERS[0],
-        Action::Mint(USERS[1].into(), NFT_TOKEN_ID, NFT_BALANCE, None),
-    );
-    assert!(res.contains(&(
-        USERS[0],
-        Event::TransferSingle(TransferSingleReply {
-            operator: USERS[0].into(),
-            from: ZERO_ID,
-            to: USERS[1].into(),
-            id: NFT_TOKEN_ID,
-            amount: NFT_BALANCE,
-        })
-        .encode()
-    )));
-    let res = ft.send(USERS[0], Action::URI(NFT_TOKEN_ID));
-    assert!(res.contains(&(USERS[0], Event::URI(String::from("ipfs://2.json")).encode())));
-}
-
-#[test]
-fn token_metadata() {
-    let sys = System::new();
-    let ft = init(&sys);
-    let meta = TokenMetadata {
-        title: Some(String::from("Kitty")),
-        description: Some(String::from("Just a test kitty")),
-        media: Some(String::from("www.example.com/nfts/kitty.png")),
-        reference: Some(String::from("www.example.com/nfts/kitty")),
-    };
-    let res = ft.send(
-        USERS[0],
-        Action::Mint(
-            USERS[1].into(),
-            NFT_TOKEN_ID,
-            NFT_BALANCE,
-            Some(meta.clone()),
-        ),
-    );
-    assert!(res.contains(&(
-        USERS[0],
-        Event::TransferSingle(TransferSingleReply {
-            operator: USERS[0].into(),
-            from: ZERO_ID,
-            to: USERS[1].into(),
-            id: NFT_TOKEN_ID,
-            amount: NFT_BALANCE,
-        })
-        .encode()
-    )));
-
-    let res = ft.send(USERS[0], Action::MetadataOf(NFT_TOKEN_ID));
-    let codec = Event::MetadataOf(meta.clone()).encode();
-    assert!(res.contains(&(USERS[0], codec)));
 }
