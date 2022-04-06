@@ -28,13 +28,6 @@ jobs:
           components: clippy, rustfmt
           target: wasm32-unknown-unknown
 
-      - name: Prepare
-        run: |
-          wget -O ~/.cargo/bin/wasm-proc https://github.com/gear-tech/gear/releases/download/build/wasm-proc
-          chmod +x ~/.cargo/bin/wasm-proc
-          wget -O ~/.cargo/bin/gear-test https://github.com/gear-tech/gear/releases/download/build/gear-test
-          chmod +x ~/.cargo/bin/gear-test
-
       - name: Check fmt
         run: make fmt-check
 
