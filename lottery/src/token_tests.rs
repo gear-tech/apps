@@ -7,6 +7,7 @@ use codec::Encode;
 use gstd::String;
 use gtest::{Program, System};
 use lt_io::*;
+use ft_io::*;
 const USERS: &'static [u64] = &[1, 2, 3, 4, 5];
 
 fn init_lottery(sys: &System) {
@@ -25,7 +26,7 @@ fn init_fungible_token(sys: &System) {
 
     let res = ft.send(
         USERS[2],
-        FtInitConfig {
+        InitConfig {
             name: String::from("MyToken"),
             symbol: String::from("MTK"),
         },
@@ -33,17 +34,17 @@ fn init_fungible_token(sys: &System) {
 
     assert!(res.log().is_empty());
 
-    let res = ft.send(USERS[3], FtAction::Mint(1000));
+    let res = ft.send(USERS[3], Action::Mint(1000));
     assert!(!res.main_failed());
 
-    let res = ft.send(USERS[2], FtAction::BalanceOf(USERS[3].into()));
-    assert!(res.contains(&(USERS[2], FtEvent::Balance(1000).encode())));
+    let res = ft.send(USERS[2], Action::BalanceOf(USERS[3].into()));
+    assert!(res.contains(&(USERS[2], Event::Balance(1000).encode())));
 
-    let res = ft.send(USERS[4], FtAction::Mint(2000));
+    let res = ft.send(USERS[4], Action::Mint(2000));
     assert!(!res.main_failed());
 
-    let res = ft.send(USERS[2], FtAction::BalanceOf(USERS[4].into()));
-    assert!(res.contains(&(USERS[2], FtEvent::Balance(2000).encode())));
+    let res = ft.send(USERS[2], Action::BalanceOf(USERS[4].into()));
+    assert!(res.contains(&(USERS[2], Event::Balance(2000).encode())));
 }
 
 #[test]
@@ -57,30 +58,30 @@ fn enter() {
 
     let res = lt.send(
         USERS[2],
-        Action::StartLottery {
+        LtAction::StartLottery {
             duration: 5000,
             token_address: Some(USERS[0].into()),
         },
     );
     assert!(res.log().is_empty());
 
-    let res = ft.send(USERS[2], FtAction::TotalSupply);
+    let res = ft.send(USERS[2], Action::TotalSupply);
     println!("TotalSupply(u128): {:?}", res.decoded_log::<FtEvent>());
-    assert!(res.contains(&(USERS[2], FtEvent::TotalSupply(3000).encode())));
+    assert!(res.contains(&(USERS[2], Event::TotalSupply(3000).encode())));
 
-    let res = lt.send_with_value(USERS[3], Action::Enter(1000), 1000);
-    assert!(res.contains(&(USERS[3], Event::PlayerAdded(0).encode())));
+    let res = lt.send_with_value(USERS[3], LtAction::Enter(1000), 1000);
+    assert!(res.contains(&(USERS[3], LtEvent::PlayerAdded(0).encode())));
 
-    let res = ft.send(USERS[2], FtAction::BalanceOf(USERS[1].into()));
-    println!("Balance(u128): {:?}", res.decoded_log::<FtEvent>());
-    assert!(res.contains(&(USERS[2], FtEvent::Balance(1000).encode())));
+    let res = ft.send(USERS[2], Action::BalanceOf(USERS[1].into()));
+    println!("Balance(u128): {:?}", res.decoded_log::<Event>());
+    assert!(res.contains(&(USERS[2], Event::Balance(1000).encode())));
 
-    let res = lt.send_with_value(USERS[4], Action::Enter(2000), 2000);
-    assert!(res.contains(&(USERS[4], Event::PlayerAdded(1).encode())));
+    let res = lt.send_with_value(USERS[4], LtAction::Enter(2000), 2000);
+    assert!(res.contains(&(USERS[4], LtEvent::PlayerAdded(1).encode())));
 
-    let res = ft.send(USERS[2], FtAction::BalanceOf(USERS[1].into()));
-    println!("Balance(u128): {:?}", res.decoded_log::<FtEvent>());
-    assert!(res.contains(&(USERS[2], FtEvent::Balance(3000).encode())));
+    let res = ft.send(USERS[2], Action::BalanceOf(USERS[1].into()));
+    println!("Balance(u128): {:?}", res.decoded_log::<Event>());
+    assert!(res.contains(&(USERS[2], Event::Balance(3000).encode())));
 }
 
 #[test]
@@ -94,24 +95,24 @@ fn leave_lottery() {
 
     let res = lt.send(
         USERS[2],
-        Action::StartLottery {
+        LtAction::StartLottery {
             duration: 5000,
             token_address: Some(USERS[0].into()),
         },
     );
     assert!(res.log().is_empty());
 
-    let res = lt.send_with_value(USERS[3], Action::Enter(1000), 1000);
-    assert!(res.contains(&(USERS[3], Event::PlayerAdded(0).encode())));
+    let res = lt.send_with_value(USERS[3], LtAction::Enter(1000), 1000);
+    assert!(res.contains(&(USERS[3], LtEvent::PlayerAdded(0).encode())));
 
-    let res = lt.send_with_value(USERS[4], Action::Enter(2000), 2000);
-    assert!(res.contains(&(USERS[4], Event::PlayerAdded(1).encode())));
+    let res = lt.send_with_value(USERS[4], LtAction::Enter(2000), 2000);
+    assert!(res.contains(&(USERS[4], LtEvent::PlayerAdded(1).encode())));
 
-    let res = lt.send(USERS[4], Action::LeaveLottery(1));
+    let res = lt.send(USERS[4], LtAction::LeaveLottery(1));
     assert!(!res.main_failed());
 
-    let res = ft.send(USERS[2], FtAction::BalanceOf(USERS[4].into()));
-    assert!(res.contains(&(USERS[2], FtEvent::Balance(2000).encode())));
+    let res = ft.send(USERS[2], Action::BalanceOf(USERS[4].into()));
+    assert!(res.contains(&(USERS[2], Event::Balance(2000).encode())));
 }
 
 #[test]
@@ -125,30 +126,30 @@ fn pick_winner() {
 
     let res = lt.send(
         USERS[2],
-        Action::StartLottery {
+        LtAction::StartLottery {
             duration: 5000,
             token_address: Some(USERS[0].into()),
         },
     );
     assert!(res.log().is_empty());
 
-    let res = lt.send_with_value(USERS[3], Action::Enter(1000), 1000);
-    assert!(res.contains(&(USERS[3], Event::PlayerAdded(0).encode())));
+    let res = lt.send_with_value(USERS[3], LtAction::Enter(1000), 1000);
+    assert!(res.contains(&(USERS[3], LtEvent::PlayerAdded(0).encode())));
 
-    let res = lt.send_with_value(USERS[4], Action::Enter(2000), 2000);
-    assert!(res.contains(&(USERS[4], Event::PlayerAdded(1).encode())));
+    let res = lt.send_with_value(USERS[4], LtAction::Enter(2000), 2000);
+    assert!(res.contains(&(USERS[4], LtEvent::PlayerAdded(1).encode())));
 
     sys.spend_blocks(5000);
 
-    let res = lt.send(USERS[2], Action::PickWinner);
+    let res = lt.send(USERS[2], LtAction::PickWinner);
 
-    println!("Winner index: {:?}", res.decoded_log::<Event>());
+    println!("Winner index: {:?}", res.decoded_log::<LtEvent>());
     assert!(
-        res.contains(&(USERS[2], Event::Winner(0).encode()))
-            || res.contains(&(USERS[2], Event::Winner(1).encode()))
+        res.contains(&(USERS[2], LtEvent::Winner(0).encode()))
+            || res.contains(&(USERS[2], LtEvent::Winner(1).encode()))
     );
 
-    let res = ft.send(USERS[2], FtAction::BalanceOf(USERS[1].into()));
-    println!("Balance(u128): {:?}", res.decoded_log::<FtEvent>());
-    assert!(res.contains(&(USERS[2], FtEvent::Balance(0).encode())));
+    let res = ft.send(USERS[2], Action::BalanceOf(USERS[1].into()));
+    println!("Balance(u128): {:?}", res.decoded_log::<Event>());
+    assert!(res.contains(&(USERS[2], Event::Balance(0).encode())));
 }

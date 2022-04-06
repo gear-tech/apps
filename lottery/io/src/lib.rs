@@ -4,13 +4,7 @@ use codec::{Decode, Encode};
 use gstd::{prelude::*, ActorId};
 use scale_info::TypeInfo;
 
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct FtInitConfig {
-    pub name: String,
-    pub symbol: String,
-}
-
-#[derive(Debug, Default, Encode, Decode, TypeInfo, Clone, Copy)]
+#[derive(Debug, Default, Encode, Decode, TypeInfo, Clone)]
 pub struct LotteryState {
     pub lottery_started: bool,
     pub lottery_start_time: u64,
@@ -19,12 +13,12 @@ pub struct LotteryState {
 
 #[derive(Debug, Default, Encode, Decode, TypeInfo, Clone, Copy)]
 pub struct Player {
-    pub player: ActorId,
+    pub player_id: ActorId,
     pub balance: u128,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum Action {
+pub enum LtAction {
     Enter(u128),
     StartLottery {
         duration: u64,
@@ -38,7 +32,7 @@ pub enum Action {
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum Event {
+pub enum LtEvent {
     LotteryState(LotteryState),
     Winner(u32),
     Balance(u128),
@@ -46,7 +40,7 @@ pub enum Event {
     PlayerAdded(u32),
 }
 
-#[derive(Debug, Decode, Encode, TypeInfo)]
+/*#[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum FtAction {
     Mint(u128),
     Burn(u128),
@@ -77,7 +71,7 @@ pub enum FtEvent {
     },
     TotalSupply(u128),
     Balance(u128),
-}
+}*/
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum State {

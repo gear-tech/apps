@@ -11,8 +11,9 @@ mod token_tests;
 
 use codec::{Decode, Encode};
 use gstd::{debug, exec, msg, prelude::*, ActorId};
-use lt_io::*;
 use scale_info::TypeInfo;
+use lt_io::*;
+use ft_io::*;
 use sp_core::hashing::blake2_256;
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
@@ -61,11 +62,10 @@ impl Lottery {
     }
 
     // checks that the player is already participating in the lottery
-    fn player_exist(&mut self) -> bool {
+    fn player_exists(&mut self) -> bool {
         self.players
             .values()
-            .find(|player| player.player_id == msg::source())
-            .is_some()
+            .any(|player| player.player_id == msg::source())
     }
 
     /// Transfers `amount` tokens from `sender` account to `recipient` account.
@@ -73,13 +73,13 @@ impl Lottery {
     /// * `from`: sender account
     /// * `to`: recipient account
     /// * `amount`: amount of tokens
-    async fn transfer_tokens(&mut self, from: &ActorId, to: &ActorId, amount: u128) {
-        let _transfer_response: FtEvent = msg::send_and_wait_for_reply(
+    async fn transfer_tokens(&mut self, from: &ActorId, to: &ActorId, amount_tokens: u128) {
+        let _transfer_response: Event = msg::send_and_wait_for_reply(
             self.token_address.unwrap(),
-            FtAction::Transfer {
+            Action::Transfer {
                 from: *from,
                 to: *to,
-                amount: amount,
+                amount: amount_tokens,
             },
             0,
         )
@@ -95,7 +95,7 @@ impl Lottery {
     /// Arguments:
     /// * `amount`: value or tokens to participate in the lottery
     async fn enter(&mut self, amount: u128) {
-        if self.lottery_is_on() && !self.player_exist() && amount > 0 {
+        if self.lottery_is_on() && !self.player_exists() && amount > 0 {
             let player = Player {
                 player_id: msg::source(),
                 balance: amount,
@@ -111,12 +111,12 @@ impl Lottery {
 
             let player_index = self.players.len() as u32;
             self.players.insert(player_index, player);
-            msg::reply(Event::PlayerAdded(player_index), 0);
+            msg::reply(LtEvent::PlayerAdded(player_index), 0);
         } else {
             panic!(
-                "enter(): Lottery on: {}  player exist: {} amount: {}",
+                "enter(): Lottery on: {}  player exists: {} amount: {}",
                 self.lottery_is_on(),
-                self.player_exist(),
+                self.player_exists(),
                 amount
             );
         }
@@ -130,30 +130,30 @@ impl Lottery {
     /// Arguments:
     /// * `index`: lottery player index
     async fn leave_lottery(&mut self, index: u32) {
-        if self.lottery_is_on() {
-            if let Some(player) = self.players.get(&index) {
-                if player.player_id == msg::source() {
-                    if self.token_address.is_some() {
-                        let balance = player.balance;
-                        self.transfer_tokens(&exec::program_id(), &msg::source(), balance)
-                            .await;
-                    } else {
-                        msg::send_bytes(player.player_id, b"LeaveLottery", player.balance);
-                    }
-
-                    self.players.remove(&index);
-                } else {
-                    panic!(
-                        "leave_lottery(): ActorId's does not match: player: {:?}  msg::source(): {:?}",
-                        player.player_id,
-                        msg::source()
-                    );
-                }
-            } else {
-                panic!("leave_lottery(): Player {} not found", index);
-            }
-        } else {
+        if !self.lottery_is_on() {
             panic!("leave_lottery(): Lottery on: {}", self.lottery_is_on());
+        }
+
+        if let Some(player) = self.players.get(&index) {
+            if player.player_id != msg::source() {
+                panic!(
+                    "leave_lottery(): ActorId's does not match: player: {:?}  msg::source(): {:?}",
+                    player.player_id,
+                    msg::source()
+                );
+            }
+
+            if self.token_address.is_some() {
+                let balance = player.balance;
+                self.transfer_tokens(&exec::program_id(), &msg::source(), balance)
+                    .await;
+            } else {
+                msg::send_bytes(player.player_id, b"LeaveLottery", player.balance);
+            }
+
+            self.players.remove(&index);
+        } else {
+            panic!("leave_lottery(): Player {} not found", index);
         }
     }
 
@@ -165,9 +165,9 @@ impl Lottery {
     /// Arguments:
     /// * `index`: lottery player index
     fn get_balance(&mut self, index: u32) {
-        if self.lottery_is_on() {
+        if msg::source() == self.lottery_owner && self.lottery_is_on() {
             if let Some(player) = self.players.get(&index) {
-                msg::reply(Event::Balance(player.balance), 0);
+                msg::reply(LtEvent::Balance(player.balance), 0);
             } else {
                 panic!("get_balance(): Player {} not found", index);
             }
@@ -182,7 +182,7 @@ impl Lottery {
     /// * List of players must not be empty
     fn get_players(&mut self) {
         if self.lottery_is_on() && !self.players.is_empty() {
-            msg::reply(Event::Players(self.players.clone()), 0);
+            msg::reply(LtEvent::Players(self.players.clone()), 0);
         } else {
             panic!(
                 "get_players(): Lottery on: {}  players.is_empty(): {}",
@@ -234,7 +234,7 @@ impl Lottery {
 
             self.lottery_history
                 .insert(self.lottery_id, player.player_id);
-            msg::reply(Event::Winner(win_player_index), 0);
+            msg::reply(LtEvent::Winner(win_player_index), 0);
 
             debug!(
                 "Winner: {} token_address(): {:?}",
@@ -259,44 +259,44 @@ impl Lottery {
 static mut LOTTERY: Option<Lottery> = None;
 
 #[gstd::async_main]
-async unsafe fn main() {
+async fn main() {
     if msg::source() == ZERO_ID {
         panic!("Message from zero address");
     }
 
-    let action: Action = msg::load().expect("Could not load Action");
+    let action: LtAction = msg::load().expect("Could not load Action");
     let lottery: &mut Lottery = unsafe { LOTTERY.get_or_insert(Lottery::default()) };
 
     match action {
-        Action::Enter(amount) => {
+        LtAction::Enter(amount) => {
             lottery.enter(amount).await;
         }
 
-        Action::StartLottery {
+        LtAction::StartLottery {
             duration,
             token_address,
         } => {
             lottery.start_lottery(duration, token_address);
         }
 
-        Action::LotteryState => {
-            msg::reply(Event::LotteryState(lottery.lottery_state), 0);
+        LtAction::LotteryState => {
+            msg::reply(LtEvent::LotteryState(lottery.lottery_state.clone()), 0);
             debug!("LotteryState: {:?}", lottery.lottery_state);
         }
 
-        Action::PickWinner => {
+        LtAction::PickWinner => {
             lottery.pick_winner().await;
         }
 
-        Action::BalanceOf(index) => {
+        LtAction::BalanceOf(index) => {
             lottery.get_balance(index);
         }
 
-        Action::GetPlayers => {
+        LtAction::GetPlayers => {
             lottery.get_players();
         }
 
-        Action::LeaveLottery(index) => {
+        LtAction::LeaveLottery(index) => {
             lottery.leave_lottery(index).await;
         }
     }
@@ -336,8 +336,8 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
 gstd::metadata! {
     title: "Lottery",
     handle:
-        input: Action,
-        output: Event,
+        input: LtAction,
+        output: LtEvent,
     state:
         input: State,
         output: StateReply,
