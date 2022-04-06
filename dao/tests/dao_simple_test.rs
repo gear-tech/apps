@@ -20,11 +20,11 @@ fn init_fungible_token(sys: &System) {
 
     assert!(res.log().is_empty());
 
-    let res = ft.send(4, Action::Mint(10000000));
+    let res = ft.send(4, FTAction::Mint(10000000));
     assert!(!res.main_failed());
     let res = ft.send(
         4,
-        Action::Approve {
+        FTAction::Approve {
             to: 2.into(),
             amount: 10000000,
         },
@@ -304,8 +304,8 @@ fn abort_proposal() {
     let res = dao.send(4, DaoAction::Abort(0));
     assert!(res.main_failed());
 
-    let res = ft.send(3, Action::BalanceOf(4.into()));
-    assert!(res.contains(&(3, Event::Balance(10000000).encode())));
+    let res = ft.send(3, FTAction::BalanceOf(4.into()));
+    assert!(res.contains(&(3, FTEvent::Balance(10000000).encode())));
 }
 
 #[test]
@@ -372,8 +372,8 @@ fn cancel_proposal() {
     let res = dao.send(3, DaoAction::CancelProposal(0));
     assert!(res.main_failed());
 
-    let res = ft.send(3, Action::BalanceOf(4.into()));
-    assert!(res.contains(&(3, Event::Balance(10000000).encode())));
+    let res = ft.send(3, FTAction::BalanceOf(4.into()));
+    assert!(res.contains(&(3, FTEvent::Balance(10000000).encode())));
 }
 
 #[test]
@@ -441,8 +441,8 @@ fn ragequit() {
         .encode()
     )));
 
-    let res = ft.send(3, Action::BalanceOf(4.into()));
-    assert!(res.contains(&(3, Event::Balance(9999999).encode())));
+    let res = ft.send(3, FTAction::BalanceOf(4.into()));
+    assert!(res.contains(&(3, FTEvent::Balance(9999999).encode())));
 }
 
 #[test]
