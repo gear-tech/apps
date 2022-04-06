@@ -26,7 +26,6 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```shell
 rustup toolchain add nightly
 rustup target add wasm32-unknown-unknown --toolchain nightly
-cargo install --git https://github.com/gear-tech/gear wasm-proc
 ```
 
 ... or ...
@@ -38,8 +37,7 @@ make prepare
 ### 🏗️ Build
 
 ```shell
-cargo +nightly build --target wasm32-unknown-unknown --release
-wasm-proc --path ./target/wasm32-unknown-unknown/release/*.wasm
+cargo +nightly build --release
 ```
 
 ... or ...
