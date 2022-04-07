@@ -38,12 +38,12 @@ fn init_dao(sys: &System) {
 }
 
 fn mint_tokens(ft: &Program, user: u64) {
-    let res = ft.send(user, Action::Mint(10000));
+    let res = ft.send(user, FTAction::Mint(10000));
     assert!(!res.main_failed());
 
     let res = ft.send(
         user,
-        Action::Approve {
+        FTAction::Approve {
             to: 2.into(),
             amount: 10000,
         },
@@ -139,8 +139,8 @@ fn funding_proposal() {
     let res = dao.send(3, DaoAction::ProcessProposal(10));
     assert!(!res.main_failed());
 
-    let res = ft.send(3, Action::BalanceOf(20.into()));
-    assert!(res.contains(&(3, Event::Balance(8000).encode())));
+    let res = ft.send(3, FTAction::BalanceOf(20.into()));
+    assert!(res.contains(&(3, FTEvent::Balance(8000).encode())));
     let res = dao.send(4, DaoAction::RageQuit(500));
     println!("{:?}", res.decoded_log::<DaoEvent>());
     assert!(res.contains(&(

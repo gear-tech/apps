@@ -7,6 +7,8 @@ members = [
     "fungible-token",
     "gear-feeds-router",
     "nft-example",
+    "nft-marketplace/marketplace",
+    "nft-marketplace/nft",
     "non-fungible-token",
     "ping",
 ]

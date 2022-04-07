@@ -12,15 +12,15 @@ impl WasmProgram for FungibleToken {
     }
 
     fn handle(&mut self, payload: Vec<u8>) -> Result<Option<Vec<u8>>, &'static str> {
-        let res = Action::decode(&mut &payload[..]).map_err(|_| "Can't decode")?;
+        let res = FTAction::decode(&mut &payload[..]).map_err(|_| "Can't decode")?;
         match res {
-            Action::Transfer {
+            FTAction::Transfer {
                 from: _,
                 to: _,
                 amount: _,
             } => {
                 return Ok(Some(
-                    Event::Transfer {
+                    FTEvent::Transfer {
                         from: 3.into(),
                         to: 3.into(),
                         amount: 10000,
@@ -28,8 +28,8 @@ impl WasmProgram for FungibleToken {
                     .encode(),
                 ));
             }
-            Action::BalanceOf(_) => {
-                return Ok(Some(Event::Balance(10000).encode()));
+            FTAction::BalanceOf(_) => {
+                return Ok(Some(FTEvent::Balance(10000).encode()));
             }
             _ => return Ok(None),
         }
