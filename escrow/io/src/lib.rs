@@ -28,7 +28,7 @@ pub enum Action {
     },
 }
 
-#[derive(Decode, Encode, TypeInfo)]
+#[derive(Decode, Encode)]
 pub enum Event {
     Cancelled {
         buyer: ActorId,
