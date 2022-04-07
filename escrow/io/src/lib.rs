@@ -4,20 +4,48 @@ use gstd::{prelude::*, ActorId};
 
 #[derive(Decode, Encode)]
 pub struct InitConfig {
-    pub buyer: ActorId,
-    pub seller: ActorId,
     pub ft_program_id: ActorId,
-    pub amount: u128,
 }
 
 #[derive(Decode, Encode)]
 pub enum Action {
-    Deposit,
-    ConfirmDelivery,
+    Create {
+        buyer: ActorId,
+        seller: ActorId,
+        amount: u128,
+    },
+    Deposit {
+        contract_id: u128,
+    },
+    Confirm {
+        contract_id: u128,
+    },
+    Refund {
+        contract_id: u128,
+    },
+    Cancel {
+        contract_id: u128,
+    },
 }
 
-#[derive(Decode, Encode)]
+#[derive(Decode, Encode, TypeInfo)]
 pub enum Event {
-    Deposit { buyer: ActorId, amount: u128 },
-    ConfirmDelivery { seller: ActorId, amount: u128 },
+    Cancelled {
+        buyer: ActorId,
+        seller: ActorId,
+        amount: u128,
+    },
+    Refunded {
+        amount: u128,
+        buyer: ActorId,
+    },
+    Confirmed {
+        amount: u128,
+        seller: ActorId,
+    },
+    Deposited {
+        buyer: ActorId,
+        amount: u128,
+    },
+    Created { contract_id: u128 }
 }
