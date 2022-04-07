@@ -27,10 +27,7 @@ pub fn init_ft(sys: &System) {
 
 pub fn init_nft(sys: &System) {
     sys.init_logger();
-    let nft = Program::from_file(
-        &sys,
-        "../../target/wasm32-unknown-unknown/release/nft.wasm",
-    );
+    let nft = Program::from_file(&sys, "../../target/wasm32-unknown-unknown/release/nft.wasm");
 
     let res = nft.send(
         USERS[0],
