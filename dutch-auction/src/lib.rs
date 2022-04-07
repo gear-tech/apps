@@ -56,24 +56,20 @@ impl Auction {
             panic!("auction expired");
         }
 
-        let price = self.token_price();
+        let price = self.token_price().as_u128();
 
-        if U256::from(msg::value()) < price {
+        if msg::value() < price {
             panic!("value < price");
         }
 
         self.already_bought = true;
 
-        let refund = msg::value() - price.as_u128();
+        self.nft.token.transfer(&self.nft.owner, &msg::source(), self.nft.token_id);
 
-        msg::reply(
-            Event::Transfer {
-                from: self.nft.owner,
-                to: msg::source(),
-                token_id: self.nft.token_id,
-            },
-            refund,
-        );
+        let refund = msg::value() - price;
+        
+        msg::send(msg::source(), [], refund);
+        msg::send(self.nft.owner, [], price);
     }
 
     fn token_price(&self) -> U256 {
@@ -95,7 +91,6 @@ gstd::metadata! {
             input: State,
             output: StateReply,
 }
-
 
 #[no_mangle]
 pub unsafe extern "C" fn init() {

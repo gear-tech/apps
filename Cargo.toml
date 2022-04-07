@@ -2,7 +2,7 @@
 resolver = "2"
 
 members = [
-    "auction",
+    "dutch-auction",
     "dao",
     "erc1155",
     "fungible-token",
