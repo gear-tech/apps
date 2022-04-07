@@ -40,48 +40,15 @@ pub enum LtEvent {
     PlayerAdded(u32),
 }
 
-/*#[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum FtAction {
-    Mint(u128),
-    Burn(u128),
-    Transfer {
-        from: ActorId,
-        to: ActorId,
-        amount: u128,
-    },
-    Approve {
-        to: ActorId,
-        amount: u128,
-    },
-    TotalSupply,
-    BalanceOf(ActorId),
-}
-
 #[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum FtEvent {
-    Transfer {
-        from: ActorId,
-        to: ActorId,
-        amount: u128,
-    },
-    Approve {
-        from: ActorId,
-        to: ActorId,
-        amount: u128,
-    },
-    TotalSupply(u128),
-    Balance(u128),
-}*/
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum State {
+pub enum LtState {
     GetWinners,
     GetPlayers,
     BalanceOf(u32),
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum StateReply {
+pub enum LtStateReply {
     Winners(BTreeMap<u32, ActorId>),
     Players(BTreeMap<u32, Player>),
     Balance(u128),

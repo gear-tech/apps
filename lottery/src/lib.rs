@@ -10,10 +10,10 @@ mod panic_tests;
 mod token_tests;
 
 use codec::{Decode, Encode};
-use gstd::{debug, exec, msg, prelude::*, ActorId};
-use scale_info::TypeInfo;
-use lt_io::*;
 use ft_io::*;
+use gstd::{debug, exec, msg, prelude::*, ActorId};
+use lt_io::*;
+use scale_info::TypeInfo;
 use sp_core::hashing::blake2_256;
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
@@ -195,15 +195,8 @@ impl Lottery {
     // Random number generation from block timestamp
     fn get_random_number(&mut self) -> u32 {
         let timestamp: u64 = exec::block_timestamp();
-        let code_hash: sp_core::H256 = blake2_256(&timestamp.to_be_bytes()).into();
-        let u_buf = code_hash.to_fixed_bytes();
-        let mut number: u32 = 0;
-
-        for u in u_buf {
-            number += u as u32;
-        }
-
-        number
+        let code_hash = blake2_256(&timestamp.to_be_bytes());
+        u32::from_le_bytes([code_hash[0], code_hash[1], code_hash[2], code_hash[3]])
     }
 
     /// Lottery winner calculation
@@ -314,18 +307,18 @@ pub unsafe extern "C" fn init() {
 
 #[no_mangle]
 pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
-    let query: State = msg::load().expect("failed to decode input argument");
+    let query: LtState = msg::load().expect("failed to decode input argument");
     let lottery: &mut Lottery = LOTTERY.get_or_insert(Lottery::default());
 
     let encoded = match query {
-        State::GetPlayers => StateReply::Players(lottery.players.clone()).encode(),
-        State::GetWinners => StateReply::Winners(lottery.lottery_history.clone()).encode(),
+        LtState::GetPlayers => LtStateReply::Players(lottery.players.clone()).encode(),
+        LtState::GetWinners => LtStateReply::Winners(lottery.lottery_history.clone()).encode(),
 
-        State::BalanceOf(index) => {
+        LtState::BalanceOf(index) => {
             if let Some(player) = lottery.players.get(&index) {
-                StateReply::Balance(player.balance).encode()
+                LtStateReply::Balance(player.balance).encode()
             } else {
-                StateReply::Balance(0).encode()
+                LtStateReply::Balance(0).encode()
             }
         }
     };
@@ -339,6 +332,6 @@ gstd::metadata! {
         input: LtAction,
         output: LtEvent,
     state:
-        input: State,
-        output: StateReply,
+        input: LtState,
+        output: LtStateReply,
 }

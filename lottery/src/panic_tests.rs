@@ -148,7 +148,7 @@ fn pick_winner() {
 
     let res = lt.send(USERS[0], LtAction::PickWinner);
 
-    println!("Winner index: {:?}", res.decoded_log::<Event>());
+    println!("Winner index: {:?}", res.decoded_log::<LtEvent>());
     assert!(
         res.contains(&(USERS[0], LtEvent::Winner(0).encode()))
             || res.contains(&(USERS[0], LtEvent::Winner(1).encode()))

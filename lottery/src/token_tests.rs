@@ -4,10 +4,10 @@ extern crate std;
 use std::println;
 
 use codec::Encode;
+use ft_io::*;
 use gstd::String;
 use gtest::{Program, System};
 use lt_io::*;
-use ft_io::*;
 const USERS: &'static [u64] = &[1, 2, 3, 4, 5];
 
 fn init_lottery(sys: &System) {
@@ -66,7 +66,7 @@ fn enter() {
     assert!(res.log().is_empty());
 
     let res = ft.send(USERS[2], Action::TotalSupply);
-    println!("TotalSupply(u128): {:?}", res.decoded_log::<FtEvent>());
+    println!("TotalSupply(u128): {:?}", res.decoded_log::<Event>());
     assert!(res.contains(&(USERS[2], Event::TotalSupply(3000).encode())));
 
     let res = lt.send_with_value(USERS[3], LtAction::Enter(1000), 1000);
