@@ -67,19 +67,3 @@ impl Escrow {
     }
 }
 
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum Action {
-    Deposit(u128),
-    Confirm_delivery(u128),
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn handle() {
-    let action: Action = msg::load().expect("Could not load Action");
-    let ft: Escrow =Escrow::default();
-    match action {
-        Action::Deposit(_) => {
-            ft.deposit();
-        }
-    }
-}
