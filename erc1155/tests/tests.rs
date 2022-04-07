@@ -69,10 +69,27 @@ fn mint() {
 }
 
 #[test]
+fn mint_failures() {
+    let sys = System::new();
+    let ft = init(&sys);
+    let meta = TokenMetadata {
+        title: Some(String::from("Kitty")),
+        description: Some(String::from("Just a test kitty")),
+        media: Some(String::from("www.example.com/nfts/kitty.png")),
+        reference: Some(String::from("www.example.com/nfts/kitty")),
+    };
+    let res = ft.send(
+        USERS[0],
+        Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE, Some(meta.clone())),
+    );
+    // must fail since we provided metadata for balance > 1
+    assert!(res.main_failed());
+}
+
+#[test]
 fn balance() {
     let sys = System::new();
     let ft = init(&sys);
-
     ft.send(
         USERS[0],
         Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE, None),
@@ -200,6 +217,34 @@ fn safe_transfer_from() {
     let codec = Event::BalanceOfBatch(replies).encode();
 
     assert!(res.contains(&(USERS[0], codec)));
+}
+
+#[test]
+fn safe_transfer_from_failures() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    ft.send(
+        USERS[0],
+        Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE, None),
+    );
+
+    let from = USERS[1];
+    let to = USERS[2];
+
+    let failed_res = ft.send(
+        from,
+        Action::SafeTransferFrom(from.into(), ZERO_ID.into(), TOKEN_ID, 10),
+    );
+    // must fail since we're sending to ZERO_ID
+    assert!(failed_res.main_failed());
+
+    let failed_res = ft.send(
+        from,
+        Action::SafeTransferFrom(from.into(), to.into(), TOKEN_ID, BALANCE + 100),
+    );
+    // must fail since we're sending >balance
+    assert!(failed_res.main_failed());
 }
 
 #[test]
@@ -336,6 +381,21 @@ fn burn() {
 
     let codec = Event::Balance(BALANCE - 10).encode();
     assert!(res.contains(&(from, codec)));
+}
+
+#[test]
+fn burn_failures() {
+    let sys = System::new();
+    let ft = init(&sys);
+
+    let from = USERS[0];
+    let user1 = USERS[1];
+
+    ft.send(from, Action::Mint(user1.into(), TOKEN_ID, BALANCE, None));
+
+    // must fail - since we burning > BALANCE
+    let res = ft.send(user1, Action::Burn(TOKEN_ID, BALANCE + 100));
+    assert!(res.main_failed());
 }
 
 #[test]

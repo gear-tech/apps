@@ -244,13 +244,14 @@ impl ExtendERC1155TokenBase for ERC1155Token {
 
     fn burn(&mut self, id: &TokenId, amount: u128) {
         let owner = &msg::source();
-        if self.can_burn(owner, id, amount) {
-            self.set_balance(
-                &msg::source(),
-                id,
-                self.get_balance(owner, id).saturating_sub(amount),
-            );
+        if !self.can_burn(owner, id, amount) {
+            panic!("ERC1155: Amount exceeds account balance");
         }
+        self.set_balance(
+            &msg::source(),
+            id,
+            self.get_balance(owner, id).saturating_sub(amount),
+        );
     }
 
     fn burn_batch(&mut self, ids: &[TokenId], amounts: &[u128]) {
