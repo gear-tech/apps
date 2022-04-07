@@ -11,7 +11,3 @@ members = [
     "non-fungible-token",
     "ping",
 ]
-
-[profile.release]
-lto = true
-opt-level = "s"
