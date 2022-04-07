@@ -1,10 +1,7 @@
 #![no_std]
 
-//use ft_io::*;
+use ft_io::*;
 use gstd::{msg, ActorId};
-use codec::{Decode, Encode};
-use scale_info::TypeInfo;
-
 
 //// The available  states during the escrow
 enum State {
@@ -13,9 +10,14 @@ enum State {
     Finished,
 }
 
-const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
+//Default status for State enum data type
+impl Default for State {
+    fn default() -> Self {
+        Self::PendingPayment
+    }
+}
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct Escrow {
     //Current escrow State
     current_state: State,
@@ -23,6 +25,8 @@ struct Escrow {
     buyer: ActorId,
     //Seller payable address, it'll receive funds after the sender makes a deposit
     seller: ActorId,
+    //Amount to transfer
+    amount: u128,
 }
 
 impl Escrow {
@@ -56,9 +60,9 @@ impl Escrow {
 
         msg::reply(
             Event::Transfer {
-                from: ZERO_ID,
+                from: self.buyer,
                 to: msg::source(),
-                balance,
+                amount: self.amount,
             },
             0,
         );
