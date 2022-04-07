@@ -10,7 +10,7 @@ use gstd::{ActorId, String};
 use gtest::{Log, Program, System};
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
-const USERS: &'static [u64] = &[3, 4, 5];
+const USERS: &'static [u64] = &[3, 4, 5, 6];
 const TOKEN_ID: u128 = 1;
 const BALANCE: u128 = 100;
 
@@ -78,6 +78,15 @@ fn mint_failures() {
         media: Some(String::from("www.example.com/nfts/kitty.png")),
         reference: Some(String::from("www.example.com/nfts/kitty")),
     };
+
+    let res = ft.send(
+        USERS[0],
+        Action::Mint(ZERO_ID.into(), TOKEN_ID, BALANCE, Some(meta.clone())),
+    );
+
+    // must fail since we provided a zero_id user
+    assert!(res.main_failed());
+
     let res = ft.send(
         USERS[0],
         Action::Mint(USERS[1].into(), TOKEN_ID, BALANCE, Some(meta.clone())),
@@ -176,12 +185,12 @@ fn safe_transfer_from() {
 
     let res = ft.send(
         from,
-        Action::SafeTransferFrom(from.into(), to.into(), TOKEN_ID, 10),
+        Action::TransferFrom(from.into(), to.into(), TOKEN_ID, 10),
     );
 
     let failed_res = ft.send(
         from,
-        Action::SafeTransferFrom(from.into(), ZERO_ID.into(), TOKEN_ID, 10),
+        Action::TransferFrom(from.into(), ZERO_ID.into(), TOKEN_ID, 10),
     );
 
     assert!(failed_res.main_failed());
@@ -231,19 +240,34 @@ fn safe_transfer_from_failures() {
 
     let from = USERS[1];
     let to = USERS[2];
+    let invalid_user = USERS[3];
 
     let failed_res = ft.send(
         from,
-        Action::SafeTransferFrom(from.into(), ZERO_ID.into(), TOKEN_ID, 10),
+        Action::TransferFrom(from.into(), ZERO_ID.into(), TOKEN_ID, 10),
     );
     // must fail since we're sending to ZERO_ID
     assert!(failed_res.main_failed());
 
     let failed_res = ft.send(
         from,
-        Action::SafeTransferFrom(from.into(), to.into(), TOKEN_ID, BALANCE + 100),
+        Action::TransferFrom(from.into(), to.into(), TOKEN_ID, BALANCE + 100),
     );
     // must fail since we're sending >balance
+    assert!(failed_res.main_failed());
+
+    let failed_res = ft.send(
+        from,
+        Action::TransferFrom(from.into(), from.into(), TOKEN_ID, BALANCE - 100),
+    );
+    // must fail since same addresses
+    assert!(failed_res.main_failed());
+
+    let failed_res = ft.send(
+        invalid_user,
+        Action::TransferFrom(from.into(), to.into(), TOKEN_ID, BALANCE - 100),
+    );
+    // must fail since same addresses
     assert!(failed_res.main_failed());
 }
 
@@ -268,7 +292,7 @@ fn safe_batch_transfer_from() {
 
     let ret = ft.send(
         to,
-        Action::SafeBatchTransferFrom(
+        Action::BatchTransferFrom(
             to.into(),
             newuser.into(),
             vec![1u128, 2u128],
@@ -301,7 +325,7 @@ fn set_approval_for_all() {
 
     let failed_res = ft.send(
         operator,
-        Action::SafeTransferFrom(owner.into(), other.into(), 1, 10),
+        Action::TransferFrom(owner.into(), other.into(), 1, 10),
     );
 
     assert!(failed_res.main_failed());
@@ -319,7 +343,7 @@ fn set_approval_for_all() {
 
     ft.send(
         operator,
-        Action::SafeTransferFrom(owner.into(), other.into(), 1, 30),
+        Action::TransferFrom(owner.into(), other.into(), 1, 30),
     );
 
     let ret3 = ft.send(other, Action::BalanceOf(other.into(), 1));
@@ -395,6 +419,10 @@ fn burn_failures() {
 
     // must fail - since we burning > BALANCE
     let res = ft.send(user1, Action::Burn(TOKEN_ID, BALANCE + 100));
+    assert!(res.main_failed());
+
+    // must fail - since user0 doesn't own it
+    let res = ft.send(from, Action::Burn(TOKEN_ID, BALANCE - 100));
     assert!(res.main_failed());
 }
 

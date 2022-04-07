@@ -245,7 +245,7 @@ impl ExtendERC1155TokenBase for ERC1155Token {
     fn burn(&mut self, id: &TokenId, amount: u128) {
         let owner = &msg::source();
         if !self.can_burn(owner, id, amount) {
-            panic!("ERC1155: Amount exceeds account balance");
+            panic!("ERC1155: Amount exceeds account balance or invalid ownership");
         }
         self.set_balance(
             &msg::source(),
@@ -373,7 +373,7 @@ pub unsafe extern "C" fn handle() {
             ERC1155_TOKEN.mint_batch(&account, &ids, &amounts, metas);
         }
 
-        Action::SafeTransferFrom(from, to, id, amount) => {
+        Action::TransferFrom(from, to, id, amount) => {
             ERC1155_TOKEN.transfer_from(&from, &to, &id, amount);
             msg::reply(
                 Event::TransferSingle(TransferSingleReply {
@@ -387,7 +387,7 @@ pub unsafe extern "C" fn handle() {
             );
         }
 
-        Action::SafeBatchTransferFrom(from, to, ids, amounts) => {
+        Action::BatchTransferFrom(from, to, ids, amounts) => {
             ERC1155_TOKEN.batch_transfer_from(&from, &to, &ids, &amounts);
         }
 
