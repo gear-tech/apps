@@ -504,9 +504,9 @@ name = "dao-io"
 version = "0.1.0"
 dependencies = [
  "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "scale-info 1.0.0",
 ]
 
 [[package]]
@@ -672,9 +672,9 @@ name = "ft-io"
 version = "0.1.0"
 dependencies = [
  "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "scale-info 1.0.0",
 ]
 
 [[package]]
@@ -800,7 +800,7 @@ dependencies = [
  "derive_more",
  "hex",
  "log",
- "parity-scale-codec",
+ "parity-scale-codec 2.3.1",
  "parity-wasm",
  "pwasm-utils",
  "scale-info",
@@ -817,7 +817,7 @@ dependencies = [
  "gear-backend-common",
  "gear-core",
  "log",
- "parity-scale-codec",
+ "parity-scale-codec 2.3.1",
 ]
 
 [[package]]
@@ -826,9 +826,9 @@ version = "0.1.0"
 dependencies = [
  "gear-wasm-builder",
  "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "scale-info 1.0.0",
 ]
 
 [[package]]
@@ -897,9 +897,9 @@ dependencies = [
  "gcore",
  "gstd-codegen",
  "hex",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "scale-info 1.0.0",
 ]
 
 [[package]]
@@ -923,7 +923,7 @@ dependencies = [
  "gear-core-processor",
  "hex",
  "log",
- "parity-scale-codec",
+ "parity-scale-codec 2.3.1",
  "path-clean",
  "wasm-instrument",
 ]
@@ -976,7 +976,16 @@ version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba6a270039626615617f3f36d15fc827041df3b78c439da2cadfa47455a77f2f"
 dependencies = [
- "parity-scale-codec",
+ "parity-scale-codec 2.3.1",
+]
+
+[[package]]
+name = "impl-codec"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba6a270039626615617f3f36d15fc827041df3b78c439da2cadfa47455a77f2f"
+dependencies = [
+ "parity-scale-codec 3.1.2",
 ]
 
 [[package]]
@@ -1000,6 +1009,12 @@ dependencies = [
  "hashbrown",
  "serde",
 ]
+
+[[package]]
+name = "io-lifetimes"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec58677acfea8a15352d42fc87d11d63596ade9239e0a7c9352914417515dbe6"
 
 [[package]]
 name = "io-lifetimes"
@@ -1154,7 +1169,7 @@ version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5aa361d4faea93603064a027415f07bd8e1d5c88c9fbf68bf56a285428fd79ce"
 dependencies = [
- "autocfg",
+ "libsecp256k1-core",
 ]
 
 [[package]]
@@ -1173,20 +1188,19 @@ dependencies = [
 name = "miniz_oxide"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a92518e98c078586bc6c934028adcca4c92a53d6a958196de835170a01d84e4b"
+checksum = "5284f00d480e1c39af34e72f8ad60b94f47007e3481cd3b731c1d67190ddc7b7"
+
+[[package]]
+name = "log"
+version = "0.4.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6389c490849ff5bc16be905ae24bc913a9c8892e19b2341dbc175e14c341c2b8"
 dependencies = [
- "adler",
- "autocfg",
+ "cfg-if",
 ]
 
 [[package]]
-name = "more-asserts"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7843ec2de400bcbc6a6328c958dc38e5359da6e93e72e37bc5246bf1ae776389"
-
-[[package]]
-name = "nft-example"
+name = "lottery"
 version = "0.1.0"
 dependencies = [
  "gear-wasm-builder",
@@ -1204,9 +1218,9 @@ name = "nft-example-io"
 version = "0.1.0"
 dependencies = [
  "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
+ "parity-scale-codec 2.3.1",
+ "primitive-types 0.10.1",
+ "scale-info 1.0.0",
 ]
 
 [[package]]
@@ -1293,8 +1307,20 @@ dependencies = [
  "bitvec",
  "byte-slice-cast",
  "impl-trait-for-tuples",
- "parity-scale-codec-derive",
+ "parity-scale-codec-derive 2.3.1",
  "serde",
+]
+
+[[package]]
+name = "parity-scale-codec"
+version = "3.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8b44461635bbb1a0300f100a841e571e7d919c81c73075ef5d152ffdb521066"
+dependencies = [
+ "arrayvec 0.7.2",
+ "byte-slice-cast",
+ "impl-trait-for-tuples",
+ "parity-scale-codec-derive 3.1.2",
 ]
 
 [[package]]
@@ -1382,8 +1408,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e28720988bff275df1f51b171e1b2a18c30d194c4d2b61defdacecd625a5d94a"
 dependencies = [
  "fixed-hash",
- "impl-codec",
- "scale-info",
+ "impl-codec 0.5.1",
+ "scale-info 1.0.0",
+ "uint",
+]
+
+[[package]]
+name = "primitive-types"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e28720988bff275df1f51b171e1b2a18c30d194c4d2b61defdacecd625a5d94a"
+dependencies = [
+ "fixed-hash",
+ "impl-codec 0.6.0",
+ "scale-info 2.0.1",
  "uint",
 ]
 
@@ -1641,8 +1679,20 @@ checksum = "0563970d79bcbf3c537ce3ad36d859b30d36fc5b190efd227f1f7a84d7cf0d42"
 dependencies = [
  "cfg-if",
  "derive_more",
- "parity-scale-codec",
- "scale-info-derive",
+ "parity-scale-codec 2.3.1",
+ "scale-info-derive 1.0.0",
+]
+
+[[package]]
+name = "scale-info"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0563970d79bcbf3c537ce3ad36d859b30d36fc5b190efd227f1f7a84d7cf0d42"
+dependencies = [
+ "cfg-if",
+ "derive_more",
+ "parity-scale-codec 3.1.2",
+ "scale-info-derive 2.0.0",
 ]
 
 [[package]]
@@ -1851,6 +1901,52 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-core"
+version = "6.0.0"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#6daa169546a9a2c7cc1ae240b573320865deb93f"
+dependencies = [
+ "bitflags",
+ "blake2-rfc",
+ "byteorder",
+ "ed25519-dalek",
+ "hash-db",
+ "hash256-std-hasher",
+ "hex",
+ "libsecp256k1",
+ "log",
+ "merlin",
+ "num-traits",
+ "parity-scale-codec 3.1.2",
+ "parity-util-mem",
+ "primitive-types 0.11.1",
+ "scale-info 2.0.1",
+ "schnorrkel",
+ "secp256k1",
+ "secrecy",
+ "sp-core-hashing",
+ "sp-debug-derive 4.0.0",
+ "sp-runtime-interface",
+ "sp-std 4.0.0",
+ "sp-storage",
+ "ss58-registry",
+ "zeroize",
+]
+
+[[package]]
+name = "sp-core-hashing"
+version = "4.0.0"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#6daa169546a9a2c7cc1ae240b573320865deb93f"
+dependencies = [
+ "blake2",
+ "byteorder",
+ "digest 0.10.3",
+ "sha2 0.10.2",
+ "sha3",
+ "sp-std 4.0.0",
+ "twox-hash",
+]
+
+[[package]]
 name = "sp-debug-derive"
 version = "4.0.0"
 source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#6daa169546a9a2c7cc1ae240b573320865deb93f"
@@ -1923,6 +2019,57 @@ dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
  "sp-std",
+]
+
+[[package]]
+name = "ss58-registry"
+version = "1.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b84a70894df7a73666e0694f44b41a9571625e9546fb58a0818a565d2c7e084"
+dependencies = [
+ "Inflector",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "unicode-xid",
+]
+
+[[package]]
+name = "sp-std"
+version = "4.0.0"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#6daa169546a9a2c7cc1ae240b573320865deb93f"
+
+[[package]]
+name = "sp-storage"
+version = "6.0.0"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#6daa169546a9a2c7cc1ae240b573320865deb93f"
+dependencies = [
+ "parity-scale-codec 3.1.2",
+ "ref-cast",
+ "sp-debug-derive 4.0.0",
+ "sp-std 4.0.0",
+]
+
+[[package]]
+name = "sp-tracing"
+version = "5.0.0"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#6daa169546a9a2c7cc1ae240b573320865deb93f"
+dependencies = [
+ "parity-scale-codec 3.1.2",
+ "sp-std 4.0.0",
+ "tracing",
+ "tracing-core",
+]
+
+[[package]]
+name = "sp-wasm-interface"
+version = "6.0.0"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#6daa169546a9a2c7cc1ae240b573320865deb93f"
+dependencies = [
+ "impl-trait-for-tuples",
+ "parity-scale-codec 3.1.2",
+ "sp-std 4.0.0",
 ]
 
 [[package]]
