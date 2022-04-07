@@ -39,7 +39,7 @@ impl NFT {
         self.owner_to_ids
             .entry(msg::source())
             .and_modify(|ids| ids.push(token_id))
-            .or_insert(vec![token_id]);
+            .or_insert_with(|| vec![token_id]);
         let metadata = TokenMetadata {
             title: None,
             description: None,

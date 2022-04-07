@@ -11,7 +11,7 @@ pub const TREASURY_ID: u64 = 8;
 pub fn init_ft(sys: &System) {
     let ft = Program::from_file(
         &sys,
-        "../../fungible-token/target/wasm32-unknown-unknown/release/fungible_token.wasm",
+        "../../target/wasm32-unknown-unknown/release/fungible_token.wasm",
     );
 
     let res = ft.send(
@@ -29,7 +29,7 @@ pub fn init_nft(sys: &System) {
     sys.init_logger();
     let nft = Program::from_file(
         &sys,
-        "../nft/target/wasm32-unknown-unknown/release/nft.wasm",
+        "../../target/wasm32-unknown-unknown/release/nft.wasm",
     );
 
     let res = nft.send(
