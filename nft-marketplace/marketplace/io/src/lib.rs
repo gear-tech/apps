@@ -1,9 +1,8 @@
 #![no_std]
 use codec::{Decode, Encode};
 use gstd::{prelude::*, ActorId};
-use primitive_types::U256;
+use primitive_types::{H256, U256};
 use scale_info::TypeInfo;
-use sp_core::H256 as spH256;
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct InitMarket {
@@ -14,7 +13,7 @@ pub struct InitMarket {
 
 #[derive(Debug, Encode, Decode, TypeInfo, Clone)]
 pub struct Offer {
-    pub hash: spH256,
+    pub hash: H256,
     pub id: ActorId,
     pub ft_contract_id: Option<ActorId>,
     pub price: u128,
@@ -82,12 +81,12 @@ pub enum MarketAction {
     Withdraw {
         nft_contract_id: ActorId,
         token_id: U256,
-        hash: spH256,
+        hash: H256,
     },
     AcceptOffer {
         nft_contract_id: ActorId,
         token_id: U256,
-        offer_hash: spH256,
+        offer_hash: H256,
     },
     SettleAuction {
         nft_contract_id: ActorId,

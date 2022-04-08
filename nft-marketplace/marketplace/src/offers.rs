@@ -6,15 +6,14 @@ use crate::{
 use gstd::{exec, msg, prelude::*, ActorId};
 use market_io::*;
 use primitive_types::{H256, U256};
-use sp_core::{hashing, H256 as spH256};
 
-fn get_hash(nft_contract_id: &ActorId, ft_contract_id: Option<ActorId>, price: u128) -> spH256 {
+fn get_hash(nft_contract_id: &ActorId, ft_contract_id: Option<ActorId>, price: u128) -> H256 {
     let nft_conract_vec: Vec<u8> = <[u8; 32]>::from(*nft_contract_id).into();
     let price_vec: Vec<u8> = price.to_be_bytes().into();
     let ft_contract_vec: Vec<u8> = ft_contract_id
         .map(|id| <[u8; 32]>::from(id).into())
         .unwrap_or_default();
-    hashing::blake2_256(&[nft_conract_vec, price_vec, ft_contract_vec].concat()).into()
+    sp_core_hashing::blake2_256(&[nft_conract_vec, price_vec, ft_contract_vec].concat()).into()
 }
 
 impl Market {
@@ -47,7 +46,7 @@ impl Market {
             panic!("Cant offer zero price");
         }
 
-        let hash: spH256 = get_hash(nft_contract_id, ft_contract_id, price);
+        let hash: H256 = get_hash(nft_contract_id, ft_contract_id, price);
         let mut offers = item.offers.clone();
         if offers.iter().any(|offer| offer.hash == hash) {
             panic!("the offer with these params already exists");
@@ -89,7 +88,7 @@ impl Market {
         &mut self,
         nft_contract_id: &ActorId,
         token_id: U256,
-        offer_hash: spH256,
+        offer_hash: H256,
     ) {
         let contract_and_token_id =
             format!("{}{}", H256::from_slice(nft_contract_id.as_ref()), token_id);
@@ -143,12 +142,7 @@ impl Market {
     /// * `nft_contract_id`: the NFT contract address
     /// * `token_id`: the NFT id
     /// * `offer_hash`: the offer hash
-    pub async fn withdraw(
-        &mut self,
-        nft_contract_id: &ActorId,
-        token_id: U256,
-        offer_hash: spH256,
-    ) {
+    pub async fn withdraw(&mut self, nft_contract_id: &ActorId, token_id: U256, offer_hash: H256) {
         let contract_and_token_id =
             format!("{}{}", H256::from_slice(nft_contract_id.as_ref()), token_id);
         let item = self

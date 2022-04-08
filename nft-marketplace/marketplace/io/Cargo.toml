@@ -6,10 +6,9 @@ license = "GPL-3.0"
 authors = ["Gear Technologies"]
 
 [dependencies]
-gstd = {git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
+gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
 codec = { package = "parity-scale-codec", version = "3.1.2", default-features = false, features = ["derive", "full"] }
 scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
-hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
-primitive-types = { version = "0.11.1", default-features = false, features = ["scale-info"]}
-nft-io = {path = "../../nft/io"}
-sp-core = { version = "6.0.0", git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable", default-features = false, features = ["full_crypto"] }
+primitive-types = { version = "0.11.1", default-features = false, features = ["scale-info"] }
+nft-io = { path = "../../nft/io" }
+sp-core-hashing = { version = "4.0.0", default-features = false }
