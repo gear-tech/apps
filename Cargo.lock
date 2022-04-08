@@ -877,6 +877,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "lottery"
+version = "0.1.0"
+dependencies = [
+ "ft-io",
+ "gear-wasm-builder",
+ "gstd",
+ "gtest",
+ "lt-io",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+ "sp-core-hashing",
+]
+
+[[package]]
+name = "lt-io"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
 name = "mach"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
