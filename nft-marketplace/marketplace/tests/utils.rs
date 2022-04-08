@@ -4,7 +4,8 @@ use gstd::ActorId;
 use gtest::{Program, System};
 use market_io::*;
 use nft_io::*;
-use sp_core::{hashing, H256 as spH256};
+use primitive_types::H256;
+
 pub const USERS: &'static [u64] = &[4, 5, 6, 7];
 pub const TREASURY_ID: u64 = 8;
 
@@ -85,11 +86,11 @@ pub fn add_market_data(
     )));
 }
 
-pub fn get_hash(nft_contract_id: &ActorId, ft_contract_id: Option<ActorId>, price: u128) -> spH256 {
+pub fn get_hash(nft_contract_id: &ActorId, ft_contract_id: Option<ActorId>, price: u128) -> H256 {
     let nft_conract_vec: Vec<u8> = <[u8; 32]>::from(*nft_contract_id).into();
     let price_vec: Vec<u8> = price.to_be_bytes().into();
     let ft_contract_vec: Vec<u8> = ft_contract_id
         .map(|id| <[u8; 32]>::from(id).into())
         .unwrap_or_default();
-    hashing::blake2_256(&[nft_conract_vec, price_vec, ft_contract_vec].concat()).into()
+    sp_core_hashing::blake2_256(&[nft_conract_vec, price_vec, ft_contract_vec].concat()).into()
 }
