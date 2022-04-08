@@ -14,7 +14,6 @@ use ft_io::*;
 use gstd::{debug, exec, msg, prelude::*, ActorId};
 use lt_io::*;
 use scale_info::TypeInfo;
-use sp_core::hashing::blake2_256;
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
@@ -74,9 +73,9 @@ impl Lottery {
     /// * `to`: recipient account
     /// * `amount`: amount of tokens
     async fn transfer_tokens(&mut self, from: &ActorId, to: &ActorId, amount_tokens: u128) {
-        let _transfer_response: Event = msg::send_and_wait_for_reply(
+        let _transfer_response: FTEvent = msg::send_and_wait_for_reply(
             self.token_address.unwrap(),
-            Action::Transfer {
+            FTAction::Transfer {
                 from: *from,
                 to: *to,
                 amount: amount_tokens,
@@ -195,7 +194,7 @@ impl Lottery {
     // Random number generation from block timestamp
     fn get_random_number(&mut self) -> u32 {
         let timestamp: u64 = exec::block_timestamp();
-        let code_hash = blake2_256(&timestamp.to_be_bytes());
+        let code_hash = sp_core_hashing::blake2_256(&timestamp.to_be_bytes());
         u32::from_le_bytes([code_hash[0], code_hash[1], code_hash[2], code_hash[3]])
     }
 
