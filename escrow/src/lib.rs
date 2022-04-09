@@ -1,22 +1,28 @@
 #![no_std]
 
-use gstd::{async_main, exec, msg, prelude::*, ActorId};
-
-#[cfg(test)]
-mod tests;
+use escrow_io::*;
+use ft_io::*;
+use gstd::{
+    async_main, exec,
+    msg::{self, CodecMessageFuture},
+    prelude::*,
+    ActorId,
+};
 
 #[derive(PartialEq)]
 enum State {
-    AwaitingPayment,
-    AwaitingDelivery,
+    AwaitingDeposit,
+    AwaitingConfirmation,
     Completed,
 }
 
-#[derive(Default)]
-struct Escrow {
+fn transfer_tokens(
     ft_program_id: ActorId,
-    contracts: BTreeMap<u128, Contract>,
-    id_nonce: u128,
+    from: ActorId,
+    to: ActorId,
+    amount: u128,
+) -> CodecMessageFuture<FTEvent> {
+    msg::send_and_wait_for_reply(ft_program_id, FTAction::Transfer { from, to, amount }, 0)
 }
 
 fn get(contracts: &mut BTreeMap<u128, Contract>, contract_id: u128) -> &mut Contract {
@@ -27,8 +33,28 @@ fn get(contracts: &mut BTreeMap<u128, Contract>, contract_id: u128) -> &mut Cont
     }
 }
 
+#[derive(Default)]
+struct Escrow {
+    ft_program_id: ActorId,
+    contracts: BTreeMap<u128, Contract>,
+    id_nonce: u128,
+}
+
 impl Escrow {
+    /// Creates one escrow contract and replies with an ID of this created contract.
+    ///
+    /// Requirements:
+    /// * `msg::source()` must be a buyer or seller for this contract.
+    ///
+    /// Arguments:
+    /// * `buyer`: a buyer.
+    /// * `seller`: a seller.
+    /// * `amount`: an amount of tokens.
     fn create(&mut self, buyer: ActorId, seller: ActorId, amount: u128) {
+        if msg::source() != buyer && msg::source() != seller {
+            panic!("msg::source() must be a buyer or seller to create this contract");
+        }
+
         let contract_id = self.id_nonce;
         self.id_nonce += 1;
 
@@ -38,40 +64,46 @@ impl Escrow {
                 buyer,
                 seller,
                 amount,
-                state: State::AwaitingPayment,
+                state: State::AwaitingDeposit,
             },
         );
 
-        msg::reply(escrow_io::Event::Created { contract_id }, 0);
+        msg::reply(EscrowEvent::Created { contract_id }, 0);
     }
 
+    /// Makes a deposit from a buyer to an escrow account
+    /// and changes a contract state to `AwaitingConfirmation`.
+    ///
+    /// Requirements:
+    /// * `msg::source()` must be a buyer saved in a contract.
+    /// * Contract must not be paid or completed.
+    ///
+    /// Arguments:
+    /// * `contract_id`: a contract ID.
     async fn deposit(&mut self, contract_id: u128) {
         let contract = get(&mut self.contracts, contract_id);
 
         if msg::source() != contract.buyer {
-            panic!("Only a buyer saved in contract can make a deposit");
+            panic!("msg::source() must a buyer saved in a contract to make a deposit");
         }
 
-        if contract.state != State::AwaitingPayment {
-            panic!("Escrow already paid or completed");
+        if contract.state != State::AwaitingDeposit {
+            panic!("Contract can't take deposit if it's paid or completed");
         }
 
-        msg::send_and_wait_for_reply::<ft_io::Event, _>(
+        transfer_tokens(
             self.ft_program_id,
-            ft_io::Action::Transfer {
-                from: contract.buyer,
-                to: exec::program_id(),
-                amount: contract.amount,
-            },
-            0,
+            contract.buyer,
+            exec::program_id(),
+            contract.amount,
         )
         .await
-        .expect("Error when making the deposit");
+        .expect("Error when taking a deposit");
 
-        contract.state = State::AwaitingDelivery;
+        contract.state = State::AwaitingConfirmation;
 
         msg::reply(
-            escrow_io::Event::Deposited {
+            EscrowEvent::Deposited {
                 buyer: contract.buyer,
                 amount: contract.amount,
             },
@@ -79,33 +111,39 @@ impl Escrow {
         );
     }
 
+    /// Confirms contract by transferring tokens from an escrow account
+    /// to a seller and changing contract state to `Completed`.
+    ///
+    /// Requirements:
+    /// * `msg::source()` must be a buyer saved in contract.
+    /// * Contract must be paid and uncompleted.
+    ///
+    /// Arguments:
+    /// * `contract_id`: a contract ID.
     async fn confirm(&mut self, contract_id: u128) {
         let contract = get(&mut self.contracts, contract_id);
 
         if msg::source() != contract.buyer {
-            panic!("Only a buyer saved in contract can confirm an escrow")
+            panic!("msg::source() must a buyer saved in a contract to confirm it")
         }
 
-        if contract.state != State::AwaitingDelivery {
-            panic!("Escrow completed or not paid");
+        if contract.state != State::AwaitingConfirmation {
+            panic!("Contract can't be confirmed if it's not paid or completed");
         }
 
-        msg::send_and_wait_for_reply::<ft_io::Event, _>(
+        transfer_tokens(
             self.ft_program_id,
-            ft_io::Action::Transfer {
-                from: exec::program_id(),
-                to: contract.seller,
-                amount: contract.amount,
-            },
-            0,
+            exec::program_id(),
+            contract.seller,
+            contract.amount,
         )
         .await
-        .expect("Error when confirming the escrow");
+        .expect("Error when confirming a contract");
 
         contract.state = State::Completed;
 
         msg::reply(
-            escrow_io::Event::Confirmed {
+            EscrowEvent::Confirmed {
                 amount: contract.amount,
                 seller: contract.seller,
             },
@@ -113,31 +151,39 @@ impl Escrow {
         );
     }
 
+    /// Refunds tokens from an escrow account to a buyer
+    /// and does **NOT** change contract state (that is, a contract can be reused).
+    ///
+    /// Requirements:
+    /// * `msg::source()` must be a seller saved in contract.
+    /// * Contract must be paid and uncompleted.
+    ///
+    /// Arguments:
+    /// * `contract_id`: a contract ID.
     async fn refund(&mut self, contract_id: u128) {
         let contract = get(&mut self.contracts, contract_id);
 
         if msg::source() != contract.seller {
-            panic!("Only a seller saved in contract can refund an escrow")
+            panic!("msg::source() must be a seller saved in contract to refund")
         }
 
-        if contract.state != State::AwaitingDelivery {
-            panic!("Escrow completed or not paid");
+        if contract.state != State::AwaitingConfirmation {
+            panic!("Contract can't be refunded if it's not paid or completed");
         }
 
-        msg::send_and_wait_for_reply::<ft_io::Event, _>(
+        transfer_tokens(
             self.ft_program_id,
-            ft_io::Action::Transfer {
-                from: exec::program_id(),
-                to: contract.buyer,
-                amount: contract.amount,
-            },
-            0,
+            exec::program_id(),
+            contract.buyer,
+            contract.amount,
         )
         .await
-        .expect("Error when refunding the escrow");
+        .expect("Error when refunding a contract");
+
+        contract.state = State::AwaitingDeposit;
 
         msg::reply(
-            escrow_io::Event::Refunded {
+            EscrowEvent::Refunded {
                 amount: contract.amount,
                 buyer: contract.buyer,
             },
@@ -145,17 +191,29 @@ impl Escrow {
         );
     }
 
+    /// Cancels (early completes) a contract by changing its state to `Completed`.
+    ///
+    /// Requirements:
+    /// * `msg::source()` must be a buyer or seller saved in contract.
+    /// * Contract must not be paid or completed.
+    ///
+    /// Arguments:
+    /// * `contract_id`: a contract ID.
     async fn cancel(&mut self, contract_id: u128) {
         let contract = get(&mut self.contracts, contract_id);
 
-        if contract.state != State::AwaitingPayment {
-            panic!("Escrow can't be cancelled if it's completed or paid");
+        if msg::source() != contract.buyer && msg::source() != contract.seller {
+            panic!("msg::source() must be a buyer or seller saved in contract to cancel it");
+        }
+
+        if contract.state != State::AwaitingDeposit {
+            panic!("Contract can't be cancelled if it's paid or completed");
         }
 
         contract.state = State::Completed;
 
         msg::reply(
-            escrow_io::Event::Cancelled {
+            EscrowEvent::Cancelled {
                 buyer: contract.buyer,
                 seller: contract.seller,
                 amount: contract.amount,
@@ -176,7 +234,7 @@ static mut ESCROW: Option<Escrow> = None;
 
 #[no_mangle]
 pub extern "C" fn init() {
-    let config: escrow_io::InitConfig = msg::load().expect("Unable to decode InitConfig");
+    let config: InitEscrow = msg::load().expect("Unable to decode InitEscrow");
     let escrow = Escrow {
         ft_program_id: config.ft_program_id,
         ..Default::default()
@@ -188,17 +246,17 @@ pub extern "C" fn init() {
 
 #[async_main]
 pub async fn main() {
-    let action: escrow_io::Action = msg::load().expect("Unable to decode Action");
+    let action: EscrowAction = msg::load().expect("Unable to decode EscrowAction");
     let escrow = unsafe { ESCROW.get_or_insert(Default::default()) };
     match action {
-        escrow_io::Action::Create {
+        EscrowAction::Create {
             buyer,
             seller,
             amount,
         } => escrow.create(buyer, seller, amount),
-        escrow_io::Action::Deposit { contract_id } => escrow.deposit(contract_id).await,
-        escrow_io::Action::Confirm { contract_id } => escrow.confirm(contract_id).await,
-        escrow_io::Action::Refund { contract_id } => escrow.refund(contract_id).await,
-        escrow_io::Action::Cancel { contract_id } => escrow.cancel(contract_id).await,
+        EscrowAction::Deposit { contract_id } => escrow.deposit(contract_id).await,
+        EscrowAction::Confirm { contract_id } => escrow.confirm(contract_id).await,
+        EscrowAction::Refund { contract_id } => escrow.refund(contract_id).await,
+        EscrowAction::Cancel { contract_id } => escrow.cancel(contract_id).await,
     }
 }

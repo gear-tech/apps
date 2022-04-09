@@ -3,12 +3,12 @@
 use gstd::{prelude::*, ActorId};
 
 #[derive(Decode, Encode)]
-pub struct InitConfig {
+pub struct InitEscrow {
     pub ft_program_id: ActorId,
 }
 
 #[derive(Decode, Encode)]
-pub enum Action {
+pub enum EscrowAction {
     Create {
         buyer: ActorId,
         seller: ActorId,
@@ -29,23 +29,25 @@ pub enum Action {
 }
 
 #[derive(Decode, Encode)]
-pub enum Event {
+pub enum EscrowEvent {
     Cancelled {
         buyer: ActorId,
         seller: ActorId,
         amount: u128,
     },
     Refunded {
-        amount: u128,
         buyer: ActorId,
+        amount: u128,
     },
     Confirmed {
-        amount: u128,
         seller: ActorId,
+        amount: u128,
     },
     Deposited {
         buyer: ActorId,
         amount: u128,
     },
-    Created { contract_id: u128 }
+    Created {
+        contract_id: u128,
+    },
 }
