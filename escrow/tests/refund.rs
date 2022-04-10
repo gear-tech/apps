@@ -1,4 +1,4 @@
-mod utils;
+pub mod utils;
 use utils::*;
 
 #[test]
@@ -36,7 +36,7 @@ fn not_seller_refund() {
         AMOUNT[0],
     );
     deposit(&escrow_program, CONTRACT[0], BUYER[0], AMOUNT[0]);
-    // Should fail because not a buyer saved in a contract tries to refund
+    // Should fail because not a seller saved in a contract tries to refund
     refund_fail(&escrow_program, CONTRACT[0], FOREIGN_USER);
     refund_fail(&escrow_program, CONTRACT[0], BUYER[0]);
     refund_fail(&escrow_program, CONTRACT[0], SELLER[1]);

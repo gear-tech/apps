@@ -1,8 +1,8 @@
-mod utils;
+pub mod utils;
 use utils::*;
 
 #[test]
-fn not_seller_confirm() {
+fn not_buyer_confirm() {
     let system = init_system();
     let escrow_program = init_escrow(&system);
     let ft_program = init_fungible_tokens(&system);
