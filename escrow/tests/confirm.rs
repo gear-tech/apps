@@ -17,7 +17,7 @@ fn not_seller_confirm() {
         AMOUNT[0],
     );
     deposit(&escrow_program, CONTRACT[0], BUYER[0], AMOUNT[0]);
-    // Should fail because a not buyer saved in a contract tries to confirm
+    // Should fail because not a buyer saved in a contract tries to confirm
     confirm_fail(&escrow_program, CONTRACT[0], FOREIGN_USER);
     confirm_fail(&escrow_program, CONTRACT[0], BUYER[1]);
     confirm_fail(&escrow_program, CONTRACT[0], SELLER[0]);

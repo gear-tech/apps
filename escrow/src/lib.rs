@@ -152,7 +152,8 @@ impl Escrow {
     }
 
     /// Refunds tokens from an escrow account to a buyer
-    /// and does **NOT** change contract state (that is, a contract can be reused).
+    /// and changes contract state to `AwaitingDeposit`
+    /// (that is, a contract can be reused).
     ///
     /// Requirements:
     /// * `msg::source()` must be a seller saved in contract.

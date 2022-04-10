@@ -43,7 +43,7 @@ fn two_different_escrows() {
 }
 
 #[test]
-fn complete_after_refund() {
+fn reuse_after_refund() {
     let system = init_system();
     let escrow_program = init_escrow(&system);
     let ft_program = init_fungible_tokens(&system);

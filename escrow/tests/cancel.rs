@@ -37,7 +37,7 @@ fn foreign_user_cancel() {
         SELLER[0],
         AMOUNT[0],
     );
-    // Should fail because a foreign user tries to cancel
+    // Should fail because not a buyer/seller saved in a contract tries to cancel
     cancel_fail(&escrow_program, CONTRACT[0], FOREIGN_USER);
 }
 

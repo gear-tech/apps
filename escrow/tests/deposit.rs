@@ -55,7 +55,7 @@ fn not_buyer_deposit() {
         SELLER[0],
         AMOUNT[0],
     );
-    // Should fail because a not buyer saved in contract tries to make a deposit
+    // Should fail because not a buyer saved in contract tries to make a deposit
     deposit_fail(&escrow_program, CONTRACT[0], FOREIGN_USER);
     deposit_fail(&escrow_program, CONTRACT[0], BUYER[1]);
     deposit_fail(&escrow_program, CONTRACT[0], SELLER[0]);
