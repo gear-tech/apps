@@ -152,45 +152,6 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
         );
     }
 
-    fn set_approval_for_all(&mut self, operator: &ActorId, approved: bool) {
-        let owner = msg::source();
-
-        if owner == *operator {
-            panic!("ERC1155: setting approval status for self")
-        }
-
-        self.get_mut()
-            .operator_approvals
-            .entry(owner)
-            .or_default()
-            .insert(*operator, approved);
-
-        msg::reply(
-            Event::ApprovalForAll {
-                owner: msg::source(),
-                operator: *operator,
-                approved,
-            },
-            0,
-        );
-    }
-
-    fn is_approved_for_all(&self, owner: &ActorId, operator: &ActorId) {
-        let approved = self.get().operator_approvals.contains_key(owner)
-            && *self.get().operator_approvals[owner]
-                .get(operator)
-                .unwrap_or(&false);
-
-        msg::reply(
-            Event::ApprovalForAll {
-                owner: *owner,
-                operator: *operator,
-                approved,
-            },
-            0,
-        );
-    }
-
     fn transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128) {
         if from == to {
             panic!("ERC1155: sender and recipient addresses are the same")
@@ -259,21 +220,41 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
         );
     }
 
-    fn is_owner_of(&self, id: &TokenId) {
-        let owner = msg::source();
-        let res = self.get_balance(&owner, id) != 0;
-        msg::reply(res, 0);
+    fn approve(&mut self, to: &ActorId) {
+        if to == &ZERO_ID {
+            panic!("ERC1155: approving zero address")
+        }
+        self.get_mut()
+            .operator_approvals
+            .entry(msg::source())
+            .or_default()
+            .insert(*to, true);
+        msg::reply(
+            Event::Approve {
+                from: msg::source(),
+                to: *to,
+            },
+            0,
+        );
     }
 
-    fn is_owner_of_batch(&self, ids: &[TokenId]) {
-        let owner = msg::source();
-        for ele in ids {
-            if self.get_balance(&owner, ele) != 0 {
-                msg::reply(false, 0);
-                return;
-            }
+    fn revoke_approval(&mut self, to: &ActorId) {
+        if to == &ZERO_ID {
+            panic!("ERC1155: revoking zero address")
         }
-        msg::reply(true, 0);
+        self.get_mut()
+            .operator_approvals
+            .entry(msg::source())
+            .or_default()
+            .remove_entry(to);
+
+        msg::reply(
+            Event::Approve {
+                from: msg::source(),
+                to: *to,
+            },
+            0,
+        );
     }
 
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[TokenId]) {
@@ -292,23 +273,6 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             .collect();
 
         msg::reply(Event::BalanceOfBatch(res), 0);
-    }
-
-    fn uri(&self, id: TokenId) -> String {
-        self.get()
-            .base_uri
-            .clone()
-            .replace("{id}", &format!("{}", id))
-    }
-
-    fn get_metadata(&self, id: TokenId) -> TokenMetadata {
-        self.get()
-            .token_metadata
-            .get(&id)
-            .unwrap_or(&TokenMetadata {
-                ..Default::default()
-            })
-            .clone()
     }
 
     fn proc(&mut self, bytes: Vec<u8>) -> Option<()> {
@@ -346,9 +310,6 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             }
             Action::BurnBatch(ids, amounts) => Self::burn_batch(self, &ids, &amounts),
 
-            Action::OwnerOf(id) => Self::is_owner_of(self, &id),
-            Action::OwnerOfBatch(ids) => Self::is_owner_of_batch(self, &ids),
-
             Action::TransferFrom(from, to, id, amount) => {
                 Self::transfer_from(self, &from, &to, &id, amount);
                 msg::reply(
@@ -371,12 +332,8 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             }
             Action::BalanceOfBatch(accounts, ids) => Self::balance_of_batch(self, &accounts, &ids),
 
-            Action::SetApprovalForAll(operator, approved) => {
-                Self::set_approval_for_all(self, &operator, approved)
-            }
-            Action::IsApprovedForAll(owner, operator) => {
-                Self::is_approved_for_all(self, &owner, &operator)
-            }
+            Action::Approve(to) => Self::approve(self, &to),
+            Action::RevokeApproval(to) => Self::revoke_approval(self, &to),
         };
         Some(())
     }

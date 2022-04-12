@@ -26,12 +26,10 @@ pub enum Action {
     MintBatch(ActorId, Vec<u128>, Vec<TokenId>, Vec<Option<TokenMetadata>>),
     TransferFrom(ActorId, ActorId, TokenId, u128),
     BatchTransferFrom(ActorId, ActorId, Vec<TokenId>, Vec<u128>),
-    SetApprovalForAll(ActorId, bool),
-    IsApprovedForAll(ActorId, ActorId),
     Burn(TokenId, u128),
     BurnBatch(Vec<TokenId>, Vec<u128>),
-    OwnerOf(TokenId),
-    OwnerOfBatch(Vec<TokenId>),
+    Approve(ActorId),
+    RevokeApproval(ActorId),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -63,9 +61,8 @@ pub enum Event {
         ids: Vec<TokenId>,
         values: Vec<u128>,
     },
-    ApprovalForAll {
-        owner: ActorId,
-        operator: ActorId,
-        approved: bool,
+    Approve {
+        from: ActorId,
+        to: ActorId,
     },
 }
