@@ -82,6 +82,7 @@ impl Lottery {
             },
             0,
         )
+        .unwrap()
         .await
         .expect("Error in transfer");
     }
@@ -110,7 +111,7 @@ impl Lottery {
 
             let player_index = self.players.len() as u32;
             self.players.insert(player_index, player);
-            msg::reply(LtEvent::PlayerAdded(player_index), 0);
+            msg::reply(LtEvent::PlayerAdded(player_index), 0).unwrap();
         } else {
             panic!(
                 "enter(): Lottery on: {}  player exists: {} amount: {}",
@@ -147,7 +148,7 @@ impl Lottery {
                 self.transfer_tokens(&exec::program_id(), &msg::source(), balance)
                     .await;
             } else {
-                msg::send_bytes(player.player_id, b"LeaveLottery", player.balance);
+                msg::send_bytes(player.player_id, b"LeaveLottery", player.balance).unwrap();
             }
 
             self.players.remove(&index);
@@ -166,7 +167,7 @@ impl Lottery {
     fn get_balance(&mut self, index: u32) {
         if msg::source() == self.lottery_owner && self.lottery_is_on() {
             if let Some(player) = self.players.get(&index) {
-                msg::reply(LtEvent::Balance(player.balance), 0);
+                msg::reply(LtEvent::Balance(player.balance), 0).unwrap();
             } else {
                 panic!("get_balance(): Player {} not found", index);
             }
@@ -181,7 +182,7 @@ impl Lottery {
     /// * List of players must not be empty
     fn get_players(&mut self) {
         if self.lottery_is_on() && !self.players.is_empty() {
-            msg::reply(LtEvent::Players(self.players.clone()), 0);
+            msg::reply(LtEvent::Players(self.players.clone()), 0).unwrap();
         } else {
             panic!(
                 "get_players(): Lottery on: {}  players.is_empty(): {}",
@@ -221,12 +222,12 @@ impl Lottery {
 
                 self.lottery_balance = 0;
             } else {
-                msg::send_bytes(player.player_id, b"Winner", exec::value_available());
+                msg::send_bytes(player.player_id, b"Winner", exec::value_available()).unwrap();
             }
 
             self.lottery_history
                 .insert(self.lottery_id, player.player_id);
-            msg::reply(LtEvent::Winner(win_player_index), 0);
+            msg::reply(LtEvent::Winner(win_player_index), 0).unwrap();
 
             debug!(
                 "Winner: {} token_address(): {:?}",
@@ -272,7 +273,7 @@ async fn main() {
         }
 
         LtAction::LotteryState => {
-            msg::reply(LtEvent::LotteryState(lottery.lottery_state.clone()), 0);
+            msg::reply(LtEvent::LotteryState(lottery.lottery_state.clone()), 0).unwrap();
             debug!("LotteryState: {:?}", lottery.lottery_state);
         }
 

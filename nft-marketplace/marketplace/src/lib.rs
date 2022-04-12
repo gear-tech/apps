@@ -97,7 +97,8 @@ impl Market {
                 price,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     pub fn check_owner(&self) {
@@ -170,7 +171,7 @@ async unsafe fn main() {
                 .get(&contract_and_token_id)
                 .unwrap_or(&Item::default())
                 .clone();
-            msg::reply(MarketEvent::ItemInfo(item), 0);
+            msg::reply(MarketEvent::ItemInfo(item), 0).unwrap();
         }
         MarketAction::AddOffer {
             nft_contract_id,

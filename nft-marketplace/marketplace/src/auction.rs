@@ -75,7 +75,8 @@ impl Market {
                 price: min_price,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     /// Settles the auction
@@ -107,7 +108,8 @@ impl Market {
                     token_id,
                 },
                 0,
-            );
+            )
+            .unwrap();
 
             return;
         }
@@ -146,7 +148,8 @@ impl Market {
                 price: highest_bid.price,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     /// Adds a bid to an ongoing auction
@@ -200,7 +203,8 @@ impl Market {
                 price,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     // checks that there is an active auction

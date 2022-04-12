@@ -11,6 +11,7 @@ pub async fn transfer_tokens(contract_id: &ActorId, from: &ActorId, to: &ActorId
         },
         0,
     )
+    .unwrap()
     .await
     .expect("Error in transfer");
 }
@@ -23,7 +24,7 @@ pub async fn transfer_payment(
 ) {
     if ft_contract_id.is_none() {
         if to != &exec::program_id() {
-            msg::send(*to, "", price);
+            msg::send(*to, "", price).unwrap();
         }
     } else {
         transfer_tokens(&ft_contract_id.unwrap(), from, to, price).await;

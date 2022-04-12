@@ -62,10 +62,11 @@ async fn main() {
 
     let ChannelOutput::Metadata(meta) =
         msg::send_and_wait_for_reply(register.address.into(), ChannelAction::Meta, 0)
+            .unwrap()
             .await
             .expect("ROUTER: Error processing async message");
 
-    msg::reply(Channel::new(register.address, meta.clone()), 0);
+    msg::reply(Channel::new(register.address, meta.clone()), 0).unwrap();
 
     debug!(
         "ROUTER: Successfully added channel\nName: {:?}\nAddress: {:?}\nOwner: {:?}",
