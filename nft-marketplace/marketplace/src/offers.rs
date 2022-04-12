@@ -71,7 +71,8 @@ impl Market {
                 price,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     /// Accepts an offer
@@ -128,7 +129,8 @@ impl Market {
                     price: offer.price,
                 },
                 0,
-            );
+            )
+            .unwrap();
         } else {
             panic!("The offer with that hash does not exist");
         }
@@ -171,7 +173,8 @@ impl Market {
                     price: offer.price,
                 },
                 0,
-            );
+            )
+            .unwrap();
         } else {
             panic!("The offer with that hash does not exist");
         }

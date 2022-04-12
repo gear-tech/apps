@@ -22,7 +22,7 @@ fn transfer_tokens(
     to: ActorId,
     amount: u128,
 ) -> CodecMessageFuture<FTEvent> {
-    msg::send_and_wait_for_reply(ft_program_id, FTAction::Transfer { from, to, amount }, 0)
+    msg::send_and_wait_for_reply(ft_program_id, FTAction::Transfer { from, to, amount }, 0).unwrap()
 }
 
 fn get(contracts: &mut BTreeMap<u128, Contract>, contract_id: u128) -> &mut Contract {
@@ -68,7 +68,7 @@ impl Escrow {
             },
         );
 
-        msg::reply(EscrowEvent::Created { contract_id }, 0);
+        msg::reply(EscrowEvent::Created { contract_id }, 0).unwrap();
     }
 
     /// Makes a deposit from a buyer to an escrow account
@@ -108,7 +108,8 @@ impl Escrow {
                 amount: contract.amount,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     /// Confirms contract by transferring tokens from an escrow account
@@ -148,7 +149,8 @@ impl Escrow {
                 seller: contract.seller,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     /// Refunds tokens from an escrow account to a buyer
@@ -189,7 +191,8 @@ impl Escrow {
                 buyer: contract.buyer,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     /// Cancels (early completes) a contract by changing its state to `Completed`.
@@ -220,7 +223,8 @@ impl Escrow {
                 amount: contract.amount,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 }
 

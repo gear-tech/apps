@@ -61,6 +61,7 @@ impl Market {
                 token_id,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 }

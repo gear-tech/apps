@@ -65,7 +65,8 @@ impl NFT {
                 token_id: self.token_id,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn burn(&mut self, token_id: U256) {
@@ -91,7 +92,8 @@ impl NFT {
                 token_id,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn nft_payout(&self, owner: &ActorId, amount: u128) {
@@ -102,7 +104,7 @@ impl NFT {
             single_payout.insert(*owner, amount);
             single_payout
         };
-        msg::reply(NFTEvent::NFTPayout(payouts), 0);
+        msg::reply(NFTEvent::NFTPayout(payouts), 0).unwrap();
     }
 
     fn check_owner(&self, token_id: U256) {
@@ -142,7 +144,7 @@ async fn main() {
         }
         NFTAction::TokensForOwner(account) => {
             let tokens = nft.owner_to_ids.get(&account).unwrap_or(&vec![]).clone();
-            msg::reply(NFTEvent::TokensForOwner(tokens), 0);
+            msg::reply(NFTEvent::TokensForOwner(tokens), 0).unwrap();
         }
         NFTAction::NFTPayout { owner, amount } => {
             nft.nft_payout(&owner, amount);
@@ -152,7 +154,7 @@ async fn main() {
         }
         NFTAction::OwnerOf(token_id) => {
             let owner = nft.tokens.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID);
-            msg::reply(NFTEvent::OwnerOf(*owner), 0);
+            msg::reply(NFTEvent::OwnerOf(*owner), 0).unwrap();
         }
         NFTAction::BalanceOf(account) => {
             nft.tokens.balance_of(&account);

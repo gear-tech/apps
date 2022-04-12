@@ -47,7 +47,8 @@ impl NFT {
                 token_id: self.token_id,
             },
             0,
-        );
+        )
+        .unwrap();
         self.token_id = self.token_id.saturating_add(U256::one());
     }
 
@@ -73,7 +74,8 @@ impl NFT {
                 token_id,
             },
             0,
-        );
+        )
+        .unwrap();
     }
     fn check_owner(&self, token_id: U256) {
         if self.token.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID) != &msg::source()

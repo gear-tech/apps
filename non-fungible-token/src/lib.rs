@@ -74,7 +74,8 @@ impl NonFungibleTokenBase for NonFungibleToken {
                 token_id,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn approve(&mut self, to: &ActorId, token_id: U256) {
@@ -101,7 +102,8 @@ impl NonFungibleTokenBase for NonFungibleToken {
                 token_id,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn approve_for_all(&mut self, owner: &ActorId, operator: &ActorId, approved: bool) {
@@ -120,17 +122,18 @@ impl NonFungibleTokenBase for NonFungibleToken {
                 approved,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn balance_of(&self, account: &ActorId) {
         let balance = *self.balances.get(account).unwrap_or(&U256::zero());
-        msg::reply(Event::BalanceOf(balance), 0);
+        msg::reply(Event::BalanceOf(balance), 0).unwrap();
     }
 
     fn owner_of(&self, token_id: U256) {
         let owner = self.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID);
-        msg::reply(Event::OwnerOf(*owner), 0);
+        msg::reply(Event::OwnerOf(*owner), 0).unwrap();
     }
 }
 
