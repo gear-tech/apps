@@ -1,7 +1,7 @@
 #![no_std]
 
 use ft_io::*;
-use gstd::{msg, ActorId};
+use gstd::{msg,prelude::*, ActorId};
 
 //// The available  states during the escrow
 enum State {
@@ -58,16 +58,41 @@ impl Escrow {
             panic!("Only buyer is able to call this function");
         }
 
+        //Sends the transfer from buyer to seller
         msg::reply(
             Event::Transfer {
                 from: self.buyer,
-                to: msg::source(),
+                to: self.seller,
                 amount: self.amount,
             },
             0,
         );
-
         self.current_state = State::Finished;
+
     }
 }
 
+#[derive(Debug, Decode, Encode)]
+pub enum EscrowActions {
+    Deposit(),
+    ConfirmDeliery(),
+}
+
+static mut ESCROW: Option<Escrow> = None;
+
+
+#[no_mangle]
+pub unsafe extern "C" fn handle() {
+
+    let action: EscrowActions = msg::load().expect("Could not load Action");
+    let ft = ESCROW.get_or_insert(Default::default()) ;
+
+    match action {
+        EscrowActions::Deposit() => {
+            ft.deposit();
+        }
+        EscrowActions::ConfirmDeliery() => {
+            ft.confirm_delivery();
+        }
+    }
+}
