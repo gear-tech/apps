@@ -1,27 +1,10 @@
 #![no_std]
 
 use codec::Encode;
-use gear_contract_libraries::non_fungible_token::{io::*, nft_core::*};
+use gear_contract_libraries::non_fungible_token::{io::*, nft_core::*, state::*, token::*};
+use gear_contract_libraries::*;
 use gstd::{msg, prelude::*, ActorId};
 use primitive_types::U256;
-
-#[derive(Debug, Default)]
-pub struct NFT {
-    pub token: NFTState,
-    pub token_id: U256,
-    pub owner: ActorId,
-}
-
-impl StateKeeper for NFT {
-    fn get(&self) -> &NFTState {
-        &self.token
-    }
-    fn get_mut(&mut self) -> &mut NFTState {
-        &mut self.token
-    }
-}
-
-static mut CONTRACT: Option<NFT> = None;
 
 gstd::metadata! {
     title: "NFT",
@@ -32,12 +15,17 @@ gstd::metadata! {
             output: NFTEvent,
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn handle() {
-    let action: Vec<u8> = msg::load().expect("Could not load msg");
-    let nft = CONTRACT.get_or_insert(NFT::default());
-    MyNFTCore::proc(nft, action);
+#[derive(Debug, Default)]
+pub struct NFT {
+    pub token: NFTState,
+    pub token_id: TokenId,
+    pub owner: ActorId,
 }
+
+impl_state_keeper!(NFT, token); 
+impl NonFungibleTokenAssert for NFT {}
+impl NFTCore for NFT {}
+static mut CONTRACT: Option<NFT> = None;
 
 #[no_mangle]
 pub unsafe extern "C" fn init() {
@@ -49,14 +37,22 @@ pub unsafe extern "C" fn init() {
     nft.owner = msg::source();
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn handle() {
+    let action: Vec<u8> = msg::load().expect("Could not load msg");
+    let nft = CONTRACT.get_or_insert(NFT::default());
+    MyNFTCore::proc(nft, action);
+}
+
+
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum MyNFTAction {
-    Mint,
+    Mint { token_metadata: TokenMetadata },
     Base(NFTAction),
 }
 
 pub trait MyNFTCore: NFTCore {
-    fn mint(&mut self);
+    fn mint(&mut self, token_metadata: TokenMetadata);
 
     fn proc(&mut self, bytes: Vec<u8>) -> Option<()> {
         if bytes.len() < 2 {
@@ -65,21 +61,20 @@ pub trait MyNFTCore: NFTCore {
         if bytes[0] == 0 {
             let mut bytes = bytes;
             bytes.remove(0);
-            return <Self as MyNFTCore>::proc(self, bytes);
+            return <Self as NFTCore>::proc(self, bytes);
         }
         let action = MyNFTAction::decode(&mut &bytes[..]).ok()?;
         match action {
-            MyNFTAction::Mint => <Self as MyNFTCore>::mint(self),
+            MyNFTAction::Mint { token_metadata } => <Self as MyNFTCore>::mint(self, token_metadata),
             MyNFTAction::Base(_) => unreachable!(),
         }
         Some(())
     }
 }
-impl NonFungibleTokenAssert for NFT {}
-impl NFTCore for NFT {}
+
 impl MyNFTCore for NFT {
-    fn mint(&mut self) {
-        NFTCore::mint(self, &msg::source(), self.token_id);
+    fn mint(&mut self, token_metadata: TokenMetadata) {
+        NFTCore::mint(self, &msg::source(), self.token_id, Some(token_metadata));
         self.token_id = self.token_id.saturating_add(U256::one());
     }
 }
