@@ -33,7 +33,7 @@ impl FungibleToken {
             .or_insert(amount);
         self.total_supply += amount;
         msg::reply(
-            Event::Transfer {
+            FTEvent::Transfer {
                 from: ZERO_ID,
                 to: msg::source(),
                 amount,
@@ -52,7 +52,7 @@ impl FungibleToken {
         self.total_supply -= amount;
 
         msg::reply(
-            Event::Transfer {
+            FTEvent::Transfer {
                 from: msg::source(),
                 to: ZERO_ID,
                 amount,
@@ -80,7 +80,7 @@ impl FungibleToken {
             .and_modify(|balance| *balance += amount)
             .or_insert(amount);
         msg::reply(
-            Event::Transfer {
+            FTEvent::Transfer {
                 from: *from,
                 to: *to,
                 amount,
@@ -99,7 +99,7 @@ impl FungibleToken {
             .or_default()
             .insert(*to, amount);
         msg::reply(
-            Event::Approve {
+            FTEvent::Approve {
                 from: msg::source(),
                 to: *to,
                 amount,
@@ -136,8 +136,8 @@ gstd::metadata! {
     init:
         input: InitConfig,
     handle:
-        input: Action,
-        output: Event,
+        input: FTAction,
+        output: FTEvent,
     state:
         input: State,
         output: StateReply,
@@ -145,27 +145,27 @@ gstd::metadata! {
 
 #[no_mangle]
 pub unsafe extern "C" fn handle() {
-    let action: Action = msg::load().expect("Could not load Action");
+    let action: FTAction = msg::load().expect("Could not load Action");
     let ft: &mut FungibleToken = FUNGIBLE_TOKEN.get_or_insert(FungibleToken::default());
     match action {
-        Action::Mint(amount) => {
+        FTAction::Mint(amount) => {
             ft.mint(amount);
         }
-        Action::Burn(amount) => {
+        FTAction::Burn(amount) => {
             ft.burn(amount);
         }
-        Action::Transfer { from, to, amount } => {
+        FTAction::Transfer { from, to, amount } => {
             ft.transfer(&from, &to, amount);
         }
-        Action::Approve { to, amount } => {
+        FTAction::Approve { to, amount } => {
             ft.approve(&to, amount);
         }
-        Action::TotalSupply => {
-            msg::reply(Event::TotalSupply(ft.total_supply), 0);
+        FTAction::TotalSupply => {
+            msg::reply(FTEvent::TotalSupply(ft.total_supply), 0);
         }
-        Action::BalanceOf(account) => {
+        FTAction::BalanceOf(account) => {
             let balance = ft.balances.get(&account).unwrap_or(&0);
-            msg::reply(Event::Balance(*balance), 0);
+            msg::reply(FTEvent::Balance(*balance), 0);
         }
     }
 }
