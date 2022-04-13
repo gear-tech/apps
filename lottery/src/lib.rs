@@ -123,41 +123,6 @@ impl Lottery {
         }
     }
 
-    /// Gets the player's balance
-    /// Requirements:
-    /// * Only owner can request a balance
-    /// * Lottery has started and lottery time has not expired
-    /// * Player must be on the player list
-    /// Arguments:
-    /// * `index`: lottery player index
-    /* fn get_balance(&mut self, index: u32) {
-        if self.lottery_is_on() {
-            if let Some(player) = self.players.get(&index) {
-                msg::reply(LtEvent::Balance(player.balance), 0).unwrap();
-            } else {
-                panic!("get_balance(): Player {} not found", index);
-            }
-        } else {
-            panic!("get_balance(): Lottery on: {}", self.lottery_is_on());
-        }
-    }*/
-
-    /// Gets a list of players
-    /// Requirements:
-    /// * Lottery has started and lottery time has not expired
-    /// * List of players must not be empty
-    /*fn get_players(&mut self) {
-        if self.lottery_is_on() && !self.players.is_empty() {
-            msg::reply(LtEvent::Players(self.players.clone()), 0).unwrap();
-        } else {
-            panic!(
-                "get_players(): Lottery on: {}  players.is_empty(): {}",
-                self.lottery_is_on(),
-                self.players.is_empty()
-            );
-        }
-    }*/
-
     // Random number generation from block timestamp
     fn get_random_number(&mut self) -> u32 {
         let timestamp: u64 = exec::block_timestamp();
