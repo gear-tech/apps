@@ -202,7 +202,7 @@ fn approve_and_transfer() {
     assert!(res.contains(&(
         USERS[1],
         Event::Transfer {
-            from: USERS[1].into(),
+            from: USERS[0].into(),
             to: USERS[2].into(),
             token_id: 0.into(),
         }

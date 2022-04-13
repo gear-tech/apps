@@ -19,10 +19,10 @@ fn init_with_mint(sys: &System) {
 
     assert!(res.log().is_empty());
 
-    let res = ft.send(USERS[0], Action::Mint(1000000));
+    let res = ft.send(USERS[0], FTAction::Mint(1000000));
     assert!(res.contains(&(
         USERS[0],
-        Event::Transfer {
+        FTEvent::Transfer {
             from: 0.into(),
             to: USERS[0].into(),
             amount: 1000000,
@@ -36,8 +36,8 @@ fn mint() {
     let sys = System::new();
     init_with_mint(&sys);
     let ft = sys.get_program(1);
-    let res = ft.send(USERS[0], Action::BalanceOf(USERS[0].into()));
-    assert!(res.contains(&(USERS[0], Event::Balance(1000000).encode())));
+    let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[0].into()));
+    assert!(res.contains(&(USERS[0], FTEvent::Balance(1000000).encode())));
 }
 
 #[test]
@@ -45,18 +45,18 @@ fn burn() {
     let sys = System::new();
     init_with_mint(&sys);
     let ft = sys.get_program(1);
-    let res = ft.send(USERS[0], Action::Burn(1000));
+    let res = ft.send(USERS[0], FTAction::Burn(1000));
     assert!(res.contains(&(
         USERS[0],
-        Event::Transfer {
+        FTEvent::Transfer {
             from: USERS[0].into(),
             to: 0.into(),
             amount: 1000,
         }
         .encode()
     )));
-    let res = ft.send(USERS[0], Action::BalanceOf(USERS[0].into()));
-    assert!(res.contains(&(USERS[0], Event::Balance(999000).encode())));
+    let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[0].into()));
+    assert!(res.contains(&(USERS[0], FTEvent::Balance(999000).encode())));
 }
 
 #[test]
@@ -66,7 +66,7 @@ fn burn_failures() {
     init_with_mint(&sys);
     let ft = sys.get_program(1);
     // must fail since the amount > the user balance
-    let res = ft.send(USERS[0], Action::Burn(1000001));
+    let res = ft.send(USERS[0], FTAction::Burn(1000001));
     assert!(res.main_failed());
 }
 
@@ -77,7 +77,7 @@ fn transfer() {
     let ft = sys.get_program(1);
     let res = ft.send(
         USERS[0],
-        Action::Transfer {
+        FTAction::Transfer {
             from: USERS[0].into(),
             to: USERS[1].into(),
             amount: 500,
@@ -86,7 +86,7 @@ fn transfer() {
 
     assert!(res.contains(&(
         USERS[0],
-        Event::Transfer {
+        FTEvent::Transfer {
             from: USERS[0].into(),
             to: USERS[1].into(),
             amount: 500,
@@ -95,10 +95,10 @@ fn transfer() {
     )));
 
     // check that the balance of `USER[0]` decreased and the balance of `USER[1]` increased
-    let res = ft.send(USERS[0], Action::BalanceOf(USERS[0].into()));
-    assert!(res.contains(&(USERS[0], Event::Balance(999500).encode())));
-    let res = ft.send(USERS[0], Action::BalanceOf(USERS[1].into()));
-    assert!(res.contains(&(USERS[0], Event::Balance(500).encode())));
+    let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[0].into()));
+    assert!(res.contains(&(USERS[0], FTEvent::Balance(999500).encode())));
+    let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[1].into()));
+    assert!(res.contains(&(USERS[0], FTEvent::Balance(500).encode())));
 }
 
 #[test]
@@ -109,7 +109,7 @@ fn transfer_failures() {
     //must fail since the amount > balance
     let res = ft.send(
         USERS[0],
-        Action::Transfer {
+        FTAction::Transfer {
             from: USERS[0].into(),
             to: USERS[1].into(),
             amount: 2000000,
@@ -120,7 +120,7 @@ fn transfer_failures() {
     //must fail transfer to zero address
     let res = ft.send(
         USERS[2],
-        Action::Transfer {
+        FTAction::Transfer {
             from: USERS[0].into(),
             to: 0.into(),
             amount: 100,
@@ -137,14 +137,14 @@ fn approve_and_transfer() {
 
     let res = ft.send(
         USERS[0],
-        Action::Approve {
+        FTAction::Approve {
             to: USERS[1].into(),
             amount: 500,
         },
     );
     assert!(res.contains(&(
         USERS[0],
-        Event::Approve {
+        FTEvent::Approve {
             from: USERS[0].into(),
             to: USERS[1].into(),
             amount: 500,
@@ -154,7 +154,7 @@ fn approve_and_transfer() {
 
     let res = ft.send(
         USERS[1],
-        Action::Transfer {
+        FTAction::Transfer {
             from: USERS[0].into(),
             to: USERS[2].into(),
             amount: 200,
@@ -162,7 +162,7 @@ fn approve_and_transfer() {
     );
     assert!(res.contains(&(
         USERS[1],
-        Event::Transfer {
+        FTEvent::Transfer {
             from: USERS[0].into(),
             to: USERS[2].into(),
             amount: 200,
@@ -171,15 +171,15 @@ fn approve_and_transfer() {
     )));
 
     // check that the balance of `USER[0]` decreased and the balance of `USER[1]` increased
-    let res = ft.send(USERS[0], Action::BalanceOf(USERS[0].into()));
-    assert!(res.contains(&(USERS[0], Event::Balance(999800).encode())));
-    let res = ft.send(USERS[0], Action::BalanceOf(USERS[2].into()));
-    assert!(res.contains(&(USERS[0], Event::Balance(200).encode())));
+    let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[0].into()));
+    assert!(res.contains(&(USERS[0], FTEvent::Balance(999800).encode())));
+    let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[2].into()));
+    assert!(res.contains(&(USERS[0], FTEvent::Balance(200).encode())));
 
     // must fail since not enough allowance
     let res = ft.send(
         USERS[1],
-        Action::Transfer {
+        FTAction::Transfer {
             from: USERS[0].into(),
             to: USERS[2].into(),
             amount: 800,

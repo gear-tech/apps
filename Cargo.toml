@@ -8,6 +8,9 @@ members = [
     "gear-feeds-router",
     "lottery",
     "nft-example",
+    "nft-marketplace/marketplace",
+    "nft-marketplace/nft",
     "non-fungible-token",
     "ping",
+    "escrow"
 ]

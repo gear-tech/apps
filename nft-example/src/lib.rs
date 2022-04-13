@@ -2,7 +2,7 @@
 #![feature(const_btree_new)]
 
 use codec::Encode;
-use gstd::{debug, msg, prelude::*, ActorId};
+use gstd::{debug, exec, msg, prelude::*, ActorId};
 use primitive_types::U256;
 
 pub mod state;
@@ -47,7 +47,8 @@ impl NFT {
                 token_id: self.token_id,
             },
             0,
-        );
+        )
+        .unwrap();
         self.token_id = self.token_id.saturating_add(U256::one());
     }
 
@@ -55,9 +56,7 @@ impl NFT {
         if !self.token.exists(token_id) {
             panic!("NonFungibleToken: Token does not exist");
         }
-        if !self.token.is_token_owner(token_id, &msg::source()) {
-            panic!("NonFungibleToken: account is not owner");
-        }
+        self.check_owner(token_id);
         self.token.token_approvals.remove(&token_id);
         self.token.owner_by_id.remove(&token_id);
         let balance = *self
@@ -75,7 +74,15 @@ impl NFT {
                 token_id,
             },
             0,
-        );
+        )
+        .unwrap();
+    }
+    fn check_owner(&self, token_id: U256) {
+        if self.token.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID) != &msg::source()
+            || self.token.owner_by_id.get(&token_id).unwrap_or(&ZERO_ID) != &exec::origin()
+        {
+            panic!("Only owner can transfer");
+        }
     }
 }
 
@@ -102,10 +109,10 @@ pub unsafe extern "C" fn handle() {
             CONTRACT.burn(amount);
         }
         Action::Transfer { to, token_id } => {
-            CONTRACT.token.transfer(&msg::source(), &to, token_id);
+            CONTRACT.token.transfer(&to, token_id);
         }
         Action::Approve { to, token_id } => {
-            CONTRACT.token.approve(&msg::source(), &to, token_id);
+            CONTRACT.token.approve(&to, token_id);
         }
         Action::ApproveForAll { to, approved } => {
             CONTRACT
