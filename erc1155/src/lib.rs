@@ -97,7 +97,8 @@ impl ERC1155TokenBase for ERC1155Token {
                 approved,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     fn is_approved_for_all(&self, owner: &ActorId, operator: &ActorId) -> bool {
@@ -172,7 +173,8 @@ impl ERC1155TokenBase for ERC1155Token {
                 values: amounts.to_vec(),
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     fn can_transfer(&self, from: &ActorId, id: &u128, amount: u128) -> bool {
@@ -239,7 +241,8 @@ impl ExtendERC1155TokenBase for ERC1155Token {
                 values: amounts.to_vec(),
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     fn burn(&mut self, id: &TokenId, amount: u128) {
@@ -279,7 +282,8 @@ impl ExtendERC1155TokenBase for ERC1155Token {
                 values: amounts.to_vec(),
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     fn uri(&self, id: TokenId) -> String {
@@ -356,7 +360,8 @@ pub unsafe extern "C" fn handle() {
                     amount,
                 }),
                 0,
-            ).unwrap();
+            )
+            .unwrap();
         }
 
         Action::BalanceOf(account, id) => {
@@ -384,7 +389,8 @@ pub unsafe extern "C" fn handle() {
                     amount,
                 }),
                 0,
-            ).unwrap();
+            )
+            .unwrap();
         }
 
         Action::BatchTransferFrom(from, to, ids, amounts) => {
@@ -404,7 +410,8 @@ pub unsafe extern "C" fn handle() {
                     approved,
                 },
                 0,
-            ).unwrap();
+            )
+            .unwrap();
         }
 
         Action::Burn(id, amount) => {
@@ -418,7 +425,8 @@ pub unsafe extern "C" fn handle() {
                     amount,
                 }),
                 0,
-            ).unwrap();
+            )
+            .unwrap();
         }
 
         Action::BurnBatch(ids, amounts) => {
