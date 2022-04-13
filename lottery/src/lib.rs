@@ -83,6 +83,7 @@ impl Lottery {
             },
             0,
         )
+        .expect("Error in sending message")
         .await
         .expect("Error in transfer");
     }
@@ -111,7 +112,7 @@ impl Lottery {
 
             let player_index = self.players.len() as u32;
             self.players.insert(player_index, player);
-            msg::reply(LtEvent::PlayerAdded(player_index), 0);
+            msg::reply(LtEvent::PlayerAdded(player_index), 0).unwrap();
         } else {
             panic!(
                 "enter(): Lottery on: {}  player exists: {} amount: {}",
@@ -122,41 +123,6 @@ impl Lottery {
         }
     }
 
-    /// Removes player from lottery
-    /// Requirements:
-    /// * Lottery has started and lottery time has not expired
-    /// * Player must be on the player list
-    /// * Player can only remove himself
-    /// Arguments:
-    /// * `index`: lottery player index
-    async fn leave_lottery(&mut self, index: u32) {
-        if !self.lottery_is_on() {
-            panic!("leave_lottery(): Lottery on: {}", self.lottery_is_on());
-        }
-
-        if let Some(player) = self.players.get(&index) {
-            if player.player_id != msg::source() {
-                panic!(
-                    "leave_lottery(): ActorId's does not match: player: {:?}  msg::source(): {:?}",
-                    player.player_id,
-                    msg::source()
-                );
-            }
-
-            if self.token_address.is_some() {
-                let balance = player.balance;
-                self.transfer_tokens(&exec::program_id(), &msg::source(), balance)
-                    .await;
-            } else {
-                msg::send_bytes(player.player_id, b"LeaveLottery", player.balance);
-            }
-
-            self.players.remove(&index);
-        } else {
-            panic!("leave_lottery(): Player {} not found", index);
-        }
-    }
-
     /// Gets the player's balance
     /// Requirements:
     /// * Only owner can request a balance
@@ -164,25 +130,25 @@ impl Lottery {
     /// * Player must be on the player list
     /// Arguments:
     /// * `index`: lottery player index
-    fn get_balance(&mut self, index: u32) {
-        if msg::source() == self.lottery_owner && self.lottery_is_on() {
+    /* fn get_balance(&mut self, index: u32) {
+        if self.lottery_is_on() {
             if let Some(player) = self.players.get(&index) {
-                msg::reply(LtEvent::Balance(player.balance), 0);
+                msg::reply(LtEvent::Balance(player.balance), 0).unwrap();
             } else {
                 panic!("get_balance(): Player {} not found", index);
             }
         } else {
             panic!("get_balance(): Lottery on: {}", self.lottery_is_on());
         }
-    }
+    }*/
 
     /// Gets a list of players
     /// Requirements:
     /// * Lottery has started and lottery time has not expired
     /// * List of players must not be empty
-    fn get_players(&mut self) {
+    /*fn get_players(&mut self) {
         if self.lottery_is_on() && !self.players.is_empty() {
-            msg::reply(LtEvent::Players(self.players.clone()), 0);
+            msg::reply(LtEvent::Players(self.players.clone()), 0).unwrap();
         } else {
             panic!(
                 "get_players(): Lottery on: {}  players.is_empty(): {}",
@@ -190,7 +156,7 @@ impl Lottery {
                 self.players.is_empty()
             );
         }
-    }
+    }*/
 
     // Random number generation from block timestamp
     fn get_random_number(&mut self) -> u32 {
@@ -205,12 +171,7 @@ impl Lottery {
     /// * Lottery has started and lottery time is expired
     /// * List of players must not be empty
     async fn pick_winner(&mut self) {
-        if msg::source() == self.lottery_owner
-            && self.lottery_state.lottery_started
-            && self.lottery_state.lottery_start_time + self.lottery_state.lottery_duration
-                <= exec::block_timestamp()
-            && !self.players.is_empty()
-        {
+        if msg::source() == self.lottery_owner && !self.players.is_empty() {
             let index = (self.get_random_number() % (self.players.len() as u32)) as usize;
             let win_player_index = *self.players.keys().nth(index).expect("Player not found");
             let player = self.players[&win_player_index];
@@ -222,12 +183,12 @@ impl Lottery {
 
                 self.lottery_balance = 0;
             } else {
-                msg::send_bytes(player.player_id, b"Winner", exec::value_available());
+                msg::send_bytes(player.player_id, b"Winner", exec::value_available()).unwrap();
             }
 
             self.lottery_history
                 .insert(self.lottery_id, player.player_id);
-            msg::reply(LtEvent::Winner(win_player_index), 0);
+            msg::reply(LtEvent::Winner(win_player_index), 0).unwrap();
 
             debug!(
                 "Winner: {} token_address(): {:?}",
@@ -273,24 +234,12 @@ async fn main() {
         }
 
         LtAction::LotteryState => {
-            msg::reply(LtEvent::LotteryState(lottery.lottery_state.clone()), 0);
+            msg::reply(LtEvent::LotteryState(lottery.lottery_state.clone()), 0).unwrap();
             debug!("LotteryState: {:?}", lottery.lottery_state);
         }
 
         LtAction::PickWinner => {
             lottery.pick_winner().await;
-        }
-
-        LtAction::BalanceOf(index) => {
-            lottery.get_balance(index);
-        }
-
-        LtAction::GetPlayers => {
-            lottery.get_players();
-        }
-
-        LtAction::LeaveLottery(index) => {
-            lottery.leave_lottery(index).await;
         }
     }
 }
@@ -313,6 +262,7 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let encoded = match query {
         LtState::GetPlayers => LtStateReply::Players(lottery.players.clone()).encode(),
         LtState::GetWinners => LtStateReply::Winners(lottery.lottery_history.clone()).encode(),
+        LtState::LotteryState => LtStateReply::LotteryState(lottery.lottery_state.clone()).encode(),
 
         LtState::BalanceOf(index) => {
             if let Some(player) = lottery.players.get(&index) {
