@@ -366,7 +366,7 @@ pub unsafe extern "C" fn handle() {
 
         Action::BalanceOfBatch(accounts, ids) => {
             let res = ERC1155_TOKEN.balance_of_batch(&accounts, &ids);
-            msg::reply(Event::BalanceOfBatch(res), 0);
+            msg::reply(Event::BalanceOfBatch(res), 0).unwrap();
         }
 
         Action::MintBatch(account, ids, amounts, metas) => {
