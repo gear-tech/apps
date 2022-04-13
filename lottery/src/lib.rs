@@ -74,9 +74,9 @@ impl Lottery {
     /// * `to`: recipient account
     /// * `amount`: amount of tokens
     async fn transfer_tokens(&mut self, from: &ActorId, to: &ActorId, amount_tokens: u128) {
-        let _transfer_response: Event = msg::send_and_wait_for_reply(
+        let _transfer_response: FTEvent = msg::send_and_wait_for_reply(
             self.token_address.unwrap(),
-            Action::Transfer {
+            FTAction::Transfer {
                 from: *from,
                 to: *to,
                 amount: amount_tokens,
