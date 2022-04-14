@@ -59,19 +59,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "auction"
-version = "0.1.0"
-dependencies = [
- "auction-io",
- "gear-wasm-builder",
- "gstd",
- "non-fungible-token",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
 name = "auction-io"
 version = "0.1.0"
 dependencies = [
@@ -437,6 +424,21 @@ dependencies = [
  "page_size",
  "static_assertions",
  "str-buf",
+]
+
+[[package]]
+name = "dutch-auction"
+version = "0.1.0"
+dependencies = [
+ "auction-io",
+ "gear-wasm-builder",
+ "gstd",
+ "gtest",
+ "nft-example-io",
+ "non-fungible-token",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
 ]
 
 [[package]]
