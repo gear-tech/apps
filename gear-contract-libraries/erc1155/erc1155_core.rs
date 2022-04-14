@@ -3,7 +3,7 @@ use gstd::{exec, msg, prelude::*, ActorId};
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ERC1155State {
     pub name: String,
     pub symbol: String,
@@ -114,7 +114,8 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                 values: amounts.to_vec(),
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn burn(&mut self, id: &TokenId, amount: u128) {
@@ -149,7 +150,8 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                 values: amounts.to_vec(),
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128) {
@@ -217,7 +219,8 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                 values: amounts.to_vec(),
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn approve(&mut self, to: &ActorId) {
@@ -235,7 +238,8 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                 to: *to,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn revoke_approval(&mut self, to: &ActorId) {
@@ -254,7 +258,8 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                 to: *to,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[TokenId]) {
@@ -272,7 +277,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             })
             .collect();
 
-        msg::reply(Event::BalanceOfBatch(res), 0);
+        msg::reply(Event::BalanceOfBatch(res), 0).unwrap();
     }
 
     fn proc(&mut self, bytes: Vec<u8>) -> Option<()> {
@@ -289,7 +294,8 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                         amount,
                     }),
                     0,
-                );
+                )
+                .unwrap();
             }
             Action::MintBatch(account, ids, amounts, metas) => {
                 Self::mint_batch(self, &account, &ids, &amounts, metas)
@@ -306,7 +312,8 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                         amount,
                     }),
                     0,
-                );
+                )
+                .unwrap();
             }
             Action::BurnBatch(ids, amounts) => Self::burn_batch(self, &ids, &amounts),
 
@@ -321,14 +328,15 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                         amount,
                     }),
                     0,
-                );
+                )
+                .unwrap();
             }
             Action::BatchTransferFrom(from, to, ids, amounts) => {
                 Self::batch_transfer_from(self, &from, &to, &ids, &amounts)
             }
 
             Action::BalanceOf(account, id) => {
-                msg::reply(Event::Balance(Self::get_balance(self, &account, &id)), 0);
+                msg::reply(Event::Balance(Self::get_balance(self, &account, &id)), 0).unwrap();
             }
             Action::BalanceOfBatch(accounts, ids) => Self::balance_of_batch(self, &accounts, &ids),
 
