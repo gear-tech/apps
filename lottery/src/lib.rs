@@ -14,7 +14,6 @@ use ft_io::*;
 use gstd::{debug, exec, msg, prelude::*, ActorId};
 use lt_io::*;
 use scale_info::TypeInfo;
-use sp_core::hashing::blake2_256;
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
@@ -126,7 +125,7 @@ impl Lottery {
     // Random number generation from block timestamp
     fn get_random_number(&mut self) -> u32 {
         let timestamp: u64 = exec::block_timestamp();
-        let code_hash = blake2_256(&timestamp.to_be_bytes());
+        let code_hash = sp_core_hashing::blake2_256(&timestamp.to_le_bytes());
         u32::from_le_bytes([code_hash[0], code_hash[1], code_hash[2], code_hash[3]])
     }
 
