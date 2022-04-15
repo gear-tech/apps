@@ -1,17 +1,19 @@
 use crate::non_fungible_token::{io::*, state::*, token::*};
-use gstd::{exec, msg, prelude::*, ActorId};
+use gstd::{debug, exec, msg, prelude::*, ActorId};
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 pub trait NFTCore: StateKeeper + NonFungibleTokenAssert {
     fn mint(&mut self, to: &ActorId, token_id: TokenId, token_metadata: Option<TokenMetadata>) {
-        self.assert_token_exists(token_id, false);
+        self.assert_token_exists(token_id);
         self.get_mut().owner_by_id.insert(token_id, *to);
         self.get_mut()
             .tokens_for_owner
             .entry(*to)
             .and_modify(|tokens| tokens.push(token_id));
-        self.get_mut().token_metadata_by_id.insert(token_id, token_metadata);
+        self.get_mut()
+            .token_metadata_by_id
+            .insert(token_id, token_metadata);
         msg::reply(
             NFTEvent::Transfer {
                 from: ZERO_ID,
@@ -19,7 +21,8 @@ pub trait NFTCore: StateKeeper + NonFungibleTokenAssert {
                 token_id,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn burn(&mut self, token_id: TokenId) {
@@ -41,11 +44,13 @@ pub trait NFTCore: StateKeeper + NonFungibleTokenAssert {
                 token_id,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn transfer(&mut self, to: &ActorId, token_id: TokenId) {
         self.assert_can_transfer(token_id);
+        self.assert_zero_address(to);
         let owner = *self
             .get()
             .owner_by_id
@@ -77,17 +82,23 @@ pub trait NFTCore: StateKeeper + NonFungibleTokenAssert {
                 token_id,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn approve(&mut self, to: &ActorId, token_id: TokenId) {
         self.assert_owner(token_id);
+        self.assert_zero_address(to);
         let owner = *self
             .get()
             .owner_by_id
             .get(&token_id)
             .expect("NonFungibleToken: token does not exist");
-        // self.token_approvals.insert(token_id, *to);
+        self.get_mut()
+            .token_approvals
+            .entry(token_id)
+            .and_modify(|approvals| approvals.push(*to))
+            .or_insert(vec![*to]);
         msg::reply(
             NFTEvent::Approval {
                 owner,
@@ -95,13 +106,18 @@ pub trait NFTCore: StateKeeper + NonFungibleTokenAssert {
                 token_id,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn proc(&mut self, bytes: Vec<u8>) -> Option<()> {
         let action = NFTAction::decode(&mut &bytes[..]).ok()?;
         match action {
-            NFTAction::Mint { to, token_id, token_metadata } => Self::mint(self, &to, token_id, token_metadata),
+            NFTAction::Mint {
+                to,
+                token_id,
+                token_metadata,
+            } => Self::mint(self, &to, token_id, token_metadata),
             NFTAction::Burn { token_id } => Self::burn(self, token_id),
             NFTAction::Transfer { to, token_id } => Self::transfer(self, &to, token_id),
             NFTAction::Approve { to, token_id } => Self::approve(self, &to, token_id),
@@ -111,11 +127,15 @@ pub trait NFTCore: StateKeeper + NonFungibleTokenAssert {
 }
 
 pub trait NonFungibleTokenAssert: StateKeeper {
-    fn assert_token_exists(&self, token_id: TokenId, existed: bool) {
-        if !(self.get().owner_by_id.contains_key(&token_id) && existed) {
-            panic!("NonFungibleToken: Token does not exist");
-        } else if self.get().owner_by_id.contains_key(&token_id) && !existed {
+    fn assert_token_exists(&self, token_id: TokenId) {
+        if self.get().owner_by_id.contains_key(&token_id) {
             panic!("NonFungibleToken: Token already exists");
+        }
+    }
+
+    fn assert_zero_address(&self, account: &ActorId) {
+        if account == &ZERO_ID {
+            panic!("NonFungibleToken: Zero address");
         }
     }
 

@@ -1,19 +1,10 @@
 #![no_std]
 
-use codec::Encode;
-use gear_contract_libraries::non_fungible_token::{io::*, nft_core::*, state::*, token::*};
+use gear_contract_libraries::non_fungible_token::{nft_core::*, state::*, token::*};
 use gear_contract_libraries::*;
 use gstd::{msg, prelude::*, ActorId};
+use nft_io::*;
 use primitive_types::U256;
-
-gstd::metadata! {
-    title: "NFT",
-        init:
-            input: InitConfig,
-        handle:
-            input: NFTAction,
-            output: NFTEvent,
-}
 
 #[derive(Debug, Default)]
 pub struct NFT {
@@ -22,14 +13,15 @@ pub struct NFT {
     pub owner: ActorId,
 }
 
-impl_state_keeper!(NFT, token); 
+impl_state_keeper!(NFT, token);
 impl NonFungibleTokenAssert for NFT {}
 impl NFTCore for NFT {}
+impl NFTMetaState for NFT {}
 static mut CONTRACT: Option<NFT> = None;
 
 #[no_mangle]
 pub unsafe extern "C" fn init() {
-    let config: InitConfig = msg::load().expect("Unable to decode InitConfig");
+    let config: InitNFT = msg::load().expect("Unable to decode InitConfig");
     let mut nft = NFT::default();
     nft.token.name = config.name;
     nft.token.symbol = config.symbol;
@@ -44,11 +36,12 @@ pub unsafe extern "C" fn handle() {
     MyNFTCore::proc(nft, action);
 }
 
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum MyNFTAction {
-    Mint { token_metadata: TokenMetadata },
-    Base(NFTAction),
+#[no_mangle]
+pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
+    let query: Vec<u8> = msg::load().expect("failed to decode input argument");
+    let nft = CONTRACT.get_or_insert(NFT::default());
+    let encoded = NFTMetaState::proc_state(nft, query).expect("error");
+    gstd::util::to_leak_ptr(encoded)
 }
 
 pub trait MyNFTCore: NFTCore {
