@@ -104,18 +104,6 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
         meta.into_iter()
             .enumerate()
             .for_each(|(i, meta)| self.mint(account, &ids[i], amounts[i], meta));
-
-        msg::reply(
-            Event::TransferBatch {
-                operator: msg::source(),
-                from: ZERO_ID,
-                to: *account,
-                ids: ids.to_vec(),
-                values: amounts.to_vec(),
-            },
-            0,
-        )
-        .unwrap();
     }
 
     fn burn(&mut self, id: &TokenId, amount: u128) {
@@ -298,7 +286,18 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                 .unwrap();
             }
             Action::MintBatch(account, ids, amounts, metas) => {
-                Self::mint_batch(self, &account, &ids, &amounts, metas)
+                Self::mint_batch(self, &account, &ids, &amounts, metas);
+                msg::reply(
+                    Event::TransferBatch {
+                        operator: msg::source(),
+                        from: ZERO_ID,
+                        to: *account,
+                        ids: ids.to_vec(),
+                        values: amounts.to_vec(),
+                    },
+                    0,
+                )
+                .unwrap();
             }
 
             Action::Burn(id, amount) => {
