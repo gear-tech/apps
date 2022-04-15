@@ -1,9 +1,14 @@
 #![no_std]
 
-use ft_io::*;
-use gstd::{msg,prelude::*, ActorId};
+//Includes only the minimal gstd components for this smart contract
+use gstd::{
+    msg::{self, CodecMessageFuture},
+    exec, 
+    prelude::*, 
+    ActorId
+};
 
-//// The available  states during the escrow
+//// The available states during the escrow
 enum State {
     PendingPayment,
     PendingDelivery,
@@ -19,6 +24,7 @@ impl Default for State {
 
 #[derive(Default)]
 struct Escrow {
+    program_id: ActorId,
     //Current escrow State
     current_state: State,
     //Buyer address
@@ -27,6 +33,52 @@ struct Escrow {
     seller: ActorId,
     //Amount to transfer
     amount: u128,
+}
+
+#[derive(Debug, Decode, Encode, TypeInfo)]
+pub enum FTAction {
+    Mint(u128),
+    Burn(u128),
+    Transfer {
+        from: ActorId,
+        to: ActorId,
+        amount: u128,
+    },
+    Approve {
+        to: ActorId,
+        amount: u128,
+    },
+    TotalSupply,
+    BalanceOf(ActorId),
+}
+
+#[derive(Debug, Encode, Decode, TypeInfo)]
+pub enum FTEvent {
+    Transfer {
+        from: ActorId,
+        to: ActorId,
+        amount: u128,
+    },
+    Approve {
+        from: ActorId,
+        to: ActorId,
+        amount: u128,
+    },
+    TotalSupply(u128),
+    Balance(u128),
+}
+
+
+pub fn transfer_tokens(token_id: &ActorId, from: &ActorId, to: &ActorId, amount: u128) -> CodecMessageFuture<FTEvent> {
+    msg::send_and_wait_for_reply(
+        *token_id,
+        FTAction::Transfer {
+            from: *from,
+            to: *to,
+            amount,
+        },
+        0,
+    ).unwrap()
 }
 
 impl Escrow {
@@ -44,6 +96,15 @@ impl Escrow {
         if !self.only_buyer() {
             panic!("Only buyer is able to call this function");
         }
+
+        //Sends the transfer from buyer to smart contract
+        transfer_tokens(
+            &self.program_id,
+            &self.buyer,
+            &exec::program_id(),
+            self.amount,
+        );
+
         self.current_state = State::PendingDelivery;
     }
 
@@ -59,16 +120,14 @@ impl Escrow {
         }
 
         //Sends the transfer from buyer to seller
-        msg::reply(
-            Event::Transfer {
-                from: self.buyer,
-                to: self.seller,
-                amount: self.amount,
-            },
-            0,
+        transfer_tokens(
+            &self.program_id,
+            &exec::program_id(),
+            &self.seller,
+            self.amount,
         );
-        self.current_state = State::Finished;
 
+        self.current_state = State::Finished;
     }
 }
 
@@ -80,12 +139,10 @@ pub enum EscrowActions {
 
 static mut ESCROW: Option<Escrow> = None;
 
-
 #[no_mangle]
 pub unsafe extern "C" fn handle() {
-
     let action: EscrowActions = msg::load().expect("Could not load Action");
-    let ft = ESCROW.get_or_insert(Default::default()) ;
+    let ft = ESCROW.get_or_insert(Default::default());
 
     match action {
         EscrowActions::Deposit() => {
@@ -96,3 +153,5 @@ pub unsafe extern "C" fn handle() {
         }
     }
 }
+
+
