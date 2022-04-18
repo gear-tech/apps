@@ -178,19 +178,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "chrono"
-version = "0.4.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "670ad68c9088c2a963aaa298cb369688cf3f9465ce5e2d4ca10e6e0098a1ce73"
-dependencies = [
- "libc",
- "num-integer",
- "num-traits",
- "time",
- "winapi",
-]
-
-[[package]]
 name = "colored"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -205,11 +192,21 @@ dependencies = [
 name = "concert"
 version = "0.1.0"
 dependencies = [
- "chrono",
+ "concert-io",
  "gear-contract-libraries",
  "gear-wasm-builder",
  "gstd",
  "gtest",
+ "parity-scale-codec",
+ "scale-info",
+]
+
+[[package]]
+name = "concert-io"
+version = "0.1.0"
+dependencies = [
+ "gear-contract-libraries",
+ "gstd",
  "parity-scale-codec",
  "scale-info",
 ]
@@ -534,7 +531,7 @@ dependencies = [
 [[package]]
 name = "galloc"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#184604439d43f275400e2acd212f479a79c90181"
+source = "git+https://github.com/gear-tech/gear.git#2aac3de8077429fb5cdf1acf1e76425f796ccb77"
 dependencies = [
  "dlmalloc",
 ]
@@ -542,12 +539,12 @@ dependencies = [
 [[package]]
 name = "gcore"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#184604439d43f275400e2acd212f479a79c90181"
+source = "git+https://github.com/gear-tech/gear.git#2aac3de8077429fb5cdf1acf1e76425f796ccb77"
 
 [[package]]
 name = "gear-backend-common"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#184604439d43f275400e2acd212f479a79c90181"
+source = "git+https://github.com/gear-tech/gear.git#2aac3de8077429fb5cdf1acf1e76425f796ccb77"
 dependencies = [
  "gear-core",
  "log",
@@ -556,7 +553,7 @@ dependencies = [
 [[package]]
 name = "gear-backend-wasmtime"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#184604439d43f275400e2acd212f479a79c90181"
+source = "git+https://github.com/gear-tech/gear.git#2aac3de8077429fb5cdf1acf1e76425f796ccb77"
 dependencies = [
  "gear-backend-common",
  "gear-core",
@@ -578,7 +575,7 @@ dependencies = [
 [[package]]
 name = "gear-core"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#184604439d43f275400e2acd212f479a79c90181"
+source = "git+https://github.com/gear-tech/gear.git#2aac3de8077429fb5cdf1acf1e76425f796ccb77"
 dependencies = [
  "anyhow",
  "blake2-rfc",
@@ -595,7 +592,7 @@ dependencies = [
 [[package]]
 name = "gear-core-processor"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#184604439d43f275400e2acd212f479a79c90181"
+source = "git+https://github.com/gear-tech/gear.git#2aac3de8077429fb5cdf1acf1e76425f796ccb77"
 dependencies = [
  "anyhow",
  "blake2-rfc",
@@ -608,7 +605,7 @@ dependencies = [
 [[package]]
 name = "gear-wasm-builder"
 version = "0.1.2"
-source = "git+https://github.com/gear-tech/gear.git#184604439d43f275400e2acd212f479a79c90181"
+source = "git+https://github.com/gear-tech/gear.git#2aac3de8077429fb5cdf1acf1e76425f796ccb77"
 dependencies = [
  "anyhow",
  "cargo_metadata",
@@ -644,7 +641,7 @@ dependencies = [
 [[package]]
 name = "gstd"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#184604439d43f275400e2acd212f479a79c90181"
+source = "git+https://github.com/gear-tech/gear.git#2aac3de8077429fb5cdf1acf1e76425f796ccb77"
 dependencies = [
  "bs58",
  "futures",
@@ -660,7 +657,7 @@ dependencies = [
 [[package]]
 name = "gstd-codegen"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#184604439d43f275400e2acd212f479a79c90181"
+source = "git+https://github.com/gear-tech/gear.git#2aac3de8077429fb5cdf1acf1e76425f796ccb77"
 dependencies = [
  "quote",
  "syn",
@@ -669,7 +666,7 @@ dependencies = [
 [[package]]
 name = "gtest"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#184604439d43f275400e2acd212f479a79c90181"
+source = "git+https://github.com/gear-tech/gear.git#2aac3de8077429fb5cdf1acf1e76425f796ccb77"
 dependencies = [
  "colored",
  "env_logger",
@@ -842,25 +839,6 @@ name = "nodrop"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
-
-[[package]]
-name = "num-integer"
-version = "0.1.44"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2cc698a63b549a70bc047073d2949cce27cd1c7b0a4a862d08a8031bc2801db"
-dependencies = [
- "autocfg",
- "num-traits",
-]
-
-[[package]]
-name = "num-traits"
-version = "0.2.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a64b1ec5cda2586e284722486d802acf1f7dbdc623e2bfc57e65ca1cd099290"
-dependencies = [
- "autocfg",
-]
 
 [[package]]
 name = "num_cpus"
@@ -1315,20 +1293,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "time"
-version = "0.1.43"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca8a50ef2360fbd1eeb0ecd46795a87a19024eb4b53c5dc916ca1fd95fe62438"
-dependencies = [
- "libc",
- "winapi",
-]
-
-[[package]]
 name = "toml"
-version = "0.5.8"
+version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a31142970826733df8241ef35dc040ef98c679ab14d7c3e54d827099b3acecaa"
+checksum = "8d82e1a7758622a465f8cee077614c73484dac5b836c02ff6a40d5d1010324d7"
 dependencies = [
  "serde",
 ]
