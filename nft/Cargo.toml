@@ -12,6 +12,7 @@ scale-info = { version = "2.0.1", default-features = false, features = ["derive"
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 gear-contract-libraries = { path = "../gear-contract-libraries" }
 nft-io = { path = "io" }
+derive_traits = { path = "../gear-contract-libraries/utils/derive_traits" }
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git"}

@@ -1,22 +1,19 @@
 #![no_std]
 
 use gear_contract_libraries::non_fungible_token::{nft_core::*, state::*, token::*};
-use gear_contract_libraries::*;
 use gstd::{msg, prelude::*, ActorId};
 use nft_io::*;
 use primitive_types::U256;
+use derive_traits::{NFTStateKeeper, NFTCore, NFTMetaState};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, NFTStateKeeper, NFTCore, NFTMetaState)]
 pub struct NFT {
+    #[NFTStateField]
     pub token: NFTState,
     pub token_id: TokenId,
     pub owner: ActorId,
 }
 
-impl_state_keeper!(NFT, token);
-impl NonFungibleTokenAssert for NFT {}
-impl NFTCore for NFT {}
-impl NFTMetaState for NFT {}
 static mut CONTRACT: Option<NFT> = None;
 
 #[no_mangle]

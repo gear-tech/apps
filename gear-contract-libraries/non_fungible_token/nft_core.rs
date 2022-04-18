@@ -1,9 +1,9 @@
 use crate::non_fungible_token::{io::*, state::*, token::*};
 use gstd::{debug, exec, msg, prelude::*, ActorId};
-
+use codec::{Decode};
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
-pub trait NFTCore: StateKeeper + NonFungibleTokenAssert {
+pub trait NFTCore: NFTStateKeeper {
     fn mint(&mut self, to: &ActorId, token_id: TokenId, token_metadata: Option<TokenMetadata>) {
         self.assert_token_exists(token_id);
         self.get_mut().owner_by_id.insert(token_id, *to);
@@ -124,9 +124,7 @@ pub trait NFTCore: StateKeeper + NonFungibleTokenAssert {
         }
         Some(())
     }
-}
 
-pub trait NonFungibleTokenAssert: StateKeeper {
     fn assert_token_exists(&self, token_id: TokenId) {
         if self.get().owner_by_id.contains_key(&token_id) {
             panic!("NonFungibleToken: Token already exists");
@@ -159,3 +157,37 @@ pub trait NonFungibleTokenAssert: StateKeeper {
         }
     }
 }
+
+// pub trait NonFungibleTokenAssert: NFTStateKeeper {
+//     fn assert_token_exists(&self, token_id: TokenId) {
+//         if self.get().owner_by_id.contains_key(&token_id) {
+//             panic!("NonFungibleToken: Token already exists");
+//         }
+//     }
+
+//     fn assert_zero_address(&self, account: &ActorId) {
+//         if account == &ZERO_ID {
+//             panic!("NonFungibleToken: Zero address");
+//         }
+//     }
+
+//     fn assert_can_transfer(&self, token_id: TokenId) {
+//         if let Some(approved_accounts) = self.get().token_approvals.get(&token_id) {
+//             if approved_accounts.contains(&msg::source()) {
+//                 return;
+//             }
+//         }
+//         self.assert_owner(token_id);
+//     }
+
+//     fn assert_owner(&self, token_id: TokenId) {
+//         let owner = self
+//             .get()
+//             .owner_by_id
+//             .get(&token_id)
+//             .expect("NonFungibleToken: token does not exist");
+//         if !(owner == &msg::source() || owner == &exec::origin()) {
+//             panic!("Not allowed to transfer");
+//         }
+//     }
+// }

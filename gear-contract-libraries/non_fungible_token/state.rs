@@ -1,5 +1,7 @@
 use crate::non_fungible_token::token::*;
 use gstd::{prelude::*, ActorId};
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 
 #[derive(Debug, Default)]
 pub struct NFTState {
@@ -12,24 +14,9 @@ pub struct NFTState {
     pub tokens_for_owner: BTreeMap<ActorId, Vec<TokenId>>,
 }
 
-pub trait StateKeeper {
+pub trait NFTStateKeeper {
     fn get(&self) -> &NFTState;
     fn get_mut(&mut self) -> &mut NFTState;
-}
-
-#[macro_export]
-macro_rules! impl_state_keeper {
-    ($struct_name:ty, $field_name:ident) => {
-        impl StateKeeper for $struct_name {
-            fn get(&self) -> &NFTState {
-                &self.$field_name
-            }
-
-            fn get_mut(&mut self) -> &mut NFTState {
-                &mut self.$field_name
-            }
-        }
-    };
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -48,7 +35,7 @@ pub enum NFTQueryReply {
     SupplyForOwner { supply: u128 },
 }
 
-pub trait NFTMetaState: StateKeeper {
+pub trait NFTMetaState: NFTStateKeeper {
     fn token(&self, token_id: TokenId) -> Token {
         if let Some(owner_id) = self.get().owner_by_id.get(&token_id) {
             Token {
