@@ -1509,6 +1509,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d3f6746ae4fb2c851c6ad2fdaa1090f6777315bc7522b2a2bc5897e091eefb2"
 
 [[package]]
+name = "supply-chain"
+version = "0.1.0"
+dependencies = [
+ "escrow-io",
+ "gear-wasm-builder",
+ "gstd",
+ "gtest",
+ "parity-scale-codec",
+ "supply-chain-io",
+]
+
+[[package]]
+name = "supply-chain-io"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "parity-scale-codec",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
