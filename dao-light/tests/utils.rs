@@ -21,7 +21,7 @@ pub fn init_fungible_token(sys: &System) {
     );
 
     assert!(res.log().is_empty());
-    MEMBERS.iter().enumerate().for_each(|(_, member)| {
+    MEMBERS.iter().for_each(|member| {
         let res = ft.send(*member, FTAction::Mint(10000000));
         assert!(!res.main_failed());
     });
@@ -62,19 +62,14 @@ pub fn vote(dao: &Program, member: u64, proposal_id: u128, vote: Vote) -> RunRes
     dao.send(
         member,
         DaoAction::SubmitVote {
-            proposal_id: proposal_id.clone(),
+            proposal_id,
             vote: vote.clone(),
         },
     )
 }
 
 pub fn process(dao: &Program, member: u64, proposal_id: u128) -> RunResult {
-    dao.send(
-        member,
-        DaoAction::ProcessProposal {
-            proposal_id: proposal_id.clone(),
-        },
-    )
+    dao.send(member, DaoAction::ProcessProposal { proposal_id })
 }
 
 pub fn ragequit(dao: &Program, member: u64, amount: u128) -> RunResult {
