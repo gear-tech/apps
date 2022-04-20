@@ -2,7 +2,7 @@
 
 use codec::Decode;
 use concert_io::*;
-use gear_contract_libraries::erc1155::{erc1155_core::*, io::*};
+use gear_contract_libraries::erc1155::{erc1155_core::*, io::*, state::*};
 use gstd::{msg, prelude::*, ActorId};
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
@@ -31,6 +31,7 @@ impl StateKeeper for Concert {
 }
 
 impl BalanceTrait for Concert {}
+impl ERC1155TokenState for Concert {}
 impl ERC1155TokenAssert for Concert {}
 impl ERC1155Core for Concert {}
 

@@ -1,42 +1,7 @@
-use crate::erc1155::io::*;
+use crate::erc1155::{io::*, state::*};
 use gstd::{exec, msg, prelude::*, ActorId};
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
-
-#[derive(Debug, Default)]
-pub struct ERC1155State {
-    pub name: String,
-    pub symbol: String,
-    pub base_uri: String,
-    pub balances: BTreeMap<TokenId, BTreeMap<ActorId, u128>>,
-    pub operator_approvals: BTreeMap<ActorId, BTreeMap<ActorId, bool>>,
-    pub token_metadata: BTreeMap<TokenId, TokenMetadata>,
-}
-
-pub trait StateKeeper {
-    fn get(&self) -> &ERC1155State;
-    fn get_mut(&mut self) -> &mut ERC1155State;
-}
-
-pub trait BalanceTrait: StateKeeper {
-    fn get_balance(&self, account: &ActorId, id: &TokenId) -> u128 {
-        *self
-            .get()
-            .balances
-            .get(id)
-            .and_then(|m| m.get(account))
-            .unwrap_or(&0)
-    }
-
-    fn set_balance(&mut self, account: &ActorId, id: &TokenId, amount: u128) {
-        let mut _balance = self
-            .get_mut()
-            .balances
-            .entry(*id)
-            .or_default()
-            .insert(*account, amount);
-    }
-}
 
 pub trait ERC1155TokenAssert: StateKeeper + BalanceTrait {
     fn assert_can_burn(&mut self, owner: &ActorId, id: &TokenId, amount: u128) {
@@ -147,7 +112,6 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             panic!("ERC1155: sender and recipient addresses are the same")
         }
 
-        self.assert_approved(from, &msg::source());
         if from != &msg::source() {
             panic!("ERC1155: caller is not owner nor approved")
         }
@@ -155,7 +119,6 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
         if to == &ZERO_ID {
             panic!("ERC1155: transfer to the zero address")
         }
-
         let from_balance = self.get_balance(from, id);
 
         if from_balance < amount {
@@ -177,7 +140,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             panic!("ERC1155: sender and recipient addresses are the same")
         }
 
-        self.assert_approved(from, &msg::source());
+        // self.assert_approved(from, &msg::source());
         if from != &msg::source() {
             panic!("ERC1155: caller is not owner nor approved")
         }
@@ -291,7 +254,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                     Event::TransferBatch {
                         operator: msg::source(),
                         from: ZERO_ID,
-                        to: *account,
+                        to: account,
                         ids: ids.to_vec(),
                         values: amounts.to_vec(),
                     },
