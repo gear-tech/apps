@@ -85,37 +85,6 @@ fn enter() {
 }
 
 #[test]
-fn leave_lottery() {
-    let sys = System::new();
-    init_fungible_token(&sys);
-    init_lottery(&sys);
-    sys.init_logger();
-    let ft = sys.get_program(1);
-    let lt = sys.get_program(2);
-
-    let res = lt.send(
-        USERS[2],
-        LtAction::StartLottery {
-            duration: 5000,
-            token_address: Some(USERS[0].into()),
-        },
-    );
-    assert!(res.log().is_empty());
-
-    let res = lt.send_with_value(USERS[3], LtAction::Enter(1000), 1000);
-    assert!(res.contains(&(USERS[3], LtEvent::PlayerAdded(0).encode())));
-
-    let res = lt.send_with_value(USERS[4], LtAction::Enter(2000), 2000);
-    assert!(res.contains(&(USERS[4], LtEvent::PlayerAdded(1).encode())));
-
-    let res = lt.send(USERS[4], LtAction::LeaveLottery(1));
-    assert!(!res.main_failed());
-
-    let res = ft.send(USERS[2], FTAction::BalanceOf(USERS[4].into()));
-    assert!(res.contains(&(USERS[2], FTEvent::Balance(2000).encode())));
-}
-
-#[test]
 fn pick_winner() {
     let sys = System::new();
     init_fungible_token(&sys);
