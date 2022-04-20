@@ -26,17 +26,12 @@ pub enum LtAction {
     },
     LotteryState,
     PickWinner,
-    BalanceOf(u32),
-    GetPlayers,
-    LeaveLottery(u32),
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum LtEvent {
     LotteryState(LotteryState),
     Winner(u32),
-    Balance(u128),
-    Players(BTreeMap<u32, Player>),
     PlayerAdded(u32),
 }
 
@@ -45,6 +40,7 @@ pub enum LtState {
     GetWinners,
     GetPlayers,
     BalanceOf(u32),
+    LotteryState,
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
@@ -52,4 +48,5 @@ pub enum LtStateReply {
     Winners(BTreeMap<u32, ActorId>),
     Players(BTreeMap<u32, Player>),
     Balance(u128),
+    LotteryState(LotteryState),
 }
