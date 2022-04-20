@@ -27,10 +27,7 @@ pub enum StateReply {
     AllProposals(BTreeMap<u128, Proposal>),
     IsMember(bool),
     ProposalId(u128),
-    ProposalInfo {
-        proposal_id: u128,
-        proposal: Proposal,
-    },
+    ProposalInfo(Proposal),
     MemberInfo(Member),
     MemberPower(u128),
 }
