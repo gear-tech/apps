@@ -1,11 +1,15 @@
 #![no_std]
 
+#[cfg(test)]
+mod tests;
+
 //Includes only the minimal gstd components for this smart contract
 use gstd::{
-    msg::{self},
+    msg::{self, CodecMessageFuture},
     exec, 
     prelude::*, 
-    ActorId
+    ActorId,
+    async_main
 };
 use ft_io::{FTAction, FTEvent};
 
@@ -37,7 +41,7 @@ struct Escrow {
 }
 
 pub async fn transfer_tokens(token_id: &ActorId, from: &ActorId, to: &ActorId, amount: u128) {
-    let _transfer_response: FTEvent = msg::send_and_wait_for_reply(
+    let _transfer_response: CodecMessageFuture<FTEvent> = msg::send_and_wait_for_reply(
         *token_id,
         FTAction::Transfer {
             from: *from,
@@ -45,9 +49,12 @@ pub async fn transfer_tokens(token_id: &ActorId, from: &ActorId, to: &ActorId, a
             amount,
         },
         0,
-    ).unwrap()
-    .await
-    .expect("Error in transfer");
+    ).unwrap();
+}
+
+#[derive(Decode, Encode)]
+pub struct InitEscrow {
+    pub ft_token_id: ActorId,
 }
 
 #[derive(Debug, Decode, Encode)]
@@ -139,9 +146,21 @@ impl Escrow {
 static mut ESCROW: Option<Escrow> = None;
 
 #[no_mangle]
-pub async unsafe extern "C" fn handle() {
+pub extern "C" fn init() {
+    let config: InitEscrow = msg::load().expect("Unable to decode InitEscrow");
+    let escrow = Escrow {
+        ft_token_id: config.ft_token_id,
+        ..Default::default()
+    };
+    unsafe {
+        ESCROW = Some(escrow);
+    }
+}
+
+#[async_main]
+pub async fn main() {
     let action: EscrowActions = msg::load().expect("Could not load Action");
-    let escrow = ESCROW.get_or_insert(Default::default());
+    let escrow = unsafe{ ESCROW.get_or_insert(Default::default())};
 
     match action {
         EscrowActions::Deposit() => {
@@ -153,28 +172,3 @@ pub async unsafe extern "C" fn handle() {
     }
 }
 
-#[cfg(test)]
-mod tests {
-
-    extern crate std;
-    use gtest::{Program, System};
-
-    pub const _FT: u64 = 2;
-    pub const _FOREIGN_USER: u64 = 2;
-    pub const _BUYER: [u64; 2] = [1, 2];
-    pub const _SELLER: [u64; 2] = [3, 4];
-    pub const _AMOUNT: [u128; 2] = [50, 200];
-    pub const _CONTRACT: [u128; 2] = [1, 2];
-
-    #[test]
-    fn wrong_buyer_deposit() {
-        let system = System::new();
-        let program = Program::current(&system);
-
-        system.init_logger();
-
-        assert!(program
-        .send(_FOREIGN_USER, super::EscrowActions::Deposit())
-        .main_failed());
-    }
-}
