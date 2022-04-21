@@ -4,6 +4,7 @@ resolver = "2"
 members = [
     "dao",
     "erc1155",
+    "escrow",
     "fungible-token",
     "gear-feeds-router",
     "nft-example",

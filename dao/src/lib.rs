@@ -75,7 +75,7 @@ impl Dao {
             panic!("Member has already been added to the whitelist");
         }
         self.whitelist.push(*member);
-        msg::reply(DaoEvent::MemberAddedToWhitelist(*member), 0);
+        msg::reply(DaoEvent::MemberAddedToWhitelist(*member), 0).unwrap();
     }
 
     /// The proposal of joining the DAO.
@@ -144,7 +144,7 @@ impl Dao {
                 token_tribute,
             },
             0,
-        );
+        ).unwrap();
         self.proposal_id = self.proposal_id.saturating_add(1);
     }
 
@@ -211,7 +211,7 @@ impl Dao {
                 amount,
             },
             0,
-        );
+        ).unwrap();
         self.proposal_id = self.proposal_id.saturating_add(1);
     }
 
@@ -282,7 +282,7 @@ impl Dao {
                 vote,
             },
             0,
-        );
+        ).unwrap();
     }
 
     /// The proposal processing after the proposal completes during the grace period.
@@ -361,7 +361,7 @@ impl Dao {
                 did_pass: proposal.did_pass,
             },
             0,
-        );
+        ).unwrap();
     }
 
     /// Withdraws the capital of the member
@@ -404,7 +404,7 @@ impl Dao {
                 amount: funds,
             },
             0,
-        );
+        ).unwrap();
     }
 
     /// Cancels the proposal after the end of the voting period if there are no YES votes.
@@ -456,7 +456,7 @@ impl Dao {
                 proposal_id,
             },
             0,
-        );
+        ).unwrap();
     }
 
     /// Aborts the membership proposal. It can be used in case when applicant is disagree with the requested shares or the details the proposer  indicated by the proposer
@@ -502,7 +502,7 @@ impl Dao {
                 amount,
             },
             0,
-        );
+        ).unwrap();
     }
 
     /// Assigns the admin position to new actor
@@ -518,7 +518,7 @@ impl Dao {
             panic!("new admin ID cant be zero");
         }
         self.admin = *new_admin;
-        msg::reply(DaoEvent::AdminUpdated(*new_admin), 0);
+        msg::reply(DaoEvent::AdminUpdated(*new_admin), 0).unwrap();
     }
 
     /// Sets the delegate key that is responsible for submitting proposals and voting
@@ -549,7 +549,7 @@ impl Dao {
                 delegate: *new_delegate_key,
             },
             0,
-        );
+        ).unwrap();
     }
 
     // calculates the funds that the member can redeem based on his shares

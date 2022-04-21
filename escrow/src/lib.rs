@@ -11,7 +11,7 @@ use gstd::{
     ActorId,
     async_main
 };
-use ft_io::{FTAction, FTEvent};
+use ft_io::{Action, Event};
 
 //// The available states during the escrow
 enum State {
@@ -41,9 +41,9 @@ struct Escrow {
 }
 
 pub async fn transfer_tokens(token_id: &ActorId, from: &ActorId, to: &ActorId, amount: u128) {
-    let _transfer_response: CodecMessageFuture<FTEvent> = msg::send_and_wait_for_reply(
+    let _transfer_response: CodecMessageFuture<Event> = msg::send_and_wait_for_reply(
         *token_id,
-        FTAction::Transfer {
+        Action::Transfer {
             from: *from,
             to: *to,
             amount,

@@ -338,7 +338,7 @@ pub unsafe extern "C" fn handle() {
                 values: amounts,
             };
 
-            msg::reply(payload, 0);
+            msg::reply(payload, 0).unwrap();
         }
 
         Action::SetApprovalForAll(operator, approved) => {
@@ -352,7 +352,7 @@ pub unsafe extern "C" fn handle() {
                 approved,
             };
 
-            msg::reply(payload, 0);
+            msg::reply(payload, 0).unwrap();
         }
 
         Action::IsApprovedForAll(owner, operator) => {
@@ -364,7 +364,7 @@ pub unsafe extern "C" fn handle() {
                 approved,
             };
 
-            msg::reply(payload, 0);
+            msg::reply(payload, 0).unwrap();
         }
 
         Action::BurnBatch(ids, amounts) => {
@@ -378,18 +378,18 @@ pub unsafe extern "C" fn handle() {
                 values: amounts,
             };
 
-            msg::reply(payload, 0);
+            msg::reply(payload, 0).unwrap();
         }
 
         Action::OwnerOf(id) => {
             let res = ERC1155_TOKEN.owner_of(&id);
-            msg::reply(res, 0);
+            msg::reply(res, 0).unwrap();
         }
 
         Action::OwnerOfBatch(ids) => {
             let res = ERC1155_TOKEN.owner_of_batch(&ids);
 
-            msg::reply(res, 0);
+            msg::reply(res, 0).unwrap();
         }
     }
 }

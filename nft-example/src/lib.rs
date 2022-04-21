@@ -47,7 +47,7 @@ impl NFT {
                 token_id: self.token_id,
             },
             0,
-        );
+        ).unwrap();
         self.token_id = self.token_id.saturating_add(U256::one());
     }
 
@@ -75,7 +75,7 @@ impl NFT {
                 token_id,
             },
             0,
-        );
+        ).unwrap();
     }
 }
 
