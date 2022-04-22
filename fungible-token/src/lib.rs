@@ -39,7 +39,7 @@ impl FungibleToken {
                 amount,
             },
             0,
-        );
+        ).unwrap();
     }
     /// Executed on receiving `fungible-token-messages::BurnInput`.
     fn burn(&mut self, amount: u128) {
@@ -58,7 +58,7 @@ impl FungibleToken {
                 amount,
             },
             0,
-        );
+        ).unwrap();
     }
     /// Executed on receiving `fungible-token-messages::TransferInput` or `fungible-token-messages::TransferFromInput`.
     /// Transfers `amount` tokens from `sender` account to `recipient` account.
@@ -86,7 +86,7 @@ impl FungibleToken {
                 amount,
             },
             0,
-        );
+        ).unwrap();
     }
 
     /// Executed on receiving `fungible-token-messages::ApproveInput`.
@@ -105,7 +105,7 @@ impl FungibleToken {
                 amount,
             },
             0,
-        );
+        ).unwrap();
     }
 
     fn can_transfer(&mut self, from: &ActorId, amount: u128) -> bool {
@@ -161,11 +161,11 @@ pub unsafe extern "C" fn handle() {
             ft.approve(&to, amount);
         }
         Action::TotalSupply => {
-            msg::reply(Event::TotalSupply(ft.total_supply), 0);
+            msg::reply(Event::TotalSupply(ft.total_supply), 0).unwrap();
         }
         Action::BalanceOf(account) => {
             let balance = ft.balances.get(&account).unwrap_or(&0);
-            msg::reply(Event::Balance(*balance), 0);
+            msg::reply(Event::Balance(*balance), 0).unwrap();
         }
     }
 }
