@@ -290,15 +290,15 @@ pub unsafe extern "C" fn handle() {
                 amount,
             };
 
-            msg::reply(Event::TransferSingle(transfer_data), 0);
+            msg::reply(Event::TransferSingle(transfer_data), 0).unwrap();
         }
         Action::BalanceOf(account, id) => {
             let balance = ERC1155_TOKEN.balance_of(&account, &id);
-            msg::reply(Event::Balance(balance), 0);
+            msg::reply(Event::Balance(balance), 0).unwrap();
         }
         Action::BalanceOfBatch(accounts, ids) => {
             let res = ERC1155_TOKEN.balance_of_batch(&accounts, &ids);
-            msg::reply(Event::BalanceOfBatch(res), 0);
+            msg::reply(Event::BalanceOfBatch(res), 0).unwrap();
         }
         Action::MintBatch(account, ids, amounts) => {
             ERC1155_TOKEN.mint_batch(&account, &ids, &amounts);
@@ -310,7 +310,7 @@ pub unsafe extern "C" fn handle() {
                 ids,
                 values: amounts,
             };
-            msg::reply(payload, 0);
+            msg::reply(payload, 0).unwrap();
         }
 
         Action::SafeTransferFrom(from, to, id, amount) => {
@@ -324,7 +324,7 @@ pub unsafe extern "C" fn handle() {
                 amount,
             };
 
-            msg::reply(Event::TransferSingle(transfer_data), 0);
+            msg::reply(Event::TransferSingle(transfer_data), 0).unwrap();
         }
 
         Action::SafeBatchTransferFrom(from, to, ids, amounts) => {
@@ -338,7 +338,7 @@ pub unsafe extern "C" fn handle() {
                 values: amounts,
             };
 
-            msg::reply(payload, 0);
+            msg::reply(payload, 0).unwrap();
         }
 
         Action::SetApprovalForAll(operator, approved) => {
@@ -352,7 +352,7 @@ pub unsafe extern "C" fn handle() {
                 approved,
             };
 
-            msg::reply(payload, 0);
+            msg::reply(payload, 0).unwrap();
         }
 
         Action::IsApprovedForAll(owner, operator) => {
@@ -364,7 +364,7 @@ pub unsafe extern "C" fn handle() {
                 approved,
             };
 
-            msg::reply(payload, 0);
+            msg::reply(payload, 0).unwrap();
         }
 
         Action::BurnBatch(ids, amounts) => {
@@ -378,18 +378,18 @@ pub unsafe extern "C" fn handle() {
                 values: amounts,
             };
 
-            msg::reply(payload, 0);
+            msg::reply(payload, 0).unwrap();
         }
 
         Action::OwnerOf(id) => {
             let res = ERC1155_TOKEN.owner_of(&id);
-            msg::reply(res, 0);
+            msg::reply(res, 0).unwrap();
         }
 
         Action::OwnerOfBatch(ids) => {
             let res = ERC1155_TOKEN.owner_of_batch(&ids);
 
-            msg::reply(res, 0);
+            msg::reply(res, 0).unwrap();
         }
     }
 }
