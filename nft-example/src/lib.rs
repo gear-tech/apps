@@ -158,7 +158,8 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
                 .unwrap_or(&ZERO_ID);
             StateReply::GetApproved(*approved_address)
         }
-    }.encode();
+    }
+    .encode();
     let result = gstd::macros::util::to_wasm_ptr(&(encoded[..]));
 
     core::mem::forget(encoded);

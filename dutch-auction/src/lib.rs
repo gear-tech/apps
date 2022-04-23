@@ -2,14 +2,14 @@
 #![feature(const_btree_new)]
 
 use codec::Encode;
-use gstd::{msg, prelude::*, exec::block_timestamp, ActorId};
-use primitive_types::U256;
+use gstd::{exec::block_timestamp, msg, prelude::*, ActorId};
 use nft_example_io;
+use primitive_types::U256;
 
 pub mod state;
-pub use state::{State, StateReply, AuctionInfo,};
+pub use state::{AuctionInfo, State, StateReply};
 
-pub use auction_io::{Action, Event, InitConfig, CreateConfig};
+pub use auction_io::{Action, CreateConfig, Event, InitConfig};
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 const DURATION: u64 = 7 * 24 * 60 * 60 * 1000;
@@ -54,8 +54,11 @@ impl Auction {
 
         let _transfer_response: nft_example_io::Event = msg::send_and_wait_for_reply(
             self.nft.contract_id,
-            nft_example_io::Action::Transfer { to: msg::source(), token_id: self.nft.token_id },
-            0
+            nft_example_io::Action::Transfer {
+                to: msg::source(),
+                token_id: self.nft.token_id,
+            },
+            0,
         )
         .unwrap()
         .await
@@ -129,7 +132,7 @@ gstd::metadata! {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn init() { }
+pub unsafe extern "C" fn init() {}
 
 #[gstd::async_main]
 async unsafe fn main() {
@@ -155,7 +158,8 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
         State::TokenPrice() => StateReply::TokenPrice(auction.token_price()),
         State::IsActive() => StateReply::IsActive(auction.is_active),
         State::Info() => StateReply::Info(auction.info()),
-    }.encode();
+    }
+    .encode();
     let result = gstd::macros::util::to_wasm_ptr(&(encoded[..]));
 
     core::mem::forget(encoded);

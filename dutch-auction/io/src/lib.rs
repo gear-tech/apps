@@ -26,7 +26,7 @@ pub enum Event {
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct InitConfig { }
+pub struct InitConfig {}
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct CreateConfig {

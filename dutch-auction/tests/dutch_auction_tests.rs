@@ -1,6 +1,6 @@
+use auction_io::*;
 use codec::Encode;
 use gtest::{Program, RunResult, System};
-use auction_io::*;
 use primitive_types::U256;
 
 const USERS: &'static [u64] = &[4, 5, 6];
@@ -16,27 +16,21 @@ fn init(sys: &System) -> Program {
         "../target/wasm32-unknown-unknown/release/dutch_auction.wasm",
     );
 
-    auction_program.send(
-        owner_user,
-        InitConfig {},
-    );
+    auction_program.send(owner_user, InitConfig {});
 
     init_nft(sys, owner_user);
     let result = update_auction(&auction_program, owner_user, 2, 1_000_000_000.into());
 
-    assert!(
-        result.contains(
-            &(
-                owner_user,
-                Event::AuctionStarted {
-                    token_owner: owner_user.into(),
-                    price: 1_000_000_000.into(),
-                    token_id: 0.into(),
-                }.encode()
-            )
-        )
-    );
-    
+    assert!(result.contains(&(
+        owner_user,
+        Event::AuctionStarted {
+            token_owner: owner_user.into(),
+            price: 1_000_000_000.into(),
+            token_id: 0.into(),
+        }
+        .encode()
+    )));
+
     auction_program
 }
 
@@ -65,18 +59,21 @@ fn init_nft(sys: &System, owner: u64) {
     );
 }
 
-fn update_auction(auction: &Program, owner: u64, nft_contract_id: u64, starting_price: U256,) -> RunResult {
+fn update_auction(
+    auction: &Program,
+    owner: u64,
+    nft_contract_id: u64,
+    starting_price: U256,
+) -> RunResult {
     auction.send(
         owner,
-        Action::Create(
-            CreateConfig {
-                nft_contract_actor_id: nft_contract_id.into(),
-                token_owner: owner.into(),
-                starting_price,
-                discount_rate: 1.into(),
-                token_id: 0.into(),
-            }
-        ),
+        Action::Create(CreateConfig {
+            nft_contract_actor_id: nft_contract_id.into(),
+            token_owner: owner.into(),
+            starting_price,
+            discount_rate: 1.into(),
+            token_id: 0.into(),
+        }),
     )
 }
 
@@ -87,12 +84,14 @@ fn buy() {
     let auction = init(&sys);
     auction.send_with_value(USERS[1], Action::Buy, 1_000_000_000);
 
-    let result = sys.get_program(2).send(
-        USERS[0],
-        nft_example_io::Action::OwnerOf(0.into()),
-    );
+    let result = sys
+        .get_program(2)
+        .send(USERS[0], nft_example_io::Action::OwnerOf(0.into()));
 
-    assert!(result.contains(&(USERS[0], nft_example_io::Event::OwnerOf(USERS[1].into()).encode())));
+    assert!(result.contains(&(
+        USERS[0],
+        nft_example_io::Event::OwnerOf(USERS[1].into()).encode()
+    )));
 }
 
 #[test]
@@ -103,12 +102,14 @@ fn buy_later_with_lower_price() {
     sys.spend_blocks(100_000_000);
     auction.send_with_value(USERS[1], Action::Buy, 900_000_000);
 
-    let result = sys.get_program(2).send(
-        USERS[0],
-        nft_example_io::Action::OwnerOf(0.into()),
-    );
+    let result = sys
+        .get_program(2)
+        .send(USERS[0], nft_example_io::Action::OwnerOf(0.into()));
 
-    assert!(result.contains(&(USERS[0], nft_example_io::Event::OwnerOf(USERS[1].into()).encode())));
+    assert!(result.contains(&(
+        USERS[0],
+        nft_example_io::Event::OwnerOf(USERS[1].into()).encode()
+    )));
 }
 
 #[test]
@@ -163,18 +164,15 @@ fn create_auction_twice_after_time() {
     init_nft(&sys, USERS[1]);
     let result = update_auction(&auction, USERS[1], 3, 999_000_000.into());
 
-    assert!(
-        result.contains(
-            &(
-                USERS[1],
-                Event::AuctionStarted {
-                    token_owner: USERS[1].into(),
-                    price: 999_000_000.into(),
-                    token_id: 0.into(),
-                }.encode()
-            )
-        )
-    );
+    assert!(result.contains(&(
+        USERS[1],
+        Event::AuctionStarted {
+            token_owner: USERS[1].into(),
+            price: 999_000_000.into(),
+            token_id: 0.into(),
+        }
+        .encode()
+    )));
 }
 
 #[test]
@@ -188,14 +186,3 @@ fn create_auction_with_low_price() {
 
     assert!(result.main_failed());
 }
-
-// #[test]
-// fn token_price() {
-//     let sys = System::new();
-//     let auction = init(&sys);
-//
-//     let result = auction.send(USERS[1], State::TokenPrice());
-//
-//     println!("{:?}", result.decoded_log::<StateReply>());
-//     assert!(result.contains(&(USERS[1], StateReply::TokenPrice(1_000_000_000.into()).encode())));
-// }

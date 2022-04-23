@@ -14,7 +14,7 @@ pub enum State {
 pub enum StateReply {
     TokenPrice(U256),
     IsActive(bool),
-    Info(AuctionInfo)
+    Info(AuctionInfo),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -24,4 +24,3 @@ pub struct AuctionInfo {
     pub token_owner: ActorId,
     pub starting_price: U256,
 }
-
