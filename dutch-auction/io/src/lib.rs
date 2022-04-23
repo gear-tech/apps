@@ -13,11 +13,6 @@ pub enum Action {
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum Event {
-    Transfer {
-        from: ActorId,
-        to: ActorId,
-        token_id: U256,
-    },
     AuctionStarted {
         token_owner: ActorId,
         price: U256,

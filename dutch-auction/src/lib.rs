@@ -3,7 +3,6 @@
 
 use codec::Encode;
 use gstd::{exec::block_timestamp, msg, prelude::*, ActorId};
-use nft_example_io;
 use primitive_types::U256;
 
 pub mod state;
@@ -11,7 +10,6 @@ pub use state::{AuctionInfo, State, StateReply};
 
 pub use auction_io::{Action, CreateConfig, Event, InitConfig};
 
-const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 const DURATION: u64 = 7 * 24 * 60 * 60 * 1000;
 
 #[derive(Debug, Default)]
@@ -64,8 +62,8 @@ impl Auction {
         .await
         .expect("Error in nft transfer");
 
-        msg::send(msg::source(), "", refund);
-        msg::send(self.nft.owner, "", price);
+        msg::send(msg::source(), "", refund).unwrap();
+        msg::send(self.nft.owner, "", price).unwrap();
     }
 
     fn token_price(&self) -> U256 {
@@ -100,7 +98,8 @@ impl Auction {
                 token_id: self.nft.token_id,
             },
             0,
-        );
+        )
+        .unwrap();
     }
 
     fn stop_if_time_is_over(&mut self) {
@@ -150,7 +149,7 @@ async unsafe fn main() {
 #[no_mangle]
 pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let query: State = msg::load().expect("failed to decode input argument");
-    let auction: &mut Auction = unsafe { AUCTION.get_or_insert(Auction::default()) };
+    let auction: &mut Auction = AUCTION.get_or_insert(Auction::default());
 
     auction.stop_if_time_is_over();
 
