@@ -41,7 +41,7 @@ pub enum ConcertEvent {
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct InitConcertERC1155 {
+pub struct InitConcert {
     pub name: String,
     pub symbol: String,
     pub base_uri: String,

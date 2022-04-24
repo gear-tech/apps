@@ -89,7 +89,7 @@ static mut CONTRACT: Option<Concert> = None;
 
 #[no_mangle]
 pub unsafe extern "C" fn init() {
-    let config: InitConcertERC1155 = msg::load().expect("Unable to decode InitConfig");
+    let config: InitConcert = msg::load().expect("Unable to decode InitConfig");
     let mut concert = Concert::default();
     concert.tokens.name = config.name;
     concert.tokens.symbol = config.symbol;
