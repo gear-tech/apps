@@ -29,7 +29,6 @@ fn init(sys: &System) -> Program {
 }
 
 fn init_with_mint(sys: &System) {
-    println!("{:?}", sys);
     sys.init_logger();
     let erc1155 = Program::current(&sys);
     let res = erc1155.send(
