@@ -1,7 +1,7 @@
 #![no_std]
 use erc1155_io::*;
 use gear_contract_libraries::erc1155::{erc1155_core::*, state::*, io::*};
-use gstd::{msg, prelude::*, ActorId};
+use gstd::{msg, debug, prelude::*, ActorId};
 
 
 #[derive(Debug, Default)]
@@ -9,6 +9,7 @@ pub struct SimpleERC1155 {
     pub tokens: ERC1155State,
     pub token_id: TokenId,
     pub owner: ActorId,
+    pub supply: BTreeMap<TokenId, u128>,
 }
 
 impl StateKeeper for SimpleERC1155 {
@@ -34,26 +35,40 @@ pub trait SimpleERC1155Core: ERC1155Core {
 
     fn burn(&mut self, id: TokenId, amount: u128);
 
+    fn supply(&mut self, id: TokenId) -> u128;
+
     fn proc(&mut self, bytes: Vec<u8>) -> Option<()> {
         if bytes.len() < 2 {
             return None;
         }
+        debug!("IN PROC {:?}", bytes[0]);
 
         if bytes[0] == 0 {
             let mut bytes = bytes;
             bytes.remove(0);
             return <Self as ERC1155Core>::proc(self, bytes);
         }
-        let action = ERC1155Action::decode(&mut &bytes[..]).ok()?;
+        let action = MyERC1155Action::decode(&mut &bytes[..]).ok()?;
         match action {
-            ERC1155Action::Mint {
+            MyERC1155Action::Mint {
                 amount,
                 token_metadata,
             } => <Self as SimpleERC1155Core>::mint(self, amount, token_metadata),
-            ERC1155Action::Burn { id, amount } => {
+            MyERC1155Action::Burn { id, amount } => {
                 <Self as SimpleERC1155Core>::burn(self, id, amount)
             }
-            ERC1155Action::Base(_) => unreachable!(),
+            MyERC1155Action::Supply {
+                id,
+            } => {
+                msg::reply(
+                    MyERC1155Event::Supply {
+                        amount: <Self as SimpleERC1155Core>::supply(self, id),
+                    },
+                    0,
+                )
+                .unwrap();
+            }
+            MyERC1155Action::Base(_) => unreachable!(),
         }
         Some(())
     }
@@ -94,11 +109,25 @@ impl SimpleERC1155Core for SimpleERC1155 {
         amount: u128,
         token_metadata: Option<TokenMetadata>,
     ) {
+        debug!("IN MINT");
         ERC1155Core::mint(self, &msg::source(), &(self.token_id.clone()), amount, token_metadata);
         self.token_id = self.token_id.saturating_add(1);
+        let mut _balance = self
+            .supply
+            .insert(self.token_id, amount);
     }
 
     fn burn(&mut self, id: TokenId, amount: u128) {
         ERC1155Core::burn(self, &id, amount);
+        let sup = self.supply(id);
+        let mut _balance = self
+            .supply
+            .insert(self.token_id, sup.saturating_sub(amount));
+    }
+
+    fn supply(&mut self, id: TokenId) -> u128 {
+        *self.supply
+            .entry(id)
+            .or_default()
     }
 }

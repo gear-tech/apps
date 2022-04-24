@@ -95,7 +95,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             .for_each(|(i, id)| self.burn(id, amounts[i]));
 
         msg::reply(
-            Event::TransferBatch {
+            ERC1155Event::TransferBatch {
                 operator: msg::source(),
                 from: msg::source(),
                 to: ZERO_ID,
@@ -162,7 +162,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             .for_each(|(i, id)| self.transfer_from(from, to, id, amounts[i]));
 
         msg::reply(
-            Event::TransferBatch {
+            ERC1155Event::TransferBatch {
                 operator: msg::source(),
                 from: *from,
                 to: *to,
@@ -184,7 +184,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             .or_default()
             .insert(*to, true);
         msg::reply(
-            Event::Approve {
+            ERC1155Event::Approve {
                 from: msg::source(),
                 to: *to,
             },
@@ -204,7 +204,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             .remove_entry(to);
 
         msg::reply(
-            Event::Approve {
+            ERC1155Event::Approve {
                 from: msg::source(),
                 to: *to,
             },
@@ -228,16 +228,16 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             })
             .collect();
 
-        msg::reply(Event::BalanceOfBatch(res), 0).unwrap();
+        msg::reply(ERC1155Event::BalanceOfBatch(res), 0).unwrap();
     }
 
     fn proc(&mut self, bytes: Vec<u8>) -> Option<()> {
-        let action = Action::decode(&mut &bytes[..]).ok()?;
+        let action = ERC1155Action::decode(&mut &bytes[..]).ok()?;
         match action {
-            Action::Mint(account, id, amount, meta) => {
+            ERC1155Action::Mint(account, id, amount, meta) => {
                 Self::mint(self, &account, &id, amount, meta);
                 msg::reply(
-                    Event::TransferSingle(TransferSingleReply {
+                    ERC1155Event::TransferSingle(TransferSingleReply {
                         operator: msg::source(),
                         from: ZERO_ID,
                         to: account,
@@ -248,10 +248,10 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                 )
                 .unwrap();
             }
-            Action::MintBatch(account, ids, amounts, metas) => {
+            ERC1155Action::MintBatch(account, ids, amounts, metas) => {
                 Self::mint_batch(self, &account, &ids, &amounts, metas);
                 msg::reply(
-                    Event::TransferBatch {
+                    ERC1155Event::TransferBatch {
                         operator: msg::source(),
                         from: ZERO_ID,
                         to: account,
@@ -263,10 +263,10 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                 .unwrap();
             }
 
-            Action::Burn(id, amount) => {
+            ERC1155Action::Burn(id, amount) => {
                 Self::burn(self, &id, amount);
                 msg::reply(
-                    Event::TransferSingle(TransferSingleReply {
+                    ERC1155Event::TransferSingle(TransferSingleReply {
                         operator: msg::source(),
                         from: msg::source(),
                         to: ZERO_ID,
@@ -277,12 +277,12 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                 )
                 .unwrap();
             }
-            Action::BurnBatch(ids, amounts) => Self::burn_batch(self, &ids, &amounts),
+            ERC1155Action::BurnBatch(ids, amounts) => Self::burn_batch(self, &ids, &amounts),
 
-            Action::TransferFrom(from, to, id, amount) => {
+            ERC1155Action::TransferFrom(from, to, id, amount) => {
                 Self::transfer_from(self, &from, &to, &id, amount);
                 msg::reply(
-                    Event::TransferSingle(TransferSingleReply {
+                    ERC1155Event::TransferSingle(TransferSingleReply {
                         operator: msg::source(),
                         from,
                         to,
@@ -293,17 +293,17 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
                 )
                 .unwrap();
             }
-            Action::BatchTransferFrom(from, to, ids, amounts) => {
+            ERC1155Action::BatchTransferFrom(from, to, ids, amounts) => {
                 Self::batch_transfer_from(self, &from, &to, &ids, &amounts)
             }
 
-            Action::BalanceOf(account, id) => {
-                msg::reply(Event::Balance(Self::get_balance(self, &account, &id)), 0).unwrap();
+            ERC1155Action::BalanceOf(account, id) => {
+                msg::reply(ERC1155Event::Balance(Self::get_balance(self, &account, &id)), 0).unwrap();
             }
-            Action::BalanceOfBatch(accounts, ids) => Self::balance_of_batch(self, &accounts, &ids),
+            ERC1155Action::BalanceOfBatch(accounts, ids) => Self::balance_of_batch(self, &accounts, &ids),
 
-            Action::Approve(to) => Self::approve(self, &to),
-            Action::RevokeApproval(to) => Self::revoke_approval(self, &to),
+            ERC1155Action::Approve(to) => Self::approve(self, &to),
+            ERC1155Action::RevokeApproval(to) => Self::revoke_approval(self, &to),
         };
         Some(())
     }

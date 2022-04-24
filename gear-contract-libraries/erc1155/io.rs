@@ -19,7 +19,7 @@ pub struct InitConfig {
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum Action {
+pub enum ERC1155Action {
     Mint(ActorId, TokenId, u128, Option<TokenMetadata>),
     BalanceOf(ActorId, TokenId),
     BalanceOfBatch(Vec<ActorId>, Vec<TokenId>),
@@ -49,7 +49,7 @@ pub struct BalanceOfBatchReply {
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum Event {
+pub enum ERC1155Event {
     TransferSingle(TransferSingleReply),
     Balance(u128),
     BalanceOfBatch(Vec<BalanceOfBatchReply>),

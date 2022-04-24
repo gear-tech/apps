@@ -6,14 +6,24 @@ use gstd::{prelude::*};
 use scale_info::TypeInfo;
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum ERC1155Action {
-    Base(Action),
+pub enum MyERC1155Action {
+    Base(ERC1155Action),
     Mint {
         amount: u128,
         token_metadata: Option<TokenMetadata>,
     },
     Burn {
         id: TokenId,
+        amount: u128,
+    },
+    Supply {
+        id: TokenId,
+    },
+}
+
+#[derive(Debug, Encode, Decode, TypeInfo)]
+pub enum MyERC1155Event {
+    Supply {
         amount: u128,
     },
 }
