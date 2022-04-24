@@ -8,8 +8,10 @@ authors = ["Gear Technologies"]
 [dependencies]
 gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
 codec = { package = "parity-scale-codec", "version" = "3", default-features = false, features = ["derive"] }
+primitive-types = { version = "0.11", default-features = false }
 supply-chain-io = { path = "io" }
-escrow-io = { path = "../escrow/io" }
+nft-example-io = { path = "../nft-example/io" }
+ft-io = { path = "../fungible-token/io" }
 
 [build-dependencies]
 gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }

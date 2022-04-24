@@ -1512,11 +1512,13 @@ checksum = "5d3f6746ae4fb2c851c6ad2fdaa1090f6777315bc7522b2a2bc5897e091eefb2"
 name = "supply-chain"
 version = "0.1.0"
 dependencies = [
- "escrow-io",
+ "ft-io",
  "gear-wasm-builder",
  "gstd",
  "gtest",
+ "nft-example-io",
  "parity-scale-codec",
+ "primitive-types",
  "supply-chain-io",
 ]
 
@@ -1526,6 +1528,7 @@ version = "0.1.0"
 dependencies = [
  "gstd",
  "parity-scale-codec",
+ "primitive-types",
 ]
 
 [[package]]
