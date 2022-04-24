@@ -2,7 +2,7 @@
 
 use codec::{Decode, Encode};
 use gear_contract_libraries::erc1155::io::*;
-use gstd::{prelude::*};
+use gstd::prelude::*;
 use scale_info::TypeInfo;
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
@@ -23,9 +23,7 @@ pub enum MyERC1155Action {
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum MyERC1155Event {
-    Supply {
-        amount: u128,
-    },
+    Supply { amount: u128 },
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
