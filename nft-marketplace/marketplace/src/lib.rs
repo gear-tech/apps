@@ -11,6 +11,8 @@ pub mod auction;
 pub mod offers;
 pub mod payment;
 pub mod sale;
+pub mod state;
+use state::*;
 
 pub type ContractAndTokenId = String;
 
@@ -241,4 +243,23 @@ pub unsafe extern "C" fn init() {
         ..Market::default()
     };
     MARKET = Some(market);
+}
+
+
+#[no_mangle]
+pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
+    let state: State = msg::load().expect("failed to decode input argument");
+    let market: &mut Market = MARKET.get_or_insert(Market::default());
+    let encoded = match state {
+        State::AllItems => 
+            StateReply::AllItems (market.items.values().cloned().collect()).encode(),
+        State::ItemInfo(contract_and_token_id) => {
+            if let Some(item)  = market.items.get(&contract_and_token_id) {
+                StateReply::ItemInfo(item.clone()).encode()
+            } else {
+                StateReply::ItemInfo(Item::default()).encode()
+            }
+        }
+    };
+    gstd::util::to_leak_ptr(encoded)
 }
