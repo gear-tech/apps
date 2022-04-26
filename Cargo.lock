@@ -401,6 +401,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "dao-light"
+version = "0.1.0"
+dependencies = [
+ "dao-light-io",
+ "ft-io",
+ "gear-wasm-builder",
+ "gstd",
+ "gtest",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
+name = "dao-light-io"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
 name = "demo-ping"
 version = "0.1.0"
 dependencies = [
