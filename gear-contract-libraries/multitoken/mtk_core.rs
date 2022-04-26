@@ -31,7 +31,7 @@ pub trait MTKTokenAssert: StateKeeper + BalanceTrait {
 }
 
 pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
-    fn _mint(
+    fn mint_impl(
         &mut self,
         account: &ActorId,
         id: &TokenId,
@@ -52,7 +52,7 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
     }
 
     fn mint(&mut self, account: &ActorId, id: &TokenId, amount: u128, meta: Option<TokenMetadata>) {
-        self._mint(account, id, amount, meta);
+        self.mint_impl(account, id, amount, meta);
         msg::reply(
             MTKEvent::TransferSingle(TransferSingleReply {
                 operator: msg::source(),
@@ -83,9 +83,8 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
 
         meta.into_iter()
             .enumerate()
-            .for_each(|(i, meta)| self._mint(account, &ids[i], amounts[i], meta));
+            .for_each(|(i, meta)| self.mint_impl(account, &ids[i], amounts[i], meta));
 
-        // TODO: rewrites
         msg::reply(
             MTKEvent::TransferBatch {
                 operator: msg::source(),
@@ -99,7 +98,7 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         .unwrap();
     }
 
-    fn _burn(&mut self, id: &TokenId, amount: u128) {
+    fn burn_impl(&mut self, id: &TokenId, amount: u128) {
         let owner = &msg::source();
         self.assert_can_burn(owner, id, amount);
         self.set_balance(
@@ -110,7 +109,7 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
     }
 
     fn burn(&mut self, id: &TokenId, amount: u128) {
-        self._burn(id, amount);
+        self.burn_impl(id, amount);
         msg::reply(
             MTKEvent::TransferSingle(TransferSingleReply {
                 operator: msg::source(),
@@ -135,7 +134,7 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
 
         ids.iter()
             .enumerate()
-            .for_each(|(i, id)| self._burn(id, amounts[i]));
+            .for_each(|(i, id)| self.burn_impl(id, amounts[i]));
 
         msg::reply(
             MTKEvent::TransferBatch {
@@ -149,7 +148,7 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         )
         .unwrap();
     }
-    fn _transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128) {
+    fn transfer_from_impl(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128) {
         if from == to {
             panic!("MTK: sender and recipient addresses are the same")
         }
@@ -172,7 +171,7 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
     }
 
     fn transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128) {
-        self._transfer_from(from, to, id, amount);
+        self.transfer_from_impl(from, to, id, amount);
         msg::reply(
             MTKEvent::TransferSingle(TransferSingleReply {
                 operator: msg::source(),
@@ -216,7 +215,7 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
 
         ids.iter()
             .enumerate()
-            .for_each(|(i, id)| self._transfer_from(from, to, id, amounts[i]));
+            .for_each(|(i, id)| self.transfer_from_impl(from, to, id, amounts[i]));
 
         msg::reply(
             MTKEvent::TransferBatch {

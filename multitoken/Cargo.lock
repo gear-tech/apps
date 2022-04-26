@@ -818,7 +818,6 @@ dependencies = [
  "gear-wasm-builder",
  "gstd",
  "gtest",
- "hex",
  "multitoken-io",
  "parity-scale-codec",
  "primitive-types",

@@ -3,9 +3,11 @@ resolver = "2"
 
 members = [
     "dao",
+    "dao-light',
     "fungible-token",
     "gear-feeds-router",
     "lottery",
+    "multitoken",
     "nft-example",
     "nft-marketplace/marketplace",
     "nft-marketplace/nft",
