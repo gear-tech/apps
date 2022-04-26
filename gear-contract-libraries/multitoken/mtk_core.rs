@@ -1,12 +1,12 @@
-use crate::erc1155::{io::*, state::*};
+use crate::multitoken::{io::*, state::*};
 use gstd::{exec, msg, prelude::*, ActorId};
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
-pub trait ERC1155TokenAssert: StateKeeper + BalanceTrait {
+pub trait MTKTokenAssert: StateKeeper + BalanceTrait {
     fn assert_can_burn(&mut self, owner: &ActorId, id: &TokenId, amount: u128) {
         if self.get_balance(owner, id) < amount {
-            panic!("ERC1155: Not enough balance");
+            panic!("MTK: Not enough balance");
         }
     }
 
@@ -15,7 +15,7 @@ pub trait ERC1155TokenAssert: StateKeeper + BalanceTrait {
             || from == &exec::origin()
             || self.get_balance(&msg::source(), id) >= amount)
         {
-            panic!("ERC1155: Wrong owner or insufficient balance");
+            panic!("MTK: Wrong owner or insufficient balance");
         }
     }
 
@@ -25,12 +25,12 @@ pub trait ERC1155TokenAssert: StateKeeper + BalanceTrait {
                 .get(operator)
                 .unwrap_or(&false)
         {
-            panic!("ERC1155: Caller is not approved");
+            panic!("MTK: Caller is not approved");
         }
     }
 }
 
-pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
+pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
     fn _mint(
         &mut self,
         account: &ActorId,
@@ -39,11 +39,11 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
         meta: Option<TokenMetadata>,
     ) {
         if account == &ZERO_ID {
-            panic!("ERC1155: Mint to zero address")
+            panic!("MTK: Mint to zero address")
         }
         if let Some(metadata) = meta {
             if amount > 1 {
-                panic!("ERC1155: Mint metadata to a fungible token")
+                panic!("MTK: Mint metadata to a fungible token")
             }
             self.get_mut().token_metadata.insert(*id, metadata);
         }
@@ -54,7 +54,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
     fn mint(&mut self, account: &ActorId, id: &TokenId, amount: u128, meta: Option<TokenMetadata>) {
         self._mint(account, id, amount, meta);
         msg::reply(
-            ERC1155Event::TransferSingle(TransferSingleReply {
+            MTKEvent::TransferSingle(TransferSingleReply {
                 operator: msg::source(),
                 from: ZERO_ID,
                 to: *account,
@@ -74,11 +74,11 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
         meta: Vec<Option<TokenMetadata>>,
     ) {
         if account == &ZERO_ID {
-            panic!("ERC1155: Mint to zero address")
+            panic!("MTK: Mint to zero address")
         }
 
         if ids.len() != amounts.len() {
-            panic!("ERC1155: ids and amounts length mismatch")
+            panic!("MTK: ids and amounts length mismatch")
         }
 
         meta.into_iter()
@@ -87,7 +87,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
 
         // TODO: rewrites
         msg::reply(
-            ERC1155Event::TransferBatch {
+            MTKEvent::TransferBatch {
                 operator: msg::source(),
                 from: ZERO_ID,
                 to: *account,
@@ -112,7 +112,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
     fn burn(&mut self, id: &TokenId, amount: u128) {
         self._burn(id, amount);
         msg::reply(
-            ERC1155Event::TransferSingle(TransferSingleReply {
+            MTKEvent::TransferSingle(TransferSingleReply {
                 operator: msg::source(),
                 from: msg::source(),
                 to: ZERO_ID,
@@ -126,7 +126,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
 
     fn burn_batch(&mut self, ids: &[TokenId], amounts: &[u128]) {
         if ids.len() != amounts.len() {
-            panic!("ERC1155: ids and amounts length mismatch")
+            panic!("MTK: ids and amounts length mismatch")
         }
 
         for (id, amount) in ids.iter().zip(amounts) {
@@ -138,7 +138,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             .for_each(|(i, id)| self._burn(id, amounts[i]));
 
         msg::reply(
-            ERC1155Event::TransferBatch {
+            MTKEvent::TransferBatch {
                 operator: msg::source(),
                 from: msg::source(),
                 to: ZERO_ID,
@@ -151,20 +151,20 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
     }
     fn _transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128) {
         if from == to {
-            panic!("ERC1155: sender and recipient addresses are the same")
+            panic!("MTK: sender and recipient addresses are the same")
         }
 
         if from != &msg::source() {
-            panic!("ERC1155: caller is not owner nor approved")
+            panic!("MTK: caller is not owner nor approved")
         }
 
         if to == &ZERO_ID {
-            panic!("ERC1155: transfer to the zero address")
+            panic!("MTK: transfer to the zero address")
         }
         let from_balance = self.get_balance(from, id);
 
         if from_balance < amount {
-            panic!("ERC1155: insufficient balance for transfer")
+            panic!("MTK: insufficient balance for transfer")
         }
         self.set_balance(from, id, from_balance.saturating_sub(amount));
         let to_balance = self.get_balance(to, id);
@@ -174,7 +174,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
     fn transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128) {
         self._transfer_from(from, to, id, amount);
         msg::reply(
-            ERC1155Event::TransferSingle(TransferSingleReply {
+            MTKEvent::TransferSingle(TransferSingleReply {
                 operator: msg::source(),
                 from: *from,
                 to: *to,
@@ -194,20 +194,20 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
         amounts: &[u128],
     ) {
         if from == to {
-            panic!("ERC1155: sender and recipient addresses are the same")
+            panic!("MTK: sender and recipient addresses are the same")
         }
 
         // self.assert_approved(from, &msg::source());
         if from != &msg::source() {
-            panic!("ERC1155: caller is not owner nor approved")
+            panic!("MTK: caller is not owner nor approved")
         }
 
         if to == &ZERO_ID {
-            panic!("ERC1155: transfer to the zero address")
+            panic!("MTK: transfer to the zero address")
         }
 
         if ids.len() != amounts.len() {
-            panic!("ERC1155: ids and amounts length mismatch")
+            panic!("MTK: ids and amounts length mismatch")
         }
 
         for (id, amount) in ids.iter().zip(amounts) {
@@ -219,7 +219,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             .for_each(|(i, id)| self._transfer_from(from, to, id, amounts[i]));
 
         msg::reply(
-            ERC1155Event::TransferBatch {
+            MTKEvent::TransferBatch {
                 operator: msg::source(),
                 from: *from,
                 to: *to,
@@ -233,7 +233,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
 
     fn approve(&mut self, to: &ActorId) {
         if to == &ZERO_ID {
-            panic!("ERC1155: approving zero address")
+            panic!("MTK: approving zero address")
         }
         self.get_mut()
             .operator_approvals
@@ -241,7 +241,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             .or_default()
             .insert(*to, true);
         msg::reply(
-            ERC1155Event::Approve {
+            MTKEvent::Approve {
                 from: msg::source(),
                 to: *to,
             },
@@ -252,7 +252,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
 
     fn revoke_approval(&mut self, to: &ActorId) {
         if to == &ZERO_ID {
-            panic!("ERC1155: revoking zero address")
+            panic!("MTK: revoking zero address")
         }
         self.get_mut()
             .operator_approvals
@@ -261,7 +261,7 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             .remove_entry(to);
 
         msg::reply(
-            ERC1155Event::Approve {
+            MTKEvent::Approve {
                 from: msg::source(),
                 to: *to,
             },
@@ -271,12 +271,12 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
     }
 
     fn balance_of(&self, account: &ActorId, id: &TokenId) {
-        msg::reply(ERC1155Event::Balance(self.get_balance(&account, &id)), 0).unwrap();
+        msg::reply(MTKEvent::Balance(self.get_balance(&account, &id)), 0).unwrap();
     }
 
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[TokenId]) {
         if accounts.len() != ids.len() {
-            panic!("ERC1155: accounts and ids length mismatch")
+            panic!("MTK: accounts and ids length mismatch")
         }
 
         let res = ids
@@ -289,37 +289,37 @@ pub trait ERC1155Core: StateKeeper + BalanceTrait + ERC1155TokenAssert {
             })
             .collect();
 
-        msg::reply(ERC1155Event::BalanceOfBatch(res), 0).unwrap();
+        msg::reply(MTKEvent::BalanceOfBatch(res), 0).unwrap();
     }
 
     fn proc(&mut self, bytes: Vec<u8>) -> Option<()> {
-        let action = ERC1155Action::decode(&mut &bytes[..]).ok()?;
+        let action = MTKAction::decode(&mut &bytes[..]).ok()?;
         match action {
-            ERC1155Action::Mint(account, id, amount, meta) => {
+            MTKAction::Mint(account, id, amount, meta) => {
                 Self::mint(self, &account, &id, amount, meta);
             }
-            ERC1155Action::MintBatch(account, ids, amounts, metas) => {
+            MTKAction::MintBatch(account, ids, amounts, metas) => {
                 Self::mint_batch(self, &account, &ids, &amounts, metas);
             }
 
-            ERC1155Action::Burn(id, amount) => {
+            MTKAction::Burn(id, amount) => {
                 Self::burn(self, &id, amount);
             }
-            ERC1155Action::BurnBatch(ids, amounts) => Self::burn_batch(self, &ids, &amounts),
+            MTKAction::BurnBatch(ids, amounts) => Self::burn_batch(self, &ids, &amounts),
 
-            ERC1155Action::TransferFrom(from, to, id, amount) => {
+            MTKAction::TransferFrom(from, to, id, amount) => {
                 Self::transfer_from(self, &from, &to, &id, amount);
             }
-            ERC1155Action::BatchTransferFrom(from, to, ids, amounts) => {
+            MTKAction::BatchTransferFrom(from, to, ids, amounts) => {
                 Self::batch_transfer_from(self, &from, &to, &ids, &amounts)
             }
 
-            ERC1155Action::BalanceOf(account, id) => Self::balance_of(self, &account, &id),
-            ERC1155Action::BalanceOfBatch(accounts, ids) => {
+            MTKAction::BalanceOf(account, id) => Self::balance_of(self, &account, &id),
+            MTKAction::BalanceOfBatch(accounts, ids) => {
                 Self::balance_of_batch(self, &accounts, &ids)
             }
-            ERC1155Action::Approve(to) => Self::approve(self, &to),
-            ERC1155Action::RevokeApproval(to) => Self::revoke_approval(self, &to),
+            MTKAction::Approve(to) => Self::approve(self, &to),
+            MTKAction::RevokeApproval(to) => Self::revoke_approval(self, &to),
         };
         Some(())
     }

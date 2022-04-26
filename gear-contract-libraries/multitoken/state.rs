@@ -1,8 +1,8 @@
-use crate::erc1155::io::*;
+use crate::multitoken::io::*;
 use gstd::{prelude::*, ActorId};
 
 #[derive(Debug, Default)]
-pub struct ERC1155State {
+pub struct MTKState {
     pub name: String,
     pub symbol: String,
     pub base_uri: String,
@@ -12,8 +12,8 @@ pub struct ERC1155State {
 }
 
 pub trait StateKeeper {
-    fn get(&self) -> &ERC1155State;
-    fn get_mut(&mut self) -> &mut ERC1155State;
+    fn get(&self) -> &MTKState;
+    fn get_mut(&mut self) -> &mut MTKState;
 }
 
 pub trait BalanceTrait: StateKeeper {
@@ -37,7 +37,7 @@ pub trait BalanceTrait: StateKeeper {
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum ERC1155Query {
+pub enum MTKQuery {
     Name,
     Symbol,
     Uri,
@@ -48,7 +48,7 @@ pub enum ERC1155Query {
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum ERC1155QueryReply {
+pub enum MTKQueryReply {
     Name(String),
     Symbol(String),
     Uri(String),
@@ -58,7 +58,7 @@ pub enum ERC1155QueryReply {
     TokensForOwner(Vec<TokenId>),
 }
 
-pub trait ERC1155TokenState: StateKeeper + BalanceTrait {
+pub trait MTKTokenState: StateKeeper + BalanceTrait {
     fn get_uri(&self, id: TokenId) -> String {
         self.get()
             .base_uri
@@ -88,20 +88,20 @@ pub trait ERC1155TokenState: StateKeeper + BalanceTrait {
     }
 
     fn proc_state(&mut self, bytes: Vec<u8>) -> Option<Vec<u8>> {
-        let query = ERC1155Query::decode(&mut &bytes[..]).ok()?;
+        let query = MTKQuery::decode(&mut &bytes[..]).ok()?;
         let encoded = match query {
-            ERC1155Query::Name => ERC1155QueryReply::Name(self.get().name.clone()).encode(),
-            ERC1155Query::Symbol => ERC1155QueryReply::Symbol(self.get().symbol.clone()).encode(),
-            ERC1155Query::Uri => ERC1155QueryReply::Uri(self.get().base_uri.clone()).encode(),
-            ERC1155Query::BalanceOf(account, id) => {
-                ERC1155QueryReply::Balance(Self::get_balance(self, &account, &id)).encode()
+            MTKQuery::Name => MTKQueryReply::Name(self.get().name.clone()).encode(),
+            MTKQuery::Symbol => MTKQueryReply::Symbol(self.get().symbol.clone()).encode(),
+            MTKQuery::Uri => MTKQueryReply::Uri(self.get().base_uri.clone()).encode(),
+            MTKQuery::BalanceOf(account, id) => {
+                MTKQueryReply::Balance(Self::get_balance(self, &account, &id)).encode()
             }
-            ERC1155Query::URI(id) => ERC1155QueryReply::URI(Self::get_uri(self, id)).encode(),
-            ERC1155Query::MetadataOf(id) => {
-                ERC1155QueryReply::MetadataOf(Self::get_metadata(self, id)).encode()
+            MTKQuery::URI(id) => MTKQueryReply::URI(Self::get_uri(self, id)).encode(),
+            MTKQuery::MetadataOf(id) => {
+                MTKQueryReply::MetadataOf(Self::get_metadata(self, id)).encode()
             }
-            ERC1155Query::TokensForOwner(owner) => {
-                ERC1155QueryReply::TokensForOwner(Self::tokens_for_owner(self, &owner)).encode()
+            MTKQuery::TokensForOwner(owner) => {
+                MTKQueryReply::TokensForOwner(Self::tokens_for_owner(self, &owner)).encode()
             }
         };
         Some(encoded)

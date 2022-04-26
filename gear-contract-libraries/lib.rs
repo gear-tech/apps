@@ -1,2 +1,2 @@
 #![no_std]
-pub mod erc1155;
+pub mod multitoken;
