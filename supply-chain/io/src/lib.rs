@@ -1,6 +1,6 @@
 #![no_std]
 
-use gstd::{ActorId, BTreeSet, Decode, Encode, String};
+use gstd::{prelude::*, ActorId};
 use primitive_types::U256;
 
 #[derive(Encode, Decode)]
@@ -8,6 +8,9 @@ pub struct InitSupplyChain {
     pub producers: BTreeSet<ActorId>,
     pub distributors: BTreeSet<ActorId>,
     pub retailers: BTreeSet<ActorId>,
+
+    pub ft_program_id: ActorId,
+    pub nft_program_id: ActorId,
 }
 
 #[derive(Encode, Decode)]
@@ -15,47 +18,35 @@ pub enum SupplyChainAction {
     Produce { name: String, notes: String },
     PutUpForSaleByProducer { item_id: U256, price: u128 },
     PurchaseByDistributor { item_id: U256, delivery_time: u64 },
-    ShipByProducer { item_id: U256 },
-    ReceiveByDistributor { item_id: U256 },
-    ProcessByDistributor { item_id: U256 },
-    PackageByDistributor { item_id: U256 },
+    ShipByProducer(U256),
+    ReceiveByDistributor(U256),
+    ProcessByDistributor(U256),
+    PackageByDistributor(U256),
     PutUpForSaleByDistributor { item_id: U256, price: u128 },
     PurchaseByRetailer { item_id: U256, delivery_time: u64 },
-    ShipByDistributor { item_id: U256 },
-    ReceiveByRetailer { item_id: U256 },
+    ShipByDistributor(U256),
+    ReceiveByRetailer(U256),
     PutUpForSaleByRetailer { item_id: U256, price: u128 },
-    PurchaseByConsumer { item_id: U256 },
-    GetItemInfo { item_id: U256 },
+    PurchaseByConsumer(U256),
+    GetItemInfo(U256),
 }
 
 #[derive(Encode, Decode)]
 pub enum SupplyChainEvent {
-    Produced {
-        item_id: U256,
-    },
-    ForSaleByProducer {
-        item_id: U256,
-        price: u128,
-    },
+    Produced(U256),
+    ForSaleByProducer(U256),
     PurchasedByDistributor {
         from: ActorId,
         item_id: U256,
         price: u128,
     },
-    ShippedByProducer {
-        item_id: U256,
-        shipping_time: u64,
-    },
+    ShippedByProducer(U256),
     ReceivedByDistributor {
         from: ActorId,
         item_id: U256,
     },
-    ProcessedByDistributor {
-        item_id: U256,
-    },
-    PackagedByDistributor {
-        item_id: U256,
-    },
+    ProcessedByDistributor(U256),
+    PackagedByDistributor(U256),
     ForSaleByDistributor {
         item_id: U256,
         price: u128,
@@ -65,10 +56,7 @@ pub enum SupplyChainEvent {
         item_id: U256,
         price: u128,
     },
-    ShippedByDistributor {
-        item_id: U256,
-        shipping_time: u64,
-    },
+    ShippedByDistributor(U256),
     ReceivedByRetailer {
         item_id: U256,
         from: ActorId,
@@ -84,7 +72,7 @@ pub enum SupplyChainEvent {
     },
     ItemInfo {
         item_id: U256,
-        item: ItemInfo,
+        info: ItemInfo,
     },
 }
 
