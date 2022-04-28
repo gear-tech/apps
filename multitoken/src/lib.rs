@@ -1,7 +1,7 @@
 #![no_std]
 use multitoken_io::*;
 use gear_contract_libraries::multitoken::{io::*, mtk_core::*, state::*};
-use gstd::{msg, prelude::*, ActorId};
+use gstd::{debug, msg, prelude::*, ActorId};
 
 #[derive(Debug, Default)]
 pub struct SimpleMTK {
@@ -66,6 +66,18 @@ pub trait SimpleMTKCore: MTKCore {
 
 static mut CONTRACT: Option<SimpleMTK> = None;
 
+gstd::metadata! {
+    title: "MTK",
+    init:
+        input: InitMTK,
+    handle:
+        input: MyMTKAction,
+        output: MyMTKEvent,
+    state:
+        input: MTKQuery,
+        output: MTKQueryReply,
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn init() {
     let config: InitMTK = msg::load().expect("Unable to decode InitConfig");
@@ -78,16 +90,21 @@ pub unsafe extern "C" fn init() {
 
 #[no_mangle]
 pub unsafe extern "C" fn handle() {
-    let action: Vec<u8> = msg::load().expect("Could not load msg");
+    let action: MyMTKAction = msg::load().expect("Could not load msg");
+    let action_bytes = action.encode();
+    // let action: Vec<u8> = msg::load().expect("Could not load msg");
+    // debug!("ACTION: {:?}", action);
     let multi_token = CONTRACT.get_or_insert(SimpleMTK::default());
-    SimpleMTKCore::proc(multi_token, action);
+    SimpleMTKCore::proc(multi_token, action_bytes);
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
-    let query: Vec<u8> = msg::load().expect("failed to decode input argument");
+    let query: MTKQuery = msg::load().expect("failed to decode input argument");
+    // let query: Vec<u8> = msg::load().expect("failed to decode input argument");
+    let query_bytes = query.encode();
     let multi_token = CONTRACT.get_or_insert(SimpleMTK::default());
-    let encoded = MTKTokenState::proc_state(multi_token, query).expect("error");
+    let encoded = MTKTokenState::proc_state(multi_token, query_bytes).expect("error");
     gstd::util::to_leak_ptr(encoded)
 }
 

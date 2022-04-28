@@ -148,6 +148,7 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         )
         .unwrap();
     }
+
     fn transfer_from_impl(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128) {
         if from == to {
             panic!("MTK: sender and recipient addresses are the same")
