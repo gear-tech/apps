@@ -24,7 +24,7 @@ const uploadProgram = async (
     const programId = api.program.submit({ code, initPayload, gasLimit: gas }, meta);
     await api.program.signAndSend(account, (data) => {
         console.log(data.toHuman());
-        });
+    });
     return programId;
 }
 
