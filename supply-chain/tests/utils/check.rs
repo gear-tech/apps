@@ -46,7 +46,7 @@ pub fn purchare_by_distributor(
     supply_chain_program: &Program,
     distributor: u64,
     item_id: u128,
-    delivery_time: u64,
+    delivery_time: u32,
 
     from: u64,
     price: u128,
@@ -56,7 +56,7 @@ pub fn purchare_by_distributor(
             distributor,
             SupplyChainAction::PurchaseByDistributor {
                 item_id: item_id.into(),
-                delivery_time,
+                delivery_time: delivery_time as _,
             },
         )
         .contains(&(
@@ -154,7 +154,7 @@ pub fn purchare_by_retailer(
     supply_chain_program: &Program,
     retailer: u64,
     item_id: u128,
-    delivery_time: u64,
+    delivery_time: u32,
 
     from: u64,
     price: u128,
@@ -164,7 +164,7 @@ pub fn purchare_by_retailer(
             retailer,
             SupplyChainAction::PurchaseByRetailer {
                 item_id: item_id.into(),
-                delivery_time,
+                delivery_time: delivery_time as _,
             }
         )
         .contains(&(

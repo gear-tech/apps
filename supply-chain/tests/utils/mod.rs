@@ -2,7 +2,6 @@ pub use ft_io::{FTAction, FTEvent, InitConfig as InitFT};
 pub use gstd::prelude::*;
 pub use gtest::{Program, System};
 pub use nft_example_io::{Action as NFTAction, Event as NFTEvent, InitConfig as InitNFT};
-pub use primitive_types::U256;
 pub use supply_chain_io::*;
 
 pub mod check;
@@ -17,6 +16,13 @@ pub const RETAILER: [u64; 2] = [8, 9];
 pub const CONSUMER: [u64; 2] = [10, 11];
 pub const FOREIGN_USER: u64 = 1337;
 pub const ITEM_ID: [u128; 2] = [0, 1];
+pub const ITEM_NAME: [&str; 2] = ["Banana", "Tasty"];
+pub const ITEM_NOTES: [&str; 2] = ["Watermelon", "Fresh"];
+pub const ITEM_PRICE_BY_PRODUCER: [u128; 2] = [1234, 4321];
+pub const ITEM_PRICE_BY_DISTRIBUTOR: [u128; 2] = [12345, 54321];
+pub const ITEM_PRICE_BY_RETAILER: [u128; 2] = [123456, 654321];
+pub const CONSUMER_BALANCE: [u128; 2] = [1234567, 7654321];
+pub const DELIVERY_TIME: [u32; 2] = [12, 21];
 
 pub fn init_system() -> System {
     let system = System::new();
@@ -87,16 +93,10 @@ pub fn init_supply_chain_program(system: &System) -> Program {
     supply_chain_program
 }
 
-pub fn check_ft_balance(ft_program: &Program, actor: u64, amount: u128) {
+pub fn check_balance(ft_program: &Program, actor: u64, amount: u128) {
     assert!(ft_program
         .send(FOREIGN_USER, FTAction::BalanceOf(actor.into()))
         .contains(&(FOREIGN_USER, FTEvent::Balance(amount).encode())));
-}
-
-pub fn check_nft_balance(ft_program: &Program, actor: u64, amount: U256) {
-    assert!(ft_program
-        .send(FOREIGN_USER, NFTAction::BalanceOf(actor.into()))
-        .contains(&(FOREIGN_USER, NFTEvent::BalanceOf(amount).encode())));
 }
 
 pub fn mint(ft_program: &Program, actor: u64, amount: u128) {
@@ -111,8 +111,8 @@ pub fn mint(ft_program: &Program, actor: u64, amount: u128) {
     )));
 }
 
-pub fn check_nft_owner(nft_program: &Program, id: U256, owner: u64) {
+pub fn check_nft_owner(nft_program: &Program, id: u128, owner: u64) {
     assert!(nft_program
-        .send(FOREIGN_USER, NFTAction::OwnerOf(id))
+        .send(FOREIGN_USER, NFTAction::OwnerOf(id.into()))
         .contains(&(FOREIGN_USER, NFTEvent::OwnerOf(owner.into()).encode())));
 }

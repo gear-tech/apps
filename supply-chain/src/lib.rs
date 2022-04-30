@@ -58,29 +58,31 @@ async fn transfer_nft(nft_program_id: ActorId, to: ActorId, token_id: U256) {
 
 async fn receive(ft_program_id: ActorId, seller: ActorId, item: &Item) {
     let elapsed_time = exec::block_timestamp() - item.shipping_time;
-    // If a seller spent more time than it was agreed...
-    let (from, to, amount) = if elapsed_time > item.delivery_time {
-        // ...and extremely late (more than 2 times in this example),
-        // then all tokens refunded to a buyer...
-        if elapsed_time > item.delivery_time * 2 {
-            (exec::program_id(), msg::source(), item.price)
+    // By default, all tokens transfered to a seller,
+    let (mut to, mut amount) = (seller, item.price);
+
+    // but if a seller spent more time than it was agreed...
+    if elapsed_time > item.delivery_time {
+        // ...and extremely late (more than or exactly 2 times in this example),
+        if elapsed_time >= item.delivery_time * 2 {
+            // then all tokens refunded to a buyer...
+            to = msg::source();
         } else {
             // ...or a half of tokens refunded to a buyer and...
             transfer_tokens(
+                ft_program_id,
                 exec::program_id(),
                 msg::source(),
-                seller,
-                item.price / 2 + 1,
+                (item.price + 1) / 2,
             )
             .await;
-            // another half transfered to a seller...
-            (ft_program_id, exec::program_id(), item.price / 2)
+
+            // ...another half transfered to a seller.
+            amount /= 2;
         }
-    } else {
-        // ...or all tokens transfered to a seller.
-        (exec::program_id(), seller, item.price)
-    };
-    transfer_tokens(ft_program_id, from, to, amount).await;
+    }
+
+    transfer_tokens(ft_program_id, exec::program_id(), to, amount).await;
 }
 
 impl SupplyChain {
