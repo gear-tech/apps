@@ -47,8 +47,6 @@
 //     check::put_up_for_sale_by_producer(&supply_chain_program, PRODUCER[0], ITEM_ID[0], ITEM_PRICE_BY_PRODUCER);
 //     check::put_up_for_sale_by_producer(&supply_chain_program, PRODUCER[0], ITEM_ID[0], ITEM_PRICE_BY_PRODUCER);
 
-
-
 //     check::purchare_by_distributor(
 //         &supply_chain_program,
 //         DISTRIBUTOR[0],
