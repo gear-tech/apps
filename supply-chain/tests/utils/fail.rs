@@ -125,9 +125,6 @@ pub fn purchare_by_consumer(supply_chain_program: &Program, user: u64, item_id: 
 
 pub fn get_item_info(supply_chain_program: &Program, item_id: u128) {
     assert!(supply_chain_program
-        .send(
-            FOREIGN_USER,
-            SupplyChainAction::GetItemInfo(item_id.into())
-        )
+        .send(FOREIGN_USER, SupplyChainAction::GetItemInfo(item_id.into()))
         .main_failed());
 }
