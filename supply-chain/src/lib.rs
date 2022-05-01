@@ -132,7 +132,7 @@ impl SupplyChain {
                 info: ItemInfo {
                     name,
                     notes,
-                    producer: ActorId::default(),
+                    producer: msg::source(),
                     distributor: ActorId::default(),
                     retailer: ActorId::default(),
                     state: ItemState::Produced,
