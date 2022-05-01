@@ -73,6 +73,11 @@ fn update_auction(
             starting_price,
             discount_rate: 1.into(),
             token_id: 0.into(),
+            duration: Duration {
+                days: 7,
+                hours: 0,
+                minutes: 0,
+            },
         }),
     )
 }
@@ -183,6 +188,33 @@ fn create_auction_with_low_price() {
     sys.spend_blocks(DURATION);
     init_nft(&sys, USERS[1]);
     let result = update_auction(&auction, USERS[1], 3, (DURATION - 1).into());
+
+    assert!(result.main_failed());
+}
+
+#[test]
+fn create_and_stop() {
+    let sys = System::new();
+    let owner_user = USERS[0];
+    let auction = init(&sys);
+
+    let result = auction.send(owner_user, Action::ForceStop);
+
+    assert!(result.contains(&(
+        owner_user,
+        Event::AuctionStoped {
+            token_owner: owner_user.into(),
+            token_id: 0.into(),
+        }
+        .encode()
+    )));
+}
+
+fn stop_from_other_user() {
+    let sys = System::new();
+    let auction = init(&sys);
+
+    let result = auction.send(USERS[1], Action::ForceStop);
 
     assert!(result.main_failed());
 }

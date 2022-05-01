@@ -10,8 +10,6 @@ pub use state::{AuctionInfo, State, StateReply};
 
 pub use auction_io::{Action, CreateConfig, Event, InitConfig};
 
-const DURATION: u64 = 7 * 24 * 60 * 60 * 1000;
-
 #[derive(Debug, Default)]
 pub struct NFT {
     pub token_id: U256,
@@ -21,12 +19,14 @@ pub struct NFT {
 
 #[derive(Debug, Default)]
 pub struct Auction {
+    pub owner: ActorId,
     pub nft: NFT,
     pub starting_price: U256,
     pub discount_rate: U256,
     pub is_active: bool,
     pub start_at: u64,
     pub expires_at: u64,
+    pub duration: u64,
 }
 
 static mut AUCTION: Option<Auction> = None;
@@ -78,13 +78,16 @@ impl Auction {
             panic!("already in use")
         }
 
-        if config.starting_price < config.discount_rate * DURATION {
+        let hours_count = config.duration.days * 24 + config.duration.hours;
+        let minutes_count = hours_count * 60 + config.duration.minutes;
+        let duration = minutes_count * 60 * 1000;
+        if config.starting_price < config.discount_rate * duration {
             panic!("starting price < min");
         }
 
         self.is_active = true;
         self.start_at = block_timestamp();
-        self.expires_at = block_timestamp() + DURATION;
+        self.expires_at = block_timestamp() + duration;
         self.nft.token_id = config.token_id;
         self.nft.contract_id = config.nft_contract_actor_id;
         self.nft.owner = config.token_owner;
@@ -106,6 +109,23 @@ impl Auction {
         if block_timestamp() >= self.expires_at {
             self.is_active = false
         }
+    }
+
+    fn force_stop(&mut self) {
+        if msg::source() != self.owner {
+            panic!("Can't stop if sender is not owner")
+        }
+
+        self.is_active = false;
+
+        msg::reply(
+            Event::AuctionStoped {
+                token_owner: self.owner,
+                token_id: self.nft.token_id,
+            },
+            0,
+        )
+        .unwrap();
     }
 
     fn info(&self) -> AuctionInfo {
@@ -131,7 +151,14 @@ gstd::metadata! {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn init() {}
+pub unsafe extern "C" fn init() {
+    let auction = Auction {
+        owner: msg::source(),
+        ..Default::default()
+    };
+
+    AUCTION = Some(auction)
+}
 
 #[gstd::async_main]
 async unsafe fn main() {
@@ -143,6 +170,7 @@ async unsafe fn main() {
     match action {
         Action::Buy => auction.buy().await,
         Action::Create(config) => auction.renew_contract(config),
+        Action::ForceStop => auction.force_stop(),
     }
 }
 

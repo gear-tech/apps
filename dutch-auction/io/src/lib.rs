@@ -9,6 +9,7 @@ use scale_info::TypeInfo;
 pub enum Action {
     Buy,
     Create(CreateConfig),
+    ForceStop,
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
@@ -18,10 +19,21 @@ pub enum Event {
         price: U256,
         token_id: U256,
     },
+    AuctionStoped {
+        token_owner: ActorId,
+        token_id: U256,
+    },
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct InitConfig {}
+
+#[derive(Debug, Encode, Decode, TypeInfo)]
+pub struct Duration {
+    pub days: u64,
+    pub hours: u64,
+    pub minutes: u64,
+}
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub struct CreateConfig {
@@ -30,4 +42,5 @@ pub struct CreateConfig {
     pub token_id: U256,
     pub starting_price: U256,
     pub discount_rate: U256,
+    pub duration: Duration,
 }
