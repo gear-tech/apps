@@ -13,17 +13,6 @@ struct Item {
     shipping_time: u64,
 }
 
-struct SupplyChain {
-    items: BTreeMap<U256, Item>,
-
-    producers: BTreeSet<ActorId>,
-    distributors: BTreeSet<ActorId>,
-    retailers: BTreeSet<ActorId>,
-
-    ft_program_id: ActorId,
-    nft_program_id: ActorId,
-}
-
 fn get_item(items: &mut BTreeMap<U256, Item>, id: U256) -> &mut Item {
     if let Some(item) = items.get_mut(&id) {
         item
@@ -81,6 +70,18 @@ async fn receive(ft_program_id: ActorId, seller: ActorId, item: &Item) {
     }
 
     transfer_tokens(ft_program_id, exec::program_id(), to, amount).await;
+}
+
+#[derive(Default)]
+struct SupplyChain {
+    items: BTreeMap<U256, Item>,
+
+    producers: BTreeSet<ActorId>,
+    distributors: BTreeSet<ActorId>,
+    retailers: BTreeSet<ActorId>,
+
+    ft_program_id: ActorId,
+    nft_program_id: ActorId,
 }
 
 impl SupplyChain {
@@ -496,21 +497,6 @@ impl SupplyChain {
             0,
         )
         .unwrap();
-    }
-}
-
-impl Default for SupplyChain {
-    fn default() -> Self {
-        Self {
-            items: BTreeMap::new(),
-
-            producers: BTreeSet::new(),
-            distributors: BTreeSet::new(),
-            retailers: BTreeSet::new(),
-
-            ft_program_id: ActorId::default(),
-            nft_program_id: ActorId::default(),
-        }
     }
 }
 
