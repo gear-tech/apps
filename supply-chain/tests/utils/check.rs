@@ -261,7 +261,7 @@ pub fn purchare_by_consumer(
         )));
 }
 
-pub fn item_info(supply_chain_program: &Program, item_id: u128, info: ItemInfo) {
+pub fn get_item_info(supply_chain_program: &Program, item_id: u128, info: ItemInfo) {
     assert!(supply_chain_program
         .send(FOREIGN_USER, SupplyChainAction::GetItemInfo(item_id.into()))
         .contains(&(

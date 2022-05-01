@@ -21,7 +21,6 @@ pub const ITEM_NOTES: [&str; 2] = ["Watermelon", "Fresh"];
 pub const ITEM_PRICE_BY_PRODUCER: [u128; 2] = [1234, 4321];
 pub const ITEM_PRICE_BY_DISTRIBUTOR: [u128; 2] = [12345, 54321];
 pub const ITEM_PRICE_BY_RETAILER: [u128; 2] = [123456, 654321];
-pub const CONSUMER_BALANCE: [u128; 2] = [1234567, 7654321];
 pub const DELIVERY_TIME: [u32; 2] = [12, 21];
 
 pub fn init_system() -> System {
