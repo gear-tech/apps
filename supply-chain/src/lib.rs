@@ -369,7 +369,8 @@ impl SupplyChain {
     }
 
     /// Starts shipping a purchased item to a retailer on behalf of a distributor.
-    /// Starts countdown for delivery time specified in `purchare_by_retailer` function.
+    /// Starts countdown for delivery time specified in
+    /// `purchare_by_retailer` function.
     ///
     /// Requirements:
     /// * `msg::source()` must be a distributor in a supply chain

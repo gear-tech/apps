@@ -42,6 +42,8 @@ fn delivery_wo_delay() {
         PRODUCER[0],
     );
 
+    // Since the delivery is completed on time,
+    // all tokens are transferred to the producer (seller).
     check_balance(&ft_program, PRODUCER[0], ITEM_PRICE_BY_PRODUCER[0]);
     check_balance(&ft_program, DISTRIBUTOR[0], 0);
 
@@ -70,6 +72,8 @@ fn delivery_wo_delay() {
         DISTRIBUTOR[0],
     );
 
+    // Since the delivery is completed on time,
+    // all tokens are transferred to the distributor (seller).
     check_balance(&ft_program, DISTRIBUTOR[0], ITEM_PRICE_BY_DISTRIBUTOR[0]);
     check_balance(&ft_program, RETAILER[0], 0);
 }
@@ -115,6 +119,9 @@ fn delivery_with_delay() {
         PRODUCER[0],
     );
 
+    // Since the delivery is completed with the delay,
+    // the half of tokens is transferred to the producer (seller)
+    // and the other half of them is refunded to the distributor (buyer).
     check_balance(&ft_program, PRODUCER[0], ITEM_PRICE_BY_PRODUCER[0] / 2);
     check_balance(
         &ft_program,
@@ -147,6 +154,9 @@ fn delivery_with_delay() {
         DISTRIBUTOR[0],
     );
 
+    // Since the delivery is completed with the delay,
+    // the half of tokens is transferred to the distributor (seller)
+    // and the other half of them is refunded to the retailer (buyer).
     check_balance(
         &ft_program,
         DISTRIBUTOR[0],
@@ -200,6 +210,8 @@ fn delivery_with_big_delay() {
         PRODUCER[0],
     );
 
+    // Since the delivery is completed with the big delay,
+    // all tokens are refunded to the distributor (buyer).
     check_balance(&ft_program, PRODUCER[0], 0);
     check_balance(&ft_program, DISTRIBUTOR[0], ITEM_PRICE_BY_PRODUCER[0]);
 
@@ -228,6 +240,8 @@ fn delivery_with_big_delay() {
         DISTRIBUTOR[0],
     );
 
+    // Since the delivery is completed with the big delay,
+    // all tokens are refunded to the retailer (buyer).
     check_balance(&ft_program, DISTRIBUTOR[0], ITEM_PRICE_BY_PRODUCER[0]);
     check_balance(&ft_program, RETAILER[0], ITEM_PRICE_BY_DISTRIBUTOR[0]);
 }
