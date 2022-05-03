@@ -1,0 +1,16 @@
+[package]
+name = "derive_traits"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+syn = { version = "1.0" }
+quote = "1.0"
+proc-macro2 = "1"
+macros = { path = "../macros/" }
+
+[lib]
+name = "derive_traits"
+path = "src/lib.rs"
+proc-macro = true
+
