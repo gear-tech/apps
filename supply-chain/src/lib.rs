@@ -45,7 +45,7 @@ async fn transfer_nft(nft_program_id: ActorId, to: ActorId, token_id: U256) {
 
 async fn receive(ft_program_id: ActorId, seller: ActorId, item: &Item) {
     let elapsed_time = exec::block_timestamp() - item.shipping_time;
-    // By default, all tokens transfered to a seller,
+    // By default, all tokens transferred to a seller,
     let (mut to, mut amount) = (seller, item.price);
 
     // but if a seller spent more time than it was agreed...
@@ -64,7 +64,7 @@ async fn receive(ft_program_id: ActorId, seller: ActorId, item: &Item) {
             )
             .await;
 
-            // ...another half transfered to a seller.
+            // ...another half transferred to a seller.
             amount /= 2;
         }
     }
@@ -116,7 +116,7 @@ impl SupplyChain {
         self.check_producer();
 
         // After minting NFT for an item,
-        // an item gets ID equal to ID of its NFT.
+        // an item gets an ID equal to the ID of its NFT.
         let item_id = match msg::send_and_wait_for_reply(self.nft_program_id, NFTAction::Mint, 0)
             .unwrap()
             .await
@@ -171,9 +171,9 @@ impl SupplyChain {
         msg::reply(SupplyChainEvent::ForSaleByProducer(item_id), 0).unwrap();
     }
 
-    /// Purchares an item from a producer on behalf of a distributor.
+    /// Purchases an item from a producer on behalf of a distributor.
     /// Transfers tokens for purchasing an item to a supply chain
-    /// until an item is received (by `receive_by_distributor` function).
+    /// until an item is received (by the `receive_by_distributor` function).
     ///
     /// Requirements:
     /// * `msg::source()` must be a distributor in a supply chain.
@@ -183,7 +183,7 @@ impl SupplyChain {
     /// * `item_id`: an item's ID.
     /// * `delivery_time`: a time in seconds for which a producer must deliver an item.
     /// A countdown starts after the `ship_by_producer` function is executed.
-    async fn purchare_by_distributor(&mut self, item_id: U256, delivery_time: u64) {
+    async fn purchase_by_distributor(&mut self, item_id: U256, delivery_time: u64) {
         self.check_distributor();
         let item = get_item(&mut self.items, item_id);
         assert_eq!(item.info.state, ItemState::ForSaleByProducer);
@@ -211,8 +211,8 @@ impl SupplyChain {
     }
 
     /// Starts shipping a purchased item to a distributor on behalf of a producer.
-    /// Starts countdown for delivery time specified in
-    /// `purchare_by_distributor` function.
+    /// Starts a countdown for a delivery time specified in the
+    /// `purchase_by_distributor` function.
     ///
     /// Requirements:
     /// * `msg::source()` must be a producer in a supply chain
@@ -233,9 +233,9 @@ impl SupplyChain {
         msg::reply(SupplyChainEvent::ShippedByProducer(item_id), 0).unwrap();
     }
 
-    /// Receives a shipped item from a producer on behalf of a distrubutor.
+    /// Receives a shipped item from a producer on behalf of a distributor.
     /// Depending on a counted delivery time, transfers tokens for purchasing an item
-    /// from supply chain to producer or as a penalty for being late refunds some or
+    /// from a supply chain to a producer or as a penalty for being late refunds some or
     /// all of them to a distributor.
     /// Transfers item's NFT to a distributor.
     ///
@@ -266,7 +266,7 @@ impl SupplyChain {
         .unwrap();
     }
 
-    /// Processes a received item from a producer on behalf of distributor.
+    /// Processes a received item from a producer on behalf of a distributor.
     ///
     /// Requirements:
     /// * `msg::source()` must be a distributor in a supply chain
@@ -285,7 +285,7 @@ impl SupplyChain {
         msg::reply(SupplyChainEvent::ProcessedByDistributor(item_id), 0).unwrap();
     }
 
-    /// Packages a processed item on behalf of distributor.
+    /// Packages a processed item on behalf of a distributor.
     ///
     /// Requirements:
     /// * `msg::source()` must be a distributor in a supply chain
@@ -329,9 +329,9 @@ impl SupplyChain {
         msg::reply(SupplyChainEvent::ForSaleByDistributor { item_id, price }, 0).unwrap();
     }
 
-    /// Purchares an item from a distributor on behalf of a retailer.
+    /// Purchases an item from a distributor on behalf of a retailer.
     /// Transfers tokens for purchasing an item to a supply chain
-    /// until an item is received (by `receive_by_retailer` function).
+    /// until an item is received (by the `receive_by_retailer` function).
     ///
     /// Requirements:
     /// * `msg::source()` must be a retailer in a supply chain.
@@ -341,7 +341,7 @@ impl SupplyChain {
     /// * `item_id`: an item's ID.
     /// * `delivery_time`: a time in seconds for which a distributor must deliver an item.
     /// A countdown starts after the `ship_by_distributor` function is executed.
-    async fn purchare_by_retailer(&mut self, item_id: U256, delivery_time: u64) {
+    async fn purchase_by_retailer(&mut self, item_id: U256, delivery_time: u64) {
         self.check_retailer();
         let item = get_item(&mut self.items, item_id);
         assert_eq!(item.info.state, ItemState::ForSaleByDistributor);
@@ -369,8 +369,8 @@ impl SupplyChain {
     }
 
     /// Starts shipping a purchased item to a retailer on behalf of a distributor.
-    /// Starts countdown for delivery time specified in
-    /// `purchare_by_retailer` function.
+    /// Starts a countdown for a delivery time specified in the
+    /// `purchase_by_retailer` function.
     ///
     /// Requirements:
     /// * `msg::source()` must be a distributor in a supply chain
@@ -393,7 +393,7 @@ impl SupplyChain {
 
     /// Receives a shipped item from a distributor on behalf of a retailer.
     /// Depending on a counted delivery time, transfers tokens for purchasing an item
-    /// from supply chain to distributor or as a penalty for being late refunds some or
+    /// from a supply chain to a distributor or as a penalty for being late refunds some or
     /// all of them to a retailer.
     /// Transfers item's NFT to a retailer.
     ///
@@ -424,7 +424,7 @@ impl SupplyChain {
         .unwrap();
     }
 
-    /// Puts a received item from distributor up for a sale to a consumer
+    /// Puts a received item from a distributor up for a sale to a consumer
     /// for a given price on behalf of a retailer.
     /// Transfers item's NFT to a supply chain.
     ///
@@ -449,7 +449,7 @@ impl SupplyChain {
         msg::reply(SupplyChainEvent::ForSaleByRetailer { item_id, price }, 0).unwrap();
     }
 
-    /// Purchares an item from a retailer.
+    /// Purchases an item from a retailer.
     /// Transfers tokens for purchasing an item to its retailer.
     /// Transfers item's NFT to a consumer.
     ///
@@ -458,7 +458,7 @@ impl SupplyChain {
     ///
     /// Arguments:
     /// * `item_id`: an item's ID.
-    async fn purchare_by_consumer(&mut self, item_id: U256) {
+    async fn purchase_by_consumer(&mut self, item_id: U256) {
         let item = get_item(&mut self.items, item_id);
         assert_eq!(item.info.state, ItemState::ForSaleByRetailer);
 
@@ -541,7 +541,7 @@ pub async fn main() {
             delivery_time,
         } => {
             supply_chain
-                .purchare_by_distributor(item_id, delivery_time)
+                .purchase_by_distributor(item_id, delivery_time)
                 .await;
         }
         SupplyChainAction::ShipByProducer(item_id) => supply_chain.ship_by_producer(item_id),
@@ -564,7 +564,7 @@ pub async fn main() {
             delivery_time,
         } => {
             supply_chain
-                .purchare_by_retailer(item_id, delivery_time)
+                .purchase_by_retailer(item_id, delivery_time)
                 .await;
         }
         SupplyChainAction::ShipByDistributor(item_id) => {
@@ -579,7 +579,7 @@ pub async fn main() {
                 .await;
         }
         SupplyChainAction::PurchaseByConsumer(item_id) => {
-            supply_chain.purchare_by_consumer(item_id).await;
+            supply_chain.purchase_by_consumer(item_id).await;
         }
         SupplyChainAction::GetItemInfo(item_id) => supply_chain.get_item_info(item_id),
     }
