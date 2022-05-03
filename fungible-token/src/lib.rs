@@ -39,7 +39,8 @@ impl FungibleToken {
                 amount,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
     /// Executed on receiving `fungible-token-messages::BurnInput`.
     fn burn(&mut self, amount: u128) {
@@ -58,7 +59,8 @@ impl FungibleToken {
                 amount,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
     /// Executed on receiving `fungible-token-messages::TransferInput` or `fungible-token-messages::TransferFromInput`.
     /// Transfers `amount` tokens from `sender` account to `recipient` account.
@@ -86,7 +88,8 @@ impl FungibleToken {
                 amount,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     /// Executed on receiving `fungible-token-messages::ApproveInput`.
@@ -105,7 +108,8 @@ impl FungibleToken {
                 amount,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     fn can_transfer(&mut self, from: &ActorId, amount: u128) -> bool {

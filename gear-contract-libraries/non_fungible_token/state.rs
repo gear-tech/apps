@@ -1,6 +1,6 @@
 use crate::non_fungible_token::token::*;
-use gstd::{prelude::*, ActorId};
 use codec::{Decode, Encode};
+use gstd::{prelude::*, ActorId};
 use scale_info::TypeInfo;
 
 #[derive(Debug, Default)]
@@ -21,32 +21,55 @@ pub trait NFTStateKeeper {
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum NFTQuery {
+    NFTInfo,
     Token { token_id: TokenId },
     TokensForOwner { owner: ActorId },
     TotalSupply,
     SupplyForOwner { owner: ActorId },
+    AllTokens,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum NFTQueryReply {
-    Token { token: Token },
-    TokensForOwner { tokens: Vec<Token> },
-    TotalSupply { total_supply: u128 },
-    SupplyForOwner { supply: u128 },
+    NFTInfo {
+        name: String,
+        symbol: String,
+        base_uri: String,
+    },
+    Token {
+        token: Token,
+    },
+    TokensForOwner {
+        tokens: Vec<Token>,
+    },
+    TotalSupply {
+        total_supply: u128,
+    },
+    SupplyForOwner {
+        supply: u128,
+    },
+    AllTokens {
+        tokens: Vec<Token>,
+    },
 }
 
 pub trait NFTMetaState: NFTStateKeeper {
     fn token(&self, token_id: TokenId) -> Token {
+        let mut token = Token::default();
         if let Some(owner_id) = self.get().owner_by_id.get(&token_id) {
-            Token {
-                token_id,
-                owner_id: *owner_id,
-                metadata: None,
-                approved_account_ids: Vec::new(),
-            }
-        } else {
-            Token::default()
+            token.id = token_id;
+            token.owner_id = *owner_id;
         }
+        if let Some(approved_account_ids) = self.get().token_approvals.get(&token_id) {
+            token.approved_account_ids = approved_account_ids.clone();
+        }
+        if let Some(Some(metadata)) = self.get().token_metadata_by_id.get(&token_id) {
+            token.name = metadata.name.clone();
+            token.description = metadata.description.clone();
+            token.media = metadata.media.clone();
+            token.reference = metadata.reference.clone();
+        }
+        token
     }
 
     fn tokens_for_owner(&self, owner: &ActorId) -> Vec<Token> {
@@ -70,33 +93,41 @@ pub trait NFTMetaState: NFTStateKeeper {
             .map(|tokens| tokens.len() as u128)
             .unwrap_or(0)
     }
-    // fn all_tokens(&self, owner: &ActorId) -> Vec<Token> {
-    //     let tokens: Vec<Token> = Vec::new();
-    //     if let Some(token_ids) = self.get().tokens_for_owner.get(owner) {
-    //         for token_id in token_ids {
-    //             tokens.push(self.token(*token_id));
-    //         };
-    //     }
-    //     tokens
-    // }
+    fn all_tokens(&self) -> Vec<Token> {
+        let mut tokens: Vec<Token> = Vec::new();
+        let token_ids: Vec<TokenId> = self.get().owner_by_id.keys().cloned().collect();
+        for token_id in token_ids {
+            tokens.push(self.token(token_id));
+        }
+        tokens
+    }
 
-    fn proc_state(&mut self, bytes: Vec<u8>) -> Option<Vec<u8>> {
-        let query = NFTQuery::decode(&mut &bytes[..]).ok()?;
+    fn proc_state(&self, query: NFTQuery) -> Option<Vec<u8>> {
         let encoded = match query {
+            NFTQuery::NFTInfo => NFTQueryReply::NFTInfo {
+                name: self.get().name.clone(),
+                symbol: self.get().symbol.clone(),
+                base_uri: self.get().base_uri.clone(),
+            }
+            .encode(),
             NFTQuery::Token { token_id } => NFTQueryReply::Token {
-                token: Self::token(self, token_id),
+                token: self.token(token_id),
             }
             .encode(),
             NFTQuery::TokensForOwner { owner } => NFTQueryReply::TokensForOwner {
-                tokens: Self::tokens_for_owner(self, &owner),
+                tokens: self.tokens_for_owner(&owner),
             }
             .encode(),
             NFTQuery::TotalSupply => NFTQueryReply::TotalSupply {
-                total_supply: Self::total_supply(self),
+                total_supply: self.total_supply(),
             }
             .encode(),
             NFTQuery::SupplyForOwner { owner } => NFTQueryReply::SupplyForOwner {
-                supply: Self::supply_for_owner(self, &owner),
+                supply: self.supply_for_owner(&owner),
+            }
+            .encode(),
+            NFTQuery::AllTokens => NFTQueryReply::AllTokens {
+                tokens: self.all_tokens(),
             }
             .encode(),
         };

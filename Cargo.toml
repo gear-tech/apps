@@ -2,10 +2,11 @@
 resolver = "2"
 
 members = [
+    "ping",
     "dao",
-    "erc1155",
     "fungible-token",
     "ping",
+    "nft",
 ]
 
 [profile.release]

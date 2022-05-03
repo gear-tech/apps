@@ -1,196 +1,120 @@
-use codec::Encode;
-use gear_contract_libraries::non_fungible_token::{io::*, token::*};
+use codec::{Decode, Encode};
+use gear_contract_libraries::non_fungible_token::io::*;
 use gtest::{Program, System};
+mod utils;
 use nft_io::*;
+use utils::*;
 const USERS: &'static [u64] = &[3, 4, 5];
-
-fn init_with_mint(sys: &System) {
-    sys.init_logger();
-    let nft = Program::current(&sys);
-    let res = nft.send(
-        USERS[0],
-        InitNFT {
-            name: String::from("MyToken"),
-            symbol: String::from("MTK"),
-            base_uri: String::from(""),
-        },
-    );
-
-    assert!(res.log().is_empty());
-
-    let res = nft.send(
-        USERS[0],
-        MyNFTAction::Mint {
-            token_metadata: TokenMetadata {
-                title: Some("CryptoKitty".to_string()),
-                description: Some("Description".to_string()),
-                media: Some("http://".to_string()),
-                reference: Some("http://".to_string()),
-            },
-        }
-        .encode(),
-    );
-    assert!(res.contains(&(
-        USERS[0],
-        NFTEvent::Transfer {
-            from: 0.into(),
-            to: USERS[0].into(),
-            token_id: 0.into(),
-        }
-        .encode()
-    )));
-}
+const ZERO_ID: u64 = 0;
 
 #[test]
-fn mint() {
+fn mint_success() {
     let sys = System::new();
-    init_with_mint(&sys);
-}
-
-#[test]
-fn burn() {
-    let sys = System::new();
-    init_with_mint(&sys);
+    init_nft(&sys);
     let nft = sys.get_program(1);
-    let res = nft.send(
-        USERS[0],
-        MyNFTAction::Base(NFTAction::Burn { token_id: 0.into() }).encode(),
-    );
-    assert!(res.contains(&(
-        USERS[0],
-        NFTEvent::Transfer {
-            from: USERS[0].into(),
-            to: 0.into(),
-            token_id: 0.into(),
-        }
-        .encode()
-    )));
+    let res = mint(&nft, USERS[0]);
+    let message = NFTTransfer {
+        from: ZERO_ID.into(),
+        to: USERS[0].into(),
+        token_id: 0.into(),
+    }
+    .encode();
+    assert!(res.contains(&(USERS[0], message.encode())));
+}
+
+#[test]
+fn burn_success() {
+    let sys = System::new();
+    init_nft(&sys);
+    let nft = sys.get_program(1);
+    assert!(!mint(&nft, USERS[0]).main_failed());
+    let res = burn(&nft, USERS[0], 0);
+    let message = NFTTransfer {
+        from: USERS[0].into(),
+        to: ZERO_ID.into(),
+        token_id: 0.into(),
+    }
+    .encode();
+    assert!(res.contains(&(USERS[0], message.encode())));
 }
 
 #[test]
 fn burn_failures() {
     let sys = System::new();
-    init_with_mint(&sys);
+    init_nft(&sys);
     let nft = sys.get_program(1);
+    assert!(!mint(&nft, USERS[0]).main_failed());
     // must fail since the token doesn't exist
-    let res = nft.send(
-        USERS[0],
-        MyNFTAction::Base(NFTAction::Burn { token_id: 1.into() }).encode(),
-    );
-    assert!(res.main_failed());
-
-    // must fail since the caller isn't the token owner
-    let res = nft.send(
-        USERS[1],
-        MyNFTAction::Base(NFTAction::Burn { token_id: 0.into() }).encode(),
-    );
-    assert!(res.main_failed());
+    assert!(burn(&nft, USERS[0], 1).main_failed());
+    // must fail since the caller is not the token owner
+    assert!(burn(&nft, USERS[1], 0).main_failed());
 }
 
 #[test]
-fn transfer() {
+fn transfer_success() {
     let sys = System::new();
-    init_with_mint(&sys);
+    init_nft(&sys);
     let nft = sys.get_program(1);
-    let res = nft.send(
-        USERS[0],
-        MyNFTAction::Base(NFTAction::Transfer {
-            to: USERS[1].into(),
-            token_id: 0.into(),
-        })
-        .encode(),
-    );
-
-    assert!(res.contains(&(
-        USERS[0],
-        NFTEvent::Transfer {
-            from: USERS[0].into(),
-            to: USERS[1].into(),
-            token_id: 0.into(),
-        }
-        .encode()
-    )));
+    assert!(!mint(&nft, USERS[0]).main_failed());
+    let res = transfer(&nft, USERS[0], USERS[1], 0);
+    let message = NFTTransfer {
+        from: USERS[0].into(),
+        to: USERS[1].into(),
+        token_id: 0.into(),
+    }
+    .encode();
+    assert!(res.contains(&(USERS[0], message.encode())));
 }
 
 #[test]
 fn transfer_failures() {
     let sys = System::new();
-    init_with_mint(&sys);
+    init_nft(&sys);
     let nft = sys.get_program(1);
-    //must fail since the tokens doesn't exist
-    let res = nft.send(
-        USERS[0],
-        MyNFTAction::Base(NFTAction::Transfer {
-            to: USERS[1].into(),
-            token_id: 100.into(),
-        })
-        .encode(),
-    );
-    assert!(res.main_failed());
+    assert!(!mint(&nft, USERS[0]).main_failed());
 
-    //must fail since the caller isn't the is not an authorized source
-    let res = nft.send(
-        USERS[2],
-        MyNFTAction::Base(NFTAction::Transfer {
-            to: USERS[1].into(),
-            token_id: 0.into(),
-        })
-        .encode(),
-    );
-    assert!(res.main_failed());
-
-    //must fail since the `to` is the zero address
-    let res = nft.send(
-        USERS[0],
-        MyNFTAction::Base(NFTAction::Transfer {
-            to: 0.into(),
-            token_id: 0.into(),
-        })
-        .encode(),
-    );
-    assert!(res.main_failed());
+    // must fail since the token doesn't exist
+    assert!(transfer(&nft, USERS[0], USERS[1], 1).main_failed());
+    // must fail since the caller is not the token owner
+    assert!(transfer(&nft, USERS[1], USERS[0], 0).main_failed());
+    // must fail since transfer to the zero address
+    assert!(transfer(&nft, USERS[1], ZERO_ID, 0).main_failed());
 }
 
 #[test]
-fn approve_and_transfer() {
+fn approve_success() {
     let sys = System::new();
-    init_with_mint(&sys);
+    init_nft(&sys);
     let nft = sys.get_program(1);
+    assert!(!mint(&nft, USERS[0]).main_failed());
+    let res = approve(&nft, USERS[0], USERS[1], 0);
+    let message = NFTApproval {
+        owner: USERS[0].into(),
+        approved_account: USERS[1].into(),
+        token_id: 0.into(),
+    }
+    .encode();
+    assert!(res.contains(&(USERS[0], message.encode())));
+    assert!(!transfer(&nft, USERS[1], USERS[2], 0).main_failed());
+}
 
-    let res = nft.send(
-        USERS[0],
-        MyNFTAction::Base(NFTAction::Approve {
-            to: USERS[1].into(),
-            token_id: 0.into(),
-        })
-        .encode(),
-    );
+#[test]
+fn approve_failures() {
+    let sys = System::new();
+    init_nft(&sys);
+    let nft = sys.get_program(1);
+    assert!(!mint(&nft, USERS[0]).main_failed());
+    // must fail since the token doesn't exist
+    assert!(approve(&nft, USERS[0], USERS[1], 1).main_failed());
+    // must fail since the caller is not the token owner
+    assert!(approve(&nft, USERS[1], USERS[0], 0).main_failed());
+    // must fail since approval to the zero address
+    assert!(approve(&nft, USERS[1], ZERO_ID, 0).main_failed());
 
-    assert!(res.contains(&(
-        USERS[0],
-        NFTEvent::Approval {
-            owner: USERS[0].into(),
-            approved_account: USERS[1].into(),
-            token_id: 0.into(),
-        }
-        .encode()
-    )));
-
-    let res = nft.send(
-        USERS[1],
-        MyNFTAction::Base(NFTAction::Transfer {
-            to: USERS[2].into(),
-            token_id: 0.into(),
-        })
-        .encode(),
-    );
-    assert!(res.contains(&(
-        USERS[1],
-        NFTEvent::Transfer {
-            from: USERS[0].into(),
-            to: USERS[2].into(),
-            token_id: 0.into(),
-        }
-        .encode()
-    )));
+    //approve
+    assert!(!approve(&nft, USERS[0], USERS[1], 0).main_failed());
+    //transfer
+    assert!(!transfer(&nft, USERS[1], USERS[2], 0).main_failed());
+    //must fail since approval was removed after transferring
+    assert!(transfer(&nft, USERS[1], USERS[0], 0).main_failed());
 }

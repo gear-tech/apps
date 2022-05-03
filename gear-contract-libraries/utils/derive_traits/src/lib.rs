@@ -1,7 +1,7 @@
 #![no_std]
 
-extern crate proc_macro;
 extern crate alloc;
+extern crate proc_macro;
 #[allow(unused_imports)]
 use macros::*;
 //use proc_macro::TokenStream;
@@ -16,7 +16,3 @@ use macros::*;
 declare_derive_storage_trait!(derive_nft_state, NFTStateKeeper, NFTStateField);
 declare_impl_trait!(derive_nft_core, NFTCore);
 declare_impl_trait!(derive_nft_metastate, NFTMetaState);
-
-
-
-

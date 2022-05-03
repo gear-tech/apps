@@ -144,7 +144,8 @@ impl Dao {
                 token_tribute,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
         self.proposal_id = self.proposal_id.saturating_add(1);
     }
 
@@ -211,7 +212,8 @@ impl Dao {
                 amount,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
         self.proposal_id = self.proposal_id.saturating_add(1);
     }
 
@@ -282,7 +284,8 @@ impl Dao {
                 vote,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     /// The proposal processing after the proposal completes during the grace period.
@@ -361,7 +364,8 @@ impl Dao {
                 did_pass: proposal.did_pass,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     /// Withdraws the capital of the member
@@ -404,7 +408,8 @@ impl Dao {
                 amount: funds,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     /// Cancels the proposal after the end of the voting period if there are no YES votes.
@@ -456,7 +461,8 @@ impl Dao {
                 proposal_id,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     /// Aborts the membership proposal. It can be used in case when applicant is disagree with the requested shares or the details the proposer  indicated by the proposer
@@ -502,7 +508,8 @@ impl Dao {
                 amount,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     /// Assigns the admin position to new actor
@@ -549,7 +556,8 @@ impl Dao {
                 delegate: *new_delegate_key,
             },
             0,
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     // calculates the funds that the member can redeem based on his shares
