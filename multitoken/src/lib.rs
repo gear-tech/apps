@@ -1,29 +1,17 @@
 #![no_std]
-use multitoken_io::*;
 use gear_contract_libraries::multitoken::{io::*, mtk_core::*, state::*};
 use gstd::{debug, msg, prelude::*, ActorId};
+use multitoken_io::*;
+use derive_traits::{BalanceTrait, MTKTokenState, MTKTokenAssert, MTKCore, StateKeeper};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, BalanceTrait, MTKTokenState, MTKTokenAssert, MTKCore, StateKeeper)]
 pub struct SimpleMTK {
+    #[MTKStateKeeper]
     pub tokens: MTKState,
     pub token_id: TokenId,
     pub owner: ActorId,
     pub supply: BTreeMap<TokenId, u128>,
 }
-
-impl StateKeeper for SimpleMTK {
-    fn get(&self) -> &MTKState {
-        &self.tokens
-    }
-    fn get_mut(&mut self) -> &mut MTKState {
-        &mut self.tokens
-    }
-}
-
-impl BalanceTrait for SimpleMTK {}
-impl MTKTokenState for SimpleMTK {}
-impl MTKTokenAssert for SimpleMTK {}
-impl MTKCore for SimpleMTK {}
 
 pub trait SimpleMTKCore: MTKCore {
     fn mint(&mut self, amount: u128, token_metadata: Option<TokenMetadata>);
@@ -31,37 +19,6 @@ pub trait SimpleMTKCore: MTKCore {
     fn burn(&mut self, id: TokenId, amount: u128);
 
     fn supply(&mut self, id: TokenId) -> u128;
-
-    fn proc(&mut self, bytes: Vec<u8>) -> Option<()> {
-        if bytes.len() < 2 {
-            return None;
-        }
-
-        if bytes[0] == 0 {
-            let mut bytes = bytes;
-            bytes.remove(0);
-            return <Self as MTKCore>::proc(self, bytes);
-        }
-        let action = MyMTKAction::decode(&mut &bytes[..]).ok()?;
-        match action {
-            MyMTKAction::Mint {
-                amount,
-                token_metadata,
-            } => <Self as SimpleMTKCore>::mint(self, amount, token_metadata),
-            MyMTKAction::Burn { id, amount } => <Self as SimpleMTKCore>::burn(self, id, amount),
-            MyMTKAction::Supply { id } => {
-                msg::reply(
-                    MyMTKEvent::Supply {
-                        amount: <Self as SimpleMTKCore>::supply(self, id),
-                    },
-                    0,
-                )
-                .unwrap();
-            }
-            MyMTKAction::Base(_) => unreachable!(),
-        }
-        Some(())
-    }
 }
 
 static mut CONTRACT: Option<SimpleMTK> = None;
@@ -72,7 +29,7 @@ gstd::metadata! {
         input: InitMTK,
     handle:
         input: MyMTKAction,
-        output: MyMTKEvent,
+        output: Vec<u8>,
     state:
         input: MTKQuery,
         output: MTKQueryReply,
@@ -86,16 +43,45 @@ pub unsafe extern "C" fn init() {
     multi_token.tokens.symbol = config.symbol;
     multi_token.tokens.base_uri = config.base_uri;
     multi_token.owner = msg::source();
+    CONTRACT = Some(multi_token);
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn handle() {
     let action: MyMTKAction = msg::load().expect("Could not load msg");
-    let action_bytes = action.encode();
-    // let action: Vec<u8> = msg::load().expect("Could not load msg");
-    // debug!("ACTION: {:?}", action);
     let multi_token = CONTRACT.get_or_insert(SimpleMTK::default());
-    SimpleMTKCore::proc(multi_token, action_bytes);
+    match action {
+        MyMTKAction::Mint {
+            amount,
+            token_metadata,
+        } => SimpleMTKCore::mint(amount, token_metadata),
+        MyMTKAction::Burn { id, amount } => SimpleMTKCore::burn(id, amount),
+        MyMTKAction::Supply { id } => SimpleMTKCore::supply(id),
+        MyMTKAction::BalanceOf { account, id } => MTKCore::balance_of(account, id),
+        MyMTKAction::BalanceOfBatch { accounts, ids } => {
+            MTKCore::balance_of_batch(accounts, ids)
+        }
+        MyMTKAction::MintBatch {
+            amounts,
+            ids,
+            tokens_metadata,
+        } => MTKCore::mint_batch(&msg::source(), amounts, ids, tokens_metadata),
+        MyMTKAction::TransferFrom {
+            from,
+            to,
+            id,
+            amount,
+        } => MTKCore::transfer_from(from, to, id, amount),
+        MyMTKAction::BatchTransferFrom {
+            from,
+            to,
+            ids,
+            amounts,
+        } => MTKCore::batch_transfer_from(from, to, ids, amounts),
+        MyMTKAction::BurnBatch { ids, amounts } => MTKCore::burn_batch(ids, amounts),
+        MyMTKAction::Approve { account } => MTKCore::approve(account),
+        MyMTKAction::RevokeApproval { account } => MTKCore::revoke_approval(account),
+    }
 }
 
 #[no_mangle]

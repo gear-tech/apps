@@ -1,0 +1,11 @@
+[package]
+name = "macros"
+version = "1.5.0"
+edition = "2021"
+
+[lib]
+name = "macros"
+path = "src/lib.rs"
+crate-type = [
+    "rlib",
+]

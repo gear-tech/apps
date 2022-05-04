@@ -1,8 +1,8 @@
 use codec::Encode;
-use multitoken_io::*;
 use gear_contract_libraries::multitoken::io::*;
 use gstd::{ActorId, String};
 use gtest::{Program, System};
+use multitoken_io::*;
 
 const USERS: &'static [u64] = &[3, 4, 5, 0];
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);

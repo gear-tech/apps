@@ -372,6 +372,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive_traits"
+version = "0.1.0"
+dependencies = [
+ "macros",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "dlmalloc"
 version = "0.1.4"
 source = "git+https://github.com/gear-tech/dlmalloc-rust.git?rev=e76ae98#e76ae9869ea4d386e758d7ed5d983ba2a25d7629"
@@ -781,6 +791,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "macros"
+version = "1.5.0"
+
+[[package]]
 name = "memchr"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -814,6 +828,7 @@ checksum = "7843ec2de400bcbc6a6328c958dc38e5359da6e93e72e37bc5246bf1ae776389"
 name = "multitoken"
 version = "0.1.0"
 dependencies = [
+ "derive_traits",
  "gear-contract-libraries",
  "gear-wasm-builder",
  "gstd",

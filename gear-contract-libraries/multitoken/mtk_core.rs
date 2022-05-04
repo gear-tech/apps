@@ -271,7 +271,7 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
     }
 
     fn balance_of(&self, account: &ActorId, id: &TokenId) {
-        msg::reply(MTKEvent::Balance(self.get_balance(&account, &id)), 0).unwrap();
+        msg::reply(MTKEvent::Balance(self.get_balance(account, id)), 0).unwrap();
     }
 
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[TokenId]) {
@@ -290,37 +290,5 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
             .collect();
 
         msg::reply(MTKEvent::BalanceOfBatch(res), 0).unwrap();
-    }
-
-    fn proc(&mut self, bytes: Vec<u8>) -> Option<()> {
-        let action = MTKAction::decode(&mut &bytes[..]).ok()?;
-        match action {
-            MTKAction::Mint(account, id, amount, meta) => {
-                Self::mint(self, &account, &id, amount, meta);
-            }
-            MTKAction::MintBatch(account, ids, amounts, metas) => {
-                Self::mint_batch(self, &account, &ids, &amounts, metas);
-            }
-
-            MTKAction::Burn(id, amount) => {
-                Self::burn(self, &id, amount);
-            }
-            MTKAction::BurnBatch(ids, amounts) => Self::burn_batch(self, &ids, &amounts),
-
-            MTKAction::TransferFrom(from, to, id, amount) => {
-                Self::transfer_from(self, &from, &to, &id, amount);
-            }
-            MTKAction::BatchTransferFrom(from, to, ids, amounts) => {
-                Self::batch_transfer_from(self, &from, &to, &ids, &amounts)
-            }
-
-            MTKAction::BalanceOf(account, id) => Self::balance_of(self, &account, &id),
-            MTKAction::BalanceOfBatch(accounts, ids) => {
-                Self::balance_of_batch(self, &accounts, &ids)
-            }
-            MTKAction::Approve(to) => Self::approve(self, &to),
-            MTKAction::RevokeApproval(to) => Self::revoke_approval(self, &to),
-        };
-        Some(())
     }
 }

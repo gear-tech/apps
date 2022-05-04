@@ -2,12 +2,11 @@
 
 use codec::{Decode, Encode};
 use gear_contract_libraries::multitoken::io::*;
-use gstd::prelude::*;
+use gstd::{prelude::*, ActorId};
 use scale_info::TypeInfo;
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum MyMTKAction {
-    Base(MTKAction),
     Mint {
         amount: u128,
         token_metadata: Option<TokenMetadata>,
@@ -18,6 +17,41 @@ pub enum MyMTKAction {
     },
     Supply {
         id: TokenId,
+    },
+    BalanceOf {
+        account: ActorId,
+        id: TokenId,
+    },
+    BalanceOfBatch {
+        accounts: Vec<ActorId>,
+        ids: Vec<TokenId>,
+    },
+    MintBatch {
+        amounts: Vec<u128>,
+        ids: Vec<TokenId>,
+        tokens_metadata: Vec<Option<TokenMetadata>>,
+    },
+    TransferFrom {
+        from: ActorId,
+        to: ActorId,
+        id: TokenId,
+        amount: u128,
+    },
+    BatchTransferFrom {
+        from: ActorId,
+        to: ActorId,
+        ids: Vec<TokenId>,
+        amounts: Vec<u128>,
+    },
+    BurnBatch {
+        ids: Vec<TokenId>,
+        amounts: Vec<u128>,
+    },
+    Approve {
+        account: ActorId,
+    },
+    RevokeApproval {
+        account: ActorId,
     },
 }
 
