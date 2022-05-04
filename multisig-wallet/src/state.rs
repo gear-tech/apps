@@ -1,7 +1,7 @@
 use codec::{Decode, Encode};
-use gstd::{ActorId, prelude::Vec};
-use scale_info::TypeInfo;
+use gstd::{prelude::Vec, ActorId};
 use primitive_types::U256;
+use scale_info::TypeInfo;
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub enum State {
@@ -13,8 +13,8 @@ pub enum State {
     Owners,
     Confirmations(U256),
     TransactionIds {
-        from_index: usize,
-        to_index: usize,
+        from_index: u64,
+        to_index: u64,
         pending: bool,
         executed: bool,
     },
@@ -23,8 +23,8 @@ pub enum State {
 
 #[derive(Debug, Encode, TypeInfo)]
 pub enum StateReply {
-    ConfirmationCount(usize),
-    TransactionsCount(usize),
+    ConfirmationCount(u64),
+    TransactionsCount(u64),
     Owners(Vec<ActorId>),
     Confirmations(Vec<ActorId>),
     TransactionIds(Vec<U256>),
