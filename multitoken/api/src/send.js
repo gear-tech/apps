@@ -19,9 +19,7 @@ async function main() {
     const meta = metaFile ? await getWasmMetadata(metaFile) : undefined;
     try {
         let somePayload = {
-            "Supply": {
-                "id": 2
-            }
+            // Payload goes here
         }
 
         const gas = await gearApi.program.gasSpent.handle(
