@@ -1362,6 +1362,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "rmrk"
+version = "0.1.0"
+dependencies = [
+ "gear-wasm-builder",
+ "gstd",
+ "gtest",
+ "parity-scale-codec",
+ "primitive-types",
+ "rmrk-io",
+ "scale-info",
+ "sp-core-hashing",
+]
+
+[[package]]
+name = "rmrk-io"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
 name = "royalties"
 version = "0.1.0"
 dependencies = [

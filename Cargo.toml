@@ -13,5 +13,6 @@ members = [
     "nft-marketplace/nft",
     "non-fungible-token",
     "ping",
+    "rmrk",
     "escrow"
 ]
