@@ -15,9 +15,6 @@ pub enum MyMTKAction {
         id: TokenId,
         amount: u128,
     },
-    // Supply {
-    //     id: TokenId,
-    // },
     BalanceOf {
         account: ActorId,
         id: TokenId,
@@ -27,8 +24,8 @@ pub enum MyMTKAction {
         ids: Vec<TokenId>,
     },
     MintBatch {
-        amounts: Vec<u128>,
         ids: Vec<TokenId>,
+        amounts: Vec<u128>,
         tokens_metadata: Vec<Option<TokenMetadata>>,
     },
     TransferFrom {
@@ -53,11 +50,6 @@ pub enum MyMTKAction {
     RevokeApproval {
         account: ActorId,
     },
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-pub enum MyMTKEvent {
-    Supply { amount: u128 },
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]

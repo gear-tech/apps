@@ -13,4 +13,3 @@ macros = { path = "../macros/" }
 name = "derive_traits"
 path = "src/lib.rs"
 proc-macro = true
-

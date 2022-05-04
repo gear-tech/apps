@@ -1,8 +1,8 @@
 #![no_std]
+use derive_traits::{BalanceTrait, MTKCore, MTKTokenAssert, MTKTokenState, StateKeeper};
 use gear_contract_libraries::multitoken::{io::*, mtk_core::*, state::*};
-use gstd::{debug, msg, prelude::*, ActorId};
+use gstd::{msg, prelude::*, ActorId};
 use multitoken_io::*;
-use derive_traits::{BalanceTrait, MTKTokenState, MTKTokenAssert, MTKCore, StateKeeper};
 
 #[derive(Debug, Default, BalanceTrait, MTKTokenState, MTKTokenAssert, MTKCore, StateKeeper)]
 pub struct SimpleMTK {
@@ -17,8 +17,6 @@ pub trait SimpleMTKCore: MTKCore {
     fn mint(&mut self, amount: u128, token_metadata: Option<TokenMetadata>);
 
     fn burn(&mut self, id: TokenId, amount: u128);
-
-    fn supply(&mut self, id: TokenId) -> u128;
 }
 
 static mut CONTRACT: Option<SimpleMTK> = None;
@@ -56,16 +54,15 @@ pub unsafe extern "C" fn handle() {
             token_metadata,
         } => SimpleMTKCore::mint(multi_token, amount, token_metadata),
         MyMTKAction::Burn { id, amount } => SimpleMTKCore::burn(multi_token, id, amount),
-      //  MyMTKAction::Supply { id } => SimpleMTKCore::supply(multi_token, id),
         MyMTKAction::BalanceOf { account, id } => MTKCore::balance_of(multi_token, &account, &id),
         MyMTKAction::BalanceOfBatch { accounts, ids } => {
             MTKCore::balance_of_batch(multi_token, &accounts, &ids)
         }
         MyMTKAction::MintBatch {
-            amounts,
             ids,
+            amounts,
             tokens_metadata,
-        } => MTKCore::mint_batch(multi_token, &msg::source(), &amounts, &ids, tokens_metadata),
+        } => MTKCore::mint_batch(multi_token, &msg::source(), &ids, &amounts, tokens_metadata),
         MyMTKAction::TransferFrom {
             from,
             to,
@@ -87,10 +84,8 @@ pub unsafe extern "C" fn handle() {
 #[no_mangle]
 pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let query: MTKQuery = msg::load().expect("failed to decode input argument");
-    // let query: Vec<u8> = msg::load().expect("failed to decode input argument");
-    let query_bytes = query.encode();
     let multi_token = CONTRACT.get_or_insert(SimpleMTK::default());
-    let encoded = MTKTokenState::proc_state(multi_token, query_bytes).expect("error");
+    let encoded = MTKTokenState::proc_state(multi_token, query).expect("error");
     gstd::util::to_leak_ptr(encoded)
 }
 
@@ -113,9 +108,5 @@ impl SimpleMTKCore for SimpleMTK {
         let mut _balance = self
             .supply
             .insert(self.token_id, sup.saturating_sub(amount));
-    }
-
-    fn supply(&mut self, id: TokenId) -> u128 {
-        *self.supply.entry(id).or_default()
     }
 }

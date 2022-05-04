@@ -31,6 +31,7 @@ pub trait MTKTokenAssert: StateKeeper + BalanceTrait {
 }
 
 pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
+    // The internal implementation of mint action with all the checks and panics
     fn mint_impl(
         &mut self,
         account: &ActorId,
@@ -51,6 +52,15 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         self.set_balance(account, id, prev_balance.saturating_add(amount));
     }
 
+    /// Mints a new token
+    /// Requirements:
+    /// * `id` must be unique
+    /// * `account` must be a non-zero account
+    /// Arguments:
+    /// * `account`: An account to which minted token will be assigned
+    /// * `id`: The ID of minted token
+    /// * `amount`: Amount of token to mint (1 in case of an NFT)
+    /// * `meta`: Optional additional metadata for NFTs
     fn mint(&mut self, account: &ActorId, id: &TokenId, amount: u128, meta: Option<TokenMetadata>) {
         self.mint_impl(account, id, amount, meta);
         msg::reply(
@@ -66,6 +76,15 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         .unwrap();
     }
 
+    /// Mints multiple new tokens
+    /// Requirements:
+    /// * `ids` element must a unique value
+    /// * `account` must be a non-zero account
+    /// Arguments:
+    /// * `account`: An account to which minted token will be assigned
+    /// * `ids`: The vector of IDs of minted tokens
+    /// * `amounts`: The vector of amounts of tokens to mint (1 in case of an NFT)
+    /// * `meta`: The vector of optional additional metadata for NFTs
     fn mint_batch(
         &mut self,
         account: &ActorId,
@@ -98,6 +117,7 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         .unwrap();
     }
 
+    // The internal implementation of burn action with all the checks and panics
     fn burn_impl(&mut self, id: &TokenId, amount: u128) {
         let owner = &msg::source();
         self.assert_can_burn(owner, id, amount);
@@ -108,6 +128,15 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         );
     }
 
+
+    /// Burns a token
+    /// Requirements:
+    /// * Only token owner can perform this action
+    /// * `id` must be the ID of the existing token
+    /// * `amount` must not exceed user's token balance
+    /// Arguments:
+    /// * `id`: The ID of token that will be burnt
+    /// * `amount`: The amount of tokens that will be burnt
     fn burn(&mut self, id: &TokenId, amount: u128) {
         self.burn_impl(id, amount);
         msg::reply(
@@ -123,6 +152,14 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         .unwrap();
     }
 
+    /// Burns multiple tokens
+    /// Requirements:
+    /// * Only token owner can perform this action
+    /// * `ids` element must be the ID of the existing token
+    /// * `amounts` element must not exceed user's token balance
+    /// Arguments:
+    /// * `ids`: The vector of ids of the token to be burnt
+    /// * `amounts`: The vector of amounts of token to be burnt
     fn burn_batch(&mut self, ids: &[TokenId], amounts: &[u128]) {
         if ids.len() != amounts.len() {
             panic!("MTK: ids and amounts length mismatch")
@@ -149,6 +186,7 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         .unwrap();
     }
 
+    // The internal implementation of transfer action with all the checks and panics
     fn transfer_from_impl(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128) {
         if from == to {
             panic!("MTK: sender and recipient addresses are the same")
@@ -171,6 +209,17 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         self.set_balance(to, id, to_balance.saturating_add(amount));
     }
 
+    /// Transfers a token to a new user
+    /// Requirements:
+    /// * Only the token owner or approved account can call that action
+    /// * `to` must be a non-zero account
+    /// * `id` must be the ID of the existing token
+    /// * `amount` must not exceed from's balance
+    /// Arguments:
+    /// * `from`: An account from which token will be transferred
+    /// * `to`: An account to which token will be transferred
+    /// * `id`: The ID of transferred token
+    /// * `amount`: The amount of transferred token
     fn transfer_from(&mut self, from: &ActorId, to: &ActorId, id: &TokenId, amount: u128) {
         self.transfer_from_impl(from, to, id, amount);
         msg::reply(
@@ -186,6 +235,17 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         .unwrap();
     }
 
+    /// Transfers multiple tokens to a new user
+    /// Requirements:
+    /// * Only the token owner or approved account can call that action
+    /// * `to` must be a non-zero account
+    /// * `ids` element must be the ID of the existing token
+    /// * `amounts` element must not exceed from's balance
+    /// Arguments:
+    /// * `from`: An account from which token will be transferred
+    /// * `to`: An account to which token will be transferred
+    /// * `ids`: The vector of IDs of transferred token
+    /// * `amounts`: The vector of amounts of transferred token
     fn batch_transfer_from(
         &mut self,
         from: &ActorId,
@@ -231,6 +291,12 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         .unwrap();
     }
 
+    /// Gives a right to another account to manage its tokens
+    /// Requirements:
+    /// * Only the token owner can call that action
+    /// * `to` must be a non-zero account
+    /// Arguments:
+    /// * `to`: An account that will be approved to manage the tokens
     fn approve(&mut self, to: &ActorId) {
         if to == &ZERO_ID {
             panic!("MTK: approving zero address")
@@ -250,6 +316,12 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         .unwrap();
     }
 
+    /// Removed a right to another account to manage its tokens
+    /// Requirements:
+    /// * Only the token owner can call that action
+    /// * `to` must be a non-zero account
+    /// Arguments:
+    /// * `to`: An account that won't be able to manage the tokens
     fn revoke_approval(&mut self, to: &ActorId) {
         if to == &ZERO_ID {
             panic!("MTK: revoking zero address")
@@ -270,10 +342,18 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         .unwrap();
     }
 
+    /// Returns the amount of specific tokens a user has
+    /// Arguments:
+    /// * `account`: ID of the actor
+    /// * `id`: Token ID which balance will be returned
     fn balance_of(&self, account: &ActorId, id: &TokenId) {
         msg::reply(MTKEvent::Balance(self.get_balance(account, id)), 0).unwrap();
     }
 
+    /// Returns the amount of multiple specific tokens multiple users have
+    /// Arguments:
+    /// * `accounts`: The vectors of IDs of the actor
+    /// * `id`: The vector of token IDs which balance will be returned
     fn balance_of_batch(&self, accounts: &[ActorId], ids: &[TokenId]) {
         if accounts.len() != ids.len() {
             panic!("MTK: accounts and ids length mismatch")

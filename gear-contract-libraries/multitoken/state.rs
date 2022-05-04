@@ -45,6 +45,7 @@ pub enum MTKQuery {
     MetadataOf(TokenId),
     URI(TokenId),
     TokensForOwner(ActorId),
+    Supply(TokenId),
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -56,6 +57,7 @@ pub enum MTKQueryReply {
     URI(String),
     MetadataOf(TokenMetadata),
     TokensForOwner(Vec<TokenId>),
+    Supply(u128),
 }
 
 pub trait MTKTokenState: StateKeeper + BalanceTrait {
@@ -87,8 +89,20 @@ pub trait MTKTokenState: StateKeeper + BalanceTrait {
         tokens
     }
 
-    fn proc_state(&mut self, bytes: Vec<u8>) -> Option<Vec<u8>> {
-        let query = MTKQuery::decode(&mut &bytes[..]).ok()?;
+    fn supply(&self, id: TokenId) -> u128 {
+        self.get()
+            .balances
+            .clone()
+            .entry(id)
+            .or_default()
+            .clone()
+            .into_values()
+            .collect::<Vec<u128>>()
+            .iter()
+            .sum()
+    }
+
+    fn proc_state(&mut self, query: MTKQuery) -> Option<Vec<u8>> {
         let encoded = match query {
             MTKQuery::Name => MTKQueryReply::Name(self.get().name.clone()).encode(),
             MTKQuery::Symbol => MTKQueryReply::Symbol(self.get().symbol.clone()).encode(),
@@ -103,6 +117,7 @@ pub trait MTKTokenState: StateKeeper + BalanceTrait {
             MTKQuery::TokensForOwner(owner) => {
                 MTKQueryReply::TokensForOwner(Self::tokens_for_owner(self, &owner)).encode()
             }
+            MTKQuery::Supply(id) => MTKQueryReply::Supply(Self::supply(self, id)).encode(),
         };
         Some(encoded)
     }
