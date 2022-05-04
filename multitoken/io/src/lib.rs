@@ -15,9 +15,9 @@ pub enum MyMTKAction {
         id: TokenId,
         amount: u128,
     },
-    Supply {
-        id: TokenId,
-    },
+    // Supply {
+    //     id: TokenId,
+    // },
     BalanceOf {
         account: ActorId,
         id: TokenId,

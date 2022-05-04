@@ -54,33 +54,33 @@ pub unsafe extern "C" fn handle() {
         MyMTKAction::Mint {
             amount,
             token_metadata,
-        } => SimpleMTKCore::mint(amount, token_metadata),
-        MyMTKAction::Burn { id, amount } => SimpleMTKCore::burn(id, amount),
-        MyMTKAction::Supply { id } => SimpleMTKCore::supply(id),
-        MyMTKAction::BalanceOf { account, id } => MTKCore::balance_of(account, id),
+        } => SimpleMTKCore::mint(multi_token, amount, token_metadata),
+        MyMTKAction::Burn { id, amount } => SimpleMTKCore::burn(multi_token, id, amount),
+      //  MyMTKAction::Supply { id } => SimpleMTKCore::supply(multi_token, id),
+        MyMTKAction::BalanceOf { account, id } => MTKCore::balance_of(multi_token, &account, &id),
         MyMTKAction::BalanceOfBatch { accounts, ids } => {
-            MTKCore::balance_of_batch(accounts, ids)
+            MTKCore::balance_of_batch(multi_token, &accounts, &ids)
         }
         MyMTKAction::MintBatch {
             amounts,
             ids,
             tokens_metadata,
-        } => MTKCore::mint_batch(&msg::source(), amounts, ids, tokens_metadata),
+        } => MTKCore::mint_batch(multi_token, &msg::source(), &amounts, &ids, tokens_metadata),
         MyMTKAction::TransferFrom {
             from,
             to,
             id,
             amount,
-        } => MTKCore::transfer_from(from, to, id, amount),
+        } => MTKCore::transfer_from(multi_token, &from, &to, &id, amount),
         MyMTKAction::BatchTransferFrom {
             from,
             to,
             ids,
             amounts,
-        } => MTKCore::batch_transfer_from(from, to, ids, amounts),
-        MyMTKAction::BurnBatch { ids, amounts } => MTKCore::burn_batch(ids, amounts),
-        MyMTKAction::Approve { account } => MTKCore::approve(account),
-        MyMTKAction::RevokeApproval { account } => MTKCore::revoke_approval(account),
+        } => MTKCore::batch_transfer_from(multi_token, &from, &to, &ids, &amounts),
+        MyMTKAction::BurnBatch { ids, amounts } => MTKCore::burn_batch(multi_token, &ids, &amounts),
+        MyMTKAction::Approve { account } => MTKCore::approve(multi_token, &account),
+        MyMTKAction::RevokeApproval { account } => MTKCore::revoke_approval(multi_token, &account),
     }
 }
 
