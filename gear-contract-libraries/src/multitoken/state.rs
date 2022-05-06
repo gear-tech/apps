@@ -90,9 +90,8 @@ pub trait MTKTokenState: StateKeeper + BalanceTrait {
     fn supply(&self, id: TokenId) -> u128 {
         self.get()
             .balances
-            .clone()
-            .entry(id)
-            .or_default()
+            .get(&id)
+            .unwrap()
             .clone()
             .into_values()
             .collect::<Vec<u128>>()
