@@ -119,7 +119,6 @@ pub trait NFTCore: NFTStateKeeper {
             .owner_by_id
             .get(&token_id)
             .expect("NonFungibleToken: token does not exist");
-
         // assign new owner
         self.get_mut()
             .owner_by_id
@@ -129,7 +128,8 @@ pub trait NFTCore: NFTStateKeeper {
         self.get_mut()
             .tokens_for_owner
             .entry(*to)
-            .and_modify(|tokens| tokens.push(token_id));
+            .and_modify(|tokens| tokens.push(token_id))
+            .or_insert_with(|| vec![token_id]);
         // remove token from old owner
         self.get_mut()
             .tokens_for_owner
