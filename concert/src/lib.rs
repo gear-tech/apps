@@ -31,10 +31,6 @@ impl StateKeeper for Concert {
     }
 }
 
-impl BalanceTrait for Concert {}
-impl ERC1155TokenState for Concert {}
-impl ERC1155TokenAssert for Concert {}
-impl ERC1155Core for Concert {}
 
 pub trait ConcertCore: ERC1155Core {
     // name -- concert ID to use as a token ID for fungible
