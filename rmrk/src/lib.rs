@@ -16,9 +16,16 @@ pub struct RMRKOwner {
 pub struct Child {
     child_token_address: ActorId,
     token_id: TokenId,
+    status: ChildStatus,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub struct ChildStatus{
+    Pending,
+    Accepted,
+}
+
+#[derive(Debug, Default)]
 pub struct RMRKToken {
     pub name: String,
     pub symbol: String,
@@ -35,13 +42,22 @@ impl RMRKToken {
         &mut self,
         to: &ActorId,
         token_id: TokenId,
-        destination_id: U256,
-        data: String,
+        destination_id: TokenId,
     ) {
-        self.assert_zero_address(to);
         self.assert_token_exists(token_id);
         //check that `to` is a deployed program
         self.assert_check_rmrk_implementation(to).await;
+
+        let root_owner: RMRKEvent = msg::send_and_wait_for_reply(
+            *to,
+            RMRKAction::RootOwner {
+                token_id: destination_id,
+            },
+            0,
+        )
+        .unwrap()
+        .await
+        .expect("Error in message to nft contract");
 
         self.rmrk_owners.insert(
             token_id,
@@ -50,7 +66,7 @@ impl RMRKToken {
                 owner_id: *to,
             },
         );
-
+       
         let _response: RMRKEvent = msg::send_and_wait_for_reply(
             *to,
             RMRKAction::AddChild {
@@ -68,9 +84,18 @@ impl RMRKToken {
             .entry(*to)
             .and_modify(|balance| *balance += 1)
             .or_insert(1);
+        msg::reply(
+            RMRKEvent::MintToNft {
+                to: *to,
+                token_id,
+                destination_id,
+            },
+            0,
+        )
+        .unwrap();
     }
 
-    fn mint_to_root_owner(&mut self, token_id: TokenId, to: &ActorId) {
+    fn mint_to_root_owner(&mut self, to: &ActorId, token_id: TokenId) {
         self.assert_zero_address(to);
         self.assert_token_exists(token_id);
 
@@ -86,6 +111,16 @@ impl RMRKToken {
                 owner_id: *to,
             },
         );
+
+        msg::reply(
+            RMRKEvent::MintToRootOwner {
+                to: *to,
+                token_id,
+            },
+            0,
+        )
+        .unwrap();
+
     }
 
     async fn add_child(
@@ -99,11 +134,22 @@ impl RMRKToken {
         let child = Child {
             child_token_address: msg::source(),
             token_id: parent_token_id,
+            status: ChildStatus::Pending,
         };
         self.children
             .entry(parent_token_id)
             .and_modify(|children| children.push(child.clone()))
             .or_insert_with(|| vec![child]);
+        
+        msg::reply(
+            RMRKEvent::PendingChild {
+                child_token_address:  msg::source(),
+                child_token_id,
+                parent_token_id,
+            },
+            0,
+        )
+        .unwrap();
 
     }
 
@@ -119,10 +165,28 @@ impl RMRKToken {
             .rmrk_owners
             .get(&token_id)
             .expect("Token does not exist");
+        debug!("here {:?}", rmrk_owner);
         msg::reply(
             RMRKEvent::NFTParent {
                 parent: rmrk_owner.owner_id,
             },
+            0,
+        )
+        .unwrap();
+    }
+
+    fn check_rmrk_implementation(&self) {
+        msg::reply(
+            RMRKEvent::CheckRMRKImplementation,
+            0,
+        )
+        .unwrap();
+    }
+
+    fn root_owner(&self, token_id: TokenId) {
+        let root_owner = self.rmrk_owners.get(&token_id).expect("RMRK: Token does not exist");
+        msg::reply(
+            RMRKEvent::RootOwner {root_owner: root_owner.owner_id},
             0,
         )
         .unwrap();
@@ -159,5 +223,28 @@ impl RMRKToken {
         } else {
             panic!("Wrong received message");
         }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn init() {
+    let config: InitRMRK = msg::load().expect("Unable to decode InitRMRK");
+    let mut rmrk = RMRKToken::default();
+    rmrk.name = config.name;
+    rmrk.symbol = config.symbol;
+    RMRK = Some(rmrk);
+}
+
+#[gstd::async_main]
+async unsafe fn main() {
+    let action: RMRKAction = msg::load().expect("Could not load msg");
+    let rmrk = unsafe { RMRK.get_or_insert(RMRKToken::default()) };
+    match action {
+        RMRKAction::MintToNft { to, token_id, destination_id } => rmrk.mint_to_nft(&to, token_id, destination_id).await,
+        RMRKAction::MintToRootOwner { to, token_id } => rmrk.mint_to_root_owner(&to, token_id),
+        RMRKAction::AddChild { parent_token_id, child_token_id, child_token_address } => rmrk.add_child(parent_token_id, child_token_id, child_token_address).await,
+        RMRKAction::NFTParent { token_id } => rmrk.nft_parent(token_id),
+        RMRKAction::CheckRMRKImplementation => rmrk.check_rmrk_implementation(),
+        RMRKAction::RootOwner { token_id } => rmrk.root_owner(token_id),
     }
 }
