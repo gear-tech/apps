@@ -5,18 +5,8 @@ edition = "2021"
 license = "GPL-3.0"
 authors = ["Gear Technologies"]
 
-[lib]
-name = "gear_contract_libraries"
-path = "lib.rs"
-crate-type = [
-    "rlib",
-]
-
 [dependencies]
-hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 codec = { package = "parity-scale-codec", version = "3.1.2", default-features = false, features = ["derive"] }
 gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
 primitive-types = { version = "0.11.1", default-features = false, features = ["scale-info"] }
 scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
-
-[workspace]

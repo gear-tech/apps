@@ -128,7 +128,6 @@ pub trait MTKCore: StateKeeper + BalanceTrait + MTKTokenAssert {
         );
     }
 
-
     /// Burns a token
     /// Requirements:
     /// * Only token owner can perform this action

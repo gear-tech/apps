@@ -72,17 +72,15 @@ pub trait MTKTokenState: StateKeeper + BalanceTrait {
         self.get()
             .token_metadata
             .get(&id)
-            .unwrap_or(&TokenMetadata {
-                ..Default::default()
-            })
-            .clone()
+            .cloned()
+            .unwrap_or_default()
     }
 
     fn tokens_for_owner(&self, owner: &ActorId) -> Vec<TokenId> {
         let mut tokens: Vec<TokenId> = Vec::new();
         let balances = &self.get().balances;
         for (token, bals) in balances {
-            if let Some(_user) = bals.get(owner) {
+            if bals.get(owner).is_some() {
                 tokens.push(*token);
             }
         }
@@ -103,22 +101,20 @@ pub trait MTKTokenState: StateKeeper + BalanceTrait {
     }
 
     fn proc_state(&mut self, query: MTKQuery) -> Option<Vec<u8>> {
-        let encoded = match query {
-            MTKQuery::Name => MTKQueryReply::Name(self.get().name.clone()).encode(),
-            MTKQuery::Symbol => MTKQueryReply::Symbol(self.get().symbol.clone()).encode(),
-            MTKQuery::Uri => MTKQueryReply::Uri(self.get().base_uri.clone()).encode(),
+        let state = match query {
+            MTKQuery::Name => MTKQueryReply::Name(self.get().name.clone()),
+            MTKQuery::Symbol => MTKQueryReply::Symbol(self.get().symbol.clone()),
+            MTKQuery::Uri => MTKQueryReply::Uri(self.get().base_uri.clone()),
             MTKQuery::BalanceOf(account, id) => {
-                MTKQueryReply::Balance(Self::get_balance(self, &account, &id)).encode()
+                MTKQueryReply::Balance(Self::get_balance(self, &account, &id))
             }
-            MTKQuery::URI(id) => MTKQueryReply::URI(Self::get_uri(self, id)).encode(),
-            MTKQuery::MetadataOf(id) => {
-                MTKQueryReply::MetadataOf(Self::get_metadata(self, id)).encode()
-            }
+            MTKQuery::URI(id) => MTKQueryReply::URI(Self::get_uri(self, id)),
+            MTKQuery::MetadataOf(id) => MTKQueryReply::MetadataOf(Self::get_metadata(self, id)),
             MTKQuery::TokensForOwner(owner) => {
-                MTKQueryReply::TokensForOwner(Self::tokens_for_owner(self, &owner)).encode()
+                MTKQueryReply::TokensForOwner(Self::tokens_for_owner(self, &owner))
             }
-            MTKQuery::Supply(id) => MTKQueryReply::Supply(Self::supply(self, id)).encode(),
+            MTKQuery::Supply(id) => MTKQueryReply::Supply(Self::supply(self, id)),
         };
-        Some(encoded)
+        Some(state.encode())
     }
 }

@@ -11,12 +11,10 @@ codec = { package = "parity-scale-codec", version = "3.1.2", default-features = 
 scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
 gear-contract-libraries = { path = "../gear-contract-libraries" }
 multitoken-io = { path = "io" }
-derive_traits = { path = "../gear-contract-libraries/utils/derive_traits" }
+derive_traits = { path = "../gear-contract-libraries/src/utils/derive_traits" }
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git"}
 
 [build-dependencies]
 gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }
-
-[workspace]

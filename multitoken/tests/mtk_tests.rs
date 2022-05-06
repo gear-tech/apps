@@ -394,8 +394,6 @@ fn transfer_from_failures() {
     );
 
     let from = USERS[1];
-    let to = USERS[2];
-    let invalid_user = USERS[3];
 
     let failed_res = mtk.send(
         from,
@@ -439,7 +437,6 @@ fn batch_transfer_from() {
     let sys = System::new();
     let mtk = init(&sys);
 
-    let from = USERS[0];
     let to = USERS[1];
     let newuser = USERS[2];
 
