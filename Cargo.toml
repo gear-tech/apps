@@ -13,5 +13,5 @@ members = [
     "non-fungible-token",
     "ping",
     "escrow",
-    "supply-chain"
+    "supply-chain",
 ]
