@@ -52,6 +52,10 @@ pub enum MWEvent {
     OwnerRemoval {
         owner: ActorId,
     },
+    OwnerReplace {
+        old_owner: ActorId,
+        new_owner: ActorId,
+    },
     RequirementChange(U256),
 }
 

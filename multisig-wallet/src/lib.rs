@@ -43,10 +43,6 @@ fn validate_requirement(owners_count: usize, required: u64) {
     if required < 1 {
         panic!("Required quantity must be greater than zero");
     }
-
-    if owners_count < 1 {
-        panic!("Owners quantity must be greater than zero");
-    }
 }
 
 fn validate_not_null_address(actor_id: &ActorId) {
@@ -163,9 +159,14 @@ impl MultisigWallet {
         *self.is_owner.get_mut(old_owner).unwrap() = false;
         *self.is_owner.get_mut(new_owner).unwrap() = true;
 
-        msg::reply(MWEvent::OwnerRemoval { owner: *old_owner }, 0).unwrap();
-
-        msg::reply(MWEvent::OwnerAddition { owner: *new_owner }, 0).unwrap();
+        msg::reply(
+            MWEvent::OwnerReplace {
+                old_owner: *old_owner,
+                new_owner: *new_owner,
+            },
+            0,
+        )
+        .unwrap();
     }
 
     /// Allows to change the number of required confirmations. Transaction has to be sent by wallet.
@@ -193,6 +194,8 @@ impl MultisigWallet {
         let transaction_id = self.add_transaction(destination, data, value);
         self.confirm_transaction(&transaction_id).await;
 
+        msg::reply(MWEvent::Submission { transaction_id }, 0).unwrap();
+
         transaction_id
     }
 
@@ -212,6 +215,13 @@ impl MultisigWallet {
 
         *confirmation = true;
 
+        self.execute_transaction(transaction_id, None::<fn(_)>)
+            .await;
+    }
+
+    async fn external_confirm_transaction(&mut self, transaction_id: &U256) {
+        self.confirm_transaction(transaction_id).await;
+
         msg::reply(
             MWEvent::Confirmation {
                 sender: msg::source(),
@@ -220,8 +230,6 @@ impl MultisigWallet {
             0,
         )
         .unwrap();
-
-        self.execute_transaction(transaction_id).await;
     }
 
     /// Allows an owner to revoke a confirmation for a transaction.
@@ -252,7 +260,10 @@ impl MultisigWallet {
 
     /// Allows anyone to execute a confirmed transaction.
     /// transactionId Transaction ID.
-    async fn execute_transaction(&mut self, transaction_id: &U256) {
+    async fn execute_transaction<F>(&mut self, transaction_id: &U256, completion: Option<F>)
+    where
+        F: Fn(bool),
+    {
         let sender = msg::source();
         self.validate_owner_exists(&sender);
         self.validate_confirmed(transaction_id, &sender);
@@ -269,25 +280,31 @@ impl MultisigWallet {
                 .unwrap()
                 .await;
 
-        let executed;
-        let payload;
-        match result {
-            Ok(_) => {
-                executed = true;
-                payload = MWEvent::Execution {
-                    transaction_id: *transaction_id,
-                };
-            }
-            Err(_) => {
-                executed = false;
-                payload = MWEvent::ExecutionFailure {
-                    transaction_id: *transaction_id,
-                };
-            }
-        }
+        let executed = result.is_ok();
 
         txn.executed = executed;
-        msg::reply(payload, 0).unwrap();
+
+        if let Some(completion) = completion {
+            completion(executed);
+        }
+    }
+
+    async fn external_execute_transaction(&mut self, transaction_id: &U256) {
+        let completion = |executed| {
+            let payload = if executed {
+                MWEvent::Execution {
+                    transaction_id: *transaction_id,
+                }
+            } else {
+                MWEvent::ExecutionFailure {
+                    transaction_id: *transaction_id,
+                }
+            };
+
+            msg::reply(payload, 0).unwrap();
+        };
+
+        self.execute_transaction(transaction_id, Some(completion)).await;
     }
 
     /*
@@ -319,8 +336,6 @@ impl MultisigWallet {
 
         self.transactions.insert(transaction_id, transaction);
         self.transaction_count += 1.into();
-
-        msg::reply(MWEvent::Submission { transaction_id }, 0).unwrap();
 
         transaction_id
     }
@@ -437,7 +452,14 @@ pub unsafe extern "C" fn init() {
 
 #[gstd::async_main]
 async unsafe fn main() {
-    let action: MWAction = msg::load().expect("Could not load Action");
+    let action = match msg::load::<MWAction>() {
+        Ok(action) => action,
+        Err(_) => {
+            let bytes: Vec<u8> = msg::load_bytes();
+            MWAction::decode(&mut bytes.as_slice()).expect("Could not load Action")
+        }
+    };
+
     let wallet: &mut MultisigWallet = unsafe { WALLET.get_or_insert(MultisigWallet::default()) };
     match action {
         MWAction::AddOwner(owner) => wallet.add_owner(&owner),
@@ -455,11 +477,11 @@ async unsafe fn main() {
             wallet.submit_transaction(&destination, data, value).await;
         }
         MWAction::ConfirmTransaction(transaction_id) => {
-            wallet.confirm_transaction(&transaction_id).await
+            wallet.external_confirm_transaction(&transaction_id).await
         }
         MWAction::RevokeConfirmation(transaction_id) => wallet.revoke_confirmation(&transaction_id),
         MWAction::ExecuteTransaction(transaction_id) => {
-            wallet.execute_transaction(&transaction_id).await
+            wallet.external_execute_transaction(&transaction_id).await
         }
     }
 }
