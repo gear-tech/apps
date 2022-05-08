@@ -45,6 +45,7 @@ pub enum MTKQuery {
     MetadataOf(TokenId),
     URI(TokenId),
     TokensForOwner(ActorId),
+    TokensIDsForOwner(ActorId),
     Supply(TokenId),
 }
 
@@ -56,7 +57,8 @@ pub enum MTKQueryReply {
     Balance(TokenId),
     URI(String),
     MetadataOf(TokenMetadata),
-    TokensForOwner(Vec<TokenId>),
+    TokensForOwner(Vec<Token>),
+    TokensIDsForOwner(Vec<TokenId>),
     Supply(u128),
 }
 
@@ -76,7 +78,31 @@ pub trait MTKTokenState: StateKeeper + BalanceTrait {
             .unwrap_or_default()
     }
 
-    fn tokens_for_owner(&self, owner: &ActorId) -> Vec<TokenId> {
+    // pub balances: BTreeMap<TokenId, BTreeMap<ActorId, u128>>,
+
+    fn tokens_for_owner(&self, owner: &ActorId) -> Vec<Token> {
+        let mut tokens: Vec<Token> = Vec::new();
+        let balances = &self.get().balances;
+        for (token, bal) in balances {
+            if let Some(amount) = bal.get(owner) {
+                // tokens ActorId, u128
+                tokens.push(Token {
+                    id: *token,
+                    amount: *amount,
+                    metadata: gstd::Some(
+                        self.get()
+                            .token_metadata
+                            .get(token)
+                            .cloned()
+                            .unwrap_or_default(),
+                    ),
+                })
+            }
+        }
+        tokens
+    }
+
+    fn tokens_ids_for_owner(&self, owner: &ActorId) -> Vec<TokenId> {
         let mut tokens: Vec<TokenId> = Vec::new();
         let balances = &self.get().balances;
         for (token, bals) in balances {
@@ -109,6 +135,9 @@ pub trait MTKTokenState: StateKeeper + BalanceTrait {
             }
             MTKQuery::URI(id) => MTKQueryReply::URI(Self::get_uri(self, id)),
             MTKQuery::MetadataOf(id) => MTKQueryReply::MetadataOf(Self::get_metadata(self, id)),
+            MTKQuery::TokensIDsForOwner(owner) => {
+                MTKQueryReply::TokensIDsForOwner(Self::tokens_ids_for_owner(self, &owner))
+            }
             MTKQuery::TokensForOwner(owner) => {
                 MTKQueryReply::TokensForOwner(Self::tokens_for_owner(self, &owner))
             }

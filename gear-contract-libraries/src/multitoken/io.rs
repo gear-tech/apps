@@ -11,6 +11,13 @@ pub struct TokenMetadata {
     pub reference: Option<String>,
 }
 
+#[derive(Debug, Decode, Encode, TypeInfo, Default, Clone)]
+pub struct Token {
+    pub id: TokenId,
+    pub amount: u128,
+    pub metadata: Option<TokenMetadata>,
+}
+
 #[derive(Debug, Decode, Encode, TypeInfo)]
 pub struct InitConfig {
     pub name: String,
