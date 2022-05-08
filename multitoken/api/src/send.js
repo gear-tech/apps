@@ -23,7 +23,7 @@ async function main() {
         }
 
         const gas = await gearApi.program.gasSpent.handle(
-            account.address,
+            account.publicKey,
             process.env.PROGRAM_ID,
             somePayload,
             0,

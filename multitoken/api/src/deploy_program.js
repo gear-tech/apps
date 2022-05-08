@@ -14,7 +14,7 @@ const uploadProgram = async (
     const metaFile = pathToMeta ? readFileSync(pathToMeta) : undefined;
     const meta = metaFile ? await getWasmMetadata(metaFile) : undefined;
     const gas = await api.program.gasSpent.init(
-        account.address,
+        account.publicKey,
         code,
         initPayload,
         value,
