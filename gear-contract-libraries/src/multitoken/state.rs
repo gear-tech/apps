@@ -117,11 +117,8 @@ pub trait MTKTokenState: StateKeeper + BalanceTrait {
         self.get()
             .balances
             .get(&id)
-            .unwrap()
-            .clone()
-            .into_values()
-            .collect::<Vec<u128>>()
-            .iter()
+            .expect("Balances always exist; qed")
+            .values()
             .sum()
     }
 
