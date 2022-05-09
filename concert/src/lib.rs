@@ -1,6 +1,5 @@
 #![no_std]
 
-use codec::Decode;
 use concert_io::*;
 use gstd::{msg, prelude::*, ActorId};
 
@@ -28,45 +27,35 @@ static mut CONTRACT: Option<Concert> = None;
 #[no_mangle]
 pub unsafe extern "C" fn init() {
     let config: InitConcert = msg::load().expect("Unable to decode InitConfig");
-    let mut concert = Concert::default();
-    concert.owner_id = config.owner_id;
-    concert.contract_id = config.mtk_contract;
+    let concert = Concert {
+        owner_id: config.owner_id,
+        contract_id: config.mtk_contract,
+        ..Concert::default()
+    };
+    CONTRACT = Some(concert);
 }
 
 #[gstd::async_main]
 async unsafe fn main() {
     let action: ConcertAction = msg::load().expect("Could not load Action");
-    let concert: &mut Concert = unsafe {CONTRACT.get_or_insert(Concert::default()) };
+    let concert: &mut Concert = unsafe { CONTRACT.get_or_insert(Concert::default()) };
     match action {
         ConcertAction::Create {
             creator,
             concert_id,
             no_tickets,
-        } => {
-            concert.create_concert(creator, concert_id, no_tickets)
-        }
-        ConcertAction::Hold {
-            concert_id,
-        } => {
-            concert.hold_concert(concert_id).await
-        }
+        } => concert.create_concert(creator, concert_id, no_tickets),
+        ConcertAction::Hold { concert_id } => concert.hold_concert(concert_id).await,
         ConcertAction::BuyTickets {
             concert_id,
             amount,
             metadata,
-        } => {
-            concert.buy_tickets(concert_id, amount, metadata).await
-        }
+        } => concert.buy_tickets(concert_id, amount, metadata).await,
     }
 }
 
 impl Concert {
-    fn create_concert(
-        &mut self,
-        creator: ActorId,
-        concert_id: u128,
-        number_of_tickets: u128,
-    ) {
+    fn create_concert(&mut self, creator: ActorId, concert_id: u128, number_of_tickets: u128) {
         self.creator = creator;
         self.id_counter = concert_id;
         self.name = concert_id;
@@ -82,7 +71,12 @@ impl Concert {
         .unwrap();
     }
 
-    async fn buy_tickets(&mut self, concert_id: u128, amount: u128, mtd: Vec<Option<TokenMetadata>>) {
+    async fn buy_tickets(
+        &mut self,
+        concert_id: u128,
+        amount: u128,
+        mtd: Vec<Option<TokenMetadata>>,
+    ) {
         if msg::source() == ZERO_ID {
             panic!("CONCERT: Message from zero address");
         }
@@ -109,10 +103,14 @@ impl Concert {
 
         self.buyers.insert(msg::source());
 
-        // !TODO: Actions from MTK.
-        msg::send_and_wait_for_reply(
+        let _: MTKEvent = msg::send_and_wait_for_reply(
             self.contract_id,
-            ERC1155Action::Mint(&msg::source(), &concert_id, amount, None),
+            MTKAction::Mint {
+                account: msg::source(),
+                id: concert_id,
+                amount,
+                meta: None,
+            },
             0,
         )
         .unwrap()
@@ -128,28 +126,40 @@ impl Concert {
             panic!("CONCERT: Only creator can hold a concert");
         }
         // get balances from a contract
-        let accounts: Vec<_> = self.buyers.into_iter().collect();
+        let accounts: Vec<_> = self.buyers.clone().into_iter().collect();
         let tokens: Vec<TokenId> = iter::repeat(self.name).take(accounts.len()).collect();
-        // !TODO: Actions from MTK.
-        let balances = msg::send_and_wait_for_reply(
+
+        let balance_response: MTKEvent = msg::send_and_wait_for_reply(
             self.contract_id,
-            ERC1155Action::BalanceOfBatch(tokens, accounts),
+            MTKAction::BalanceOfBatch {
+                accounts,
+                ids: tokens,
+            },
             0,
         )
         .unwrap()
         .await
         .expect("CONCERT: Error getting balances from the contract");
 
+        let balances: Vec<BalanceOfBatchReply> =
+            if let MTKEvent::BalanceOfBatch(balance_response) = balance_response {
+                balance_response
+            } else {
+                Vec::new()
+            };
         // we know each user balance now
         for balance in &balances {
-            msg::send_and_wait_for_reply(
+            let _: MTKEvent = msg::send_and_wait_for_reply(
                 self.contract_id,
-                ERC1155Action::Burn(balance.id, balance.amount),
+                MTKAction::Burn {
+                    id: balance.id,
+                    amount: balance.amount,
+                },
                 0,
             )
             .unwrap()
             .await
-            .expect("CONCERT: Error burning balances")
+            .expect("CONCERT: Error burning balances");
         }
 
         for actor in &self.buyers {
@@ -164,15 +174,19 @@ impl Concert {
                     meta.push(token_meta);
                 }
 
-                // !TODO: Actions from MTK.
-                msg::send_and_wait_for_reply(
+                let _: MTKEvent = msg::send_and_wait_for_reply(
                     self.contract_id,
-                    ERC1155Action::MintBatch(actor, &ids, &amounts, meta),
+                    MTKAction::MintBatch {
+                        account: *actor,
+                        ids,
+                        amounts,
+                        meta,
+                    },
                     0,
                 )
                 .unwrap()
                 .await
-                .expect("CONCERT: Error minging tickets")
+                .expect("CONCERT: Error minging tickets");
             }
         }
         msg::reply(ConcertEvent::Hold { concert_id }, 0).unwrap();
