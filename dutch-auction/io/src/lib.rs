@@ -16,7 +16,7 @@ pub enum Action {
 pub enum Event {
     AuctionStarted {
         token_owner: ActorId,
-        price: U256,
+        price: u128,
         token_id: U256,
     },
     AuctionStoped {
@@ -40,7 +40,7 @@ pub struct CreateConfig {
     pub nft_contract_actor_id: ActorId,
     pub token_owner: ActorId,
     pub token_id: U256,
-    pub starting_price: U256,
-    pub discount_rate: U256,
+    pub starting_price: u128,
+    pub discount_rate: u128,
     pub duration: Duration,
 }

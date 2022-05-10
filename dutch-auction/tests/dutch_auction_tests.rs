@@ -16,13 +16,13 @@ fn init(sys: &System) -> Program {
     auction_program.send(owner_user, InitConfig {});
 
     init_nft(sys, owner_user);
-    let result = update_auction(&auction_program, owner_user, 2, 1_000_000_000.into());
+    let result = update_auction(&auction_program, owner_user, 2, 1_000_000_000);
 
     assert!(result.contains(&(
         owner_user,
         Event::AuctionStarted {
             token_owner: owner_user.into(),
-            price: 1_000_000_000.into(),
+            price: 1_000_000_000,
             token_id: 0.into(),
         }
         .encode()
@@ -60,7 +60,7 @@ fn update_auction(
     auction: &Program,
     owner: u64,
     nft_contract_id: u64,
-    starting_price: U256,
+    starting_price: u128,
 ) -> RunResult {
     auction.send(
         owner,
@@ -68,7 +68,7 @@ fn update_auction(
             nft_contract_actor_id: nft_contract_id.into(),
             token_owner: owner.into(),
             starting_price,
-            discount_rate: 1.into(),
+            discount_rate: 1,
             token_id: 0.into(),
             duration: Duration {
                 days: 7,
@@ -152,7 +152,7 @@ fn create_auction_twice_in_a_row() {
 
     let auction = init(&sys);
     init_nft(&sys, USERS[1]);
-    let result = update_auction(&auction, USERS[1], 3, 999_000_000.into());
+    let result = update_auction(&auction, USERS[1], 3, 999_000_000);
 
     assert!(result.main_failed());
 }
@@ -164,13 +164,13 @@ fn create_auction_twice_after_time() {
     let auction = init(&sys);
     sys.spend_blocks(DURATION);
     init_nft(&sys, USERS[1]);
-    let result = update_auction(&auction, USERS[1], 3, 999_000_000.into());
+    let result = update_auction(&auction, USERS[1], 3, 999_000_000);
 
     assert!(result.contains(&(
         USERS[1],
         Event::AuctionStarted {
             token_owner: USERS[1].into(),
-            price: 999_000_000.into(),
+            price: 999_000_000,
             token_id: 0.into(),
         }
         .encode()

@@ -21,11 +21,11 @@ pub struct NFT {
 pub struct Auction {
     pub owner: ActorId,
     pub nft: NFT,
-    pub starting_price: U256,
-    pub discount_rate: U256,
+    pub starting_price: u128,
+    pub discount_rate: u128,
     pub is_active: bool,
+    pub started_at: u64,
     pub expires_at: u64,
-    pub duration: u64,
 }
 
 static mut AUCTION: Option<Auction> = None;
@@ -40,10 +40,10 @@ impl Auction {
             panic!("auction expired");
         }
 
-        let price = self.token_price().as_u128();
+        let price = self.token_price();
 
         if msg::value() < price {
-            panic!("value < price");
+            panic!("value < price, {:?} < {:?}", msg::value(), price);
         }
 
         self.is_active = false;
@@ -65,15 +65,11 @@ impl Auction {
         msg::send(self.nft.owner, "", price).expect("Couldn't send payment for nft owner");
     }
 
-    fn token_price(&self) -> U256 {
-        let time_elapsed = block_timestamp() - self.started_at();
-        let discount = self.discount_rate * time_elapsed;
+    fn token_price(&self) -> u128 {
+        let time_elapsed = block_timestamp() - self.started_at;
+        let discount = self.discount_rate * (time_elapsed as u128);
 
         self.starting_price - discount
-    }
-
-    fn started_at(&self) -> u64 {
-        self.expires_at - self.duration
     }
 
     fn renew_contract(&mut self, config: CreateConfig) {
@@ -84,11 +80,13 @@ impl Auction {
         let hours_count = config.duration.days * 24 + config.duration.hours;
         let minutes_count = hours_count * 60 + config.duration.minutes;
         let duration = minutes_count * 60 * 1000;
-        if config.starting_price < config.discount_rate * duration {
+
+        if config.starting_price < config.discount_rate * (duration as u128) {
             panic!("starting price < min");
         }
 
         self.is_active = true;
+        self.started_at = block_timestamp();
         self.expires_at = block_timestamp() + duration;
         self.nft.token_id = config.token_id;
         self.nft.contract_id = config.nft_contract_actor_id;
