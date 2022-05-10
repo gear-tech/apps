@@ -3,7 +3,7 @@
 use gstd::{prelude::*, ActorId};
 use primitive_types::U256;
 
-#[derive(Encode, Decode)]
+#[derive(Encode, Decode, TypeInfo)]
 pub struct InitSupplyChain {
     pub producers: BTreeSet<ActorId>,
     pub distributors: BTreeSet<ActorId>,
@@ -13,7 +13,7 @@ pub struct InitSupplyChain {
     pub nft_program_id: ActorId,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Encode, Decode, TypeInfo)]
 pub enum SupplyChainAction {
     Produce { name: String, notes: String },
     PutUpForSaleByProducer { item_id: U256, price: u128 },
@@ -31,7 +31,7 @@ pub enum SupplyChainAction {
     GetItemInfo(U256),
 }
 
-#[derive(Encode, Decode)]
+#[derive(Encode, Decode, TypeInfo)]
 pub enum SupplyChainEvent {
     Produced(U256),
     ForSaleByProducer(U256),
@@ -76,7 +76,7 @@ pub enum SupplyChainEvent {
     },
 }
 
-#[derive(Encode, Decode, Clone)]
+#[derive(Encode, Decode, Clone, TypeInfo)]
 pub struct ItemInfo {
     pub name: String,
     pub notes: String,
@@ -86,7 +86,7 @@ pub struct ItemInfo {
     pub state: ItemState,
 }
 
-#[derive(Encode, Decode, PartialEq, Clone, Copy, Debug)]
+#[derive(Encode, Decode, PartialEq, Clone, Copy, Debug, TypeInfo)]
 pub enum ItemState {
     Produced,
     ForSaleByProducer,

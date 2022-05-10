@@ -584,3 +584,12 @@ pub async fn main() {
         SupplyChainAction::GetItemInfo(item_id) => supply_chain.get_item_info(item_id),
     }
 }
+
+gstd::metadata! {
+    title: "Supply chain",
+    init:
+        input: InitSupplyChain,
+    handle:
+        input: SupplyChainAction,
+        output: SupplyChainEvent,
+}
