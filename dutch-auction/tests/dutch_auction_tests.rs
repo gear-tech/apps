@@ -11,10 +11,7 @@ fn init(sys: &System) -> Program {
 
     sys.init_logger();
 
-    let auction_program = Program::from_file(
-        &sys,
-        "../target/wasm32-unknown-unknown/release/dutch_auction.wasm",
-    );
+    let auction_program = Program::current(&sys);
 
     auction_program.send(owner_user, InitConfig {});
 

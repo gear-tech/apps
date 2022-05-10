@@ -24,7 +24,6 @@ pub struct Auction {
     pub starting_price: U256,
     pub discount_rate: U256,
     pub is_active: bool,
-    pub start_at: u64,
     pub expires_at: u64,
     pub duration: u64,
 }
@@ -62,15 +61,19 @@ impl Auction {
         .await
         .expect("Error in nft transfer");
 
-        msg::send(msg::source(), "", refund).unwrap();
-        msg::send(self.nft.owner, "", price).unwrap();
+        msg::send(msg::source(), "", refund).expect("Couldn't send refund");
+        msg::send(self.nft.owner, "", price).expect("Couldn't send payment for nft owner");
     }
 
     fn token_price(&self) -> U256 {
-        let time_elapsed = block_timestamp() - self.start_at;
+        let time_elapsed = block_timestamp() - self.started_at();
         let discount = self.discount_rate * time_elapsed;
 
         self.starting_price - discount
+    }
+
+    fn started_at(&self) -> u64 {
+        self.expires_at - self.duration
     }
 
     fn renew_contract(&mut self, config: CreateConfig) {
@@ -86,7 +89,6 @@ impl Auction {
         }
 
         self.is_active = true;
-        self.start_at = block_timestamp();
         self.expires_at = block_timestamp() + duration;
         self.nft.token_id = config.token_id;
         self.nft.contract_id = config.nft_contract_actor_id;
@@ -140,14 +142,14 @@ impl Auction {
 
 gstd::metadata! {
     title: "Auction",
-        init:
-            input: InitConfig,
-        handle:
-            input: Action,
-            output: Event,
-        state:
-            input: State,
-            output: StateReply,
+    init:
+        input: InitConfig,
+    handle:
+        input: Action,
+        output: Event,
+    state:
+        input: State,
+        output: StateReply,
 }
 
 #[no_mangle]
@@ -187,9 +189,6 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
         State::Info() => StateReply::Info(auction.info()),
     }
     .encode();
-    let result = gstd::macros::util::to_wasm_ptr(&(encoded[..]));
 
-    core::mem::forget(encoded);
-
-    result
+    gstd::util::to_leak_ptr(encoded)
 }
