@@ -8,6 +8,7 @@ use gstd::{
     prelude::*,
     ActorId,
 };
+use primitive_types::U256;
 
 #[derive(PartialEq)]
 enum State {
@@ -25,7 +26,7 @@ fn transfer_tokens(
     msg::send_and_wait_for_reply(ft_program_id, FTAction::Transfer { from, to, amount }, 0).unwrap()
 }
 
-fn get(contracts: &mut BTreeMap<u128, Contract>, contract_id: u128) -> &mut Contract {
+fn get(contracts: &mut BTreeMap<U256, Contract>, contract_id: U256) -> &mut Contract {
     if let Some(contract) = contracts.get_mut(&contract_id) {
         contract
     } else {
@@ -36,8 +37,8 @@ fn get(contracts: &mut BTreeMap<u128, Contract>, contract_id: u128) -> &mut Cont
 #[derive(Default)]
 struct Escrow {
     ft_program_id: ActorId,
-    contracts: BTreeMap<u128, Contract>,
-    id_nonce: u128,
+    contracts: BTreeMap<U256, Contract>,
+    id_nonce: U256,
 }
 
 impl Escrow {
@@ -56,7 +57,7 @@ impl Escrow {
         }
 
         let contract_id = self.id_nonce;
-        self.id_nonce += 1;
+        self.id_nonce = self.id_nonce.saturating_add(U256::one());
 
         self.contracts.insert(
             contract_id,
@@ -68,7 +69,7 @@ impl Escrow {
             },
         );
 
-        msg::reply(EscrowEvent::Created { contract_id }, 0).unwrap();
+        msg::reply(EscrowEvent::Created(contract_id), 0).unwrap();
     }
 
     /// Makes a deposit from a buyer to an escrow account
@@ -80,7 +81,7 @@ impl Escrow {
     ///
     /// Arguments:
     /// * `contract_id`: a contract ID.
-    async fn deposit(&mut self, contract_id: u128) {
+    async fn deposit(&mut self, contract_id: U256) {
         let contract = get(&mut self.contracts, contract_id);
 
         if msg::source() != contract.buyer {
@@ -121,7 +122,7 @@ impl Escrow {
     ///
     /// Arguments:
     /// * `contract_id`: a contract ID.
-    async fn confirm(&mut self, contract_id: u128) {
+    async fn confirm(&mut self, contract_id: U256) {
         let contract = get(&mut self.contracts, contract_id);
 
         if msg::source() != contract.buyer {
@@ -163,7 +164,7 @@ impl Escrow {
     ///
     /// Arguments:
     /// * `contract_id`: a contract ID.
-    async fn refund(&mut self, contract_id: u128) {
+    async fn refund(&mut self, contract_id: U256) {
         let contract = get(&mut self.contracts, contract_id);
 
         if msg::source() != contract.seller {
@@ -203,7 +204,7 @@ impl Escrow {
     ///
     /// Arguments:
     /// * `contract_id`: a contract ID.
-    async fn cancel(&mut self, contract_id: u128) {
+    async fn cancel(&mut self, contract_id: U256) {
         let contract = get(&mut self.contracts, contract_id);
 
         if msg::source() != contract.buyer && msg::source() != contract.seller {
@@ -259,9 +260,18 @@ pub async fn main() {
             seller,
             amount,
         } => escrow.create(buyer, seller, amount),
-        EscrowAction::Deposit { contract_id } => escrow.deposit(contract_id).await,
-        EscrowAction::Confirm { contract_id } => escrow.confirm(contract_id).await,
-        EscrowAction::Refund { contract_id } => escrow.refund(contract_id).await,
-        EscrowAction::Cancel { contract_id } => escrow.cancel(contract_id).await,
+        EscrowAction::Deposit(contract_id) => escrow.deposit(contract_id).await,
+        EscrowAction::Confirm(contract_id) => escrow.confirm(contract_id).await,
+        EscrowAction::Refund(contract_id) => escrow.refund(contract_id).await,
+        EscrowAction::Cancel(contract_id) => escrow.cancel(contract_id).await,
     }
+}
+
+gstd::metadata! {
+    title: "Escrow",
+    init:
+        input: InitEscrow,
+    handle:
+        input: EscrowAction,
+        output: EscrowEvent,
 }

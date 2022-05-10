@@ -12,7 +12,7 @@ fn two_different_escrows() {
     mint(&ft_program, BUYER[0], AMOUNT[0] + AMOUNT_REMAINDER);
     mint(&ft_program, BUYER[1], AMOUNT[1] + AMOUNT_REMAINDER);
 
-    create(
+    check::create(
         &escrow_program,
         CONTRACT[0],
         SELLER[0],
@@ -20,7 +20,7 @@ fn two_different_escrows() {
         SELLER[0],
         AMOUNT[0],
     );
-    create(
+    check::create(
         &escrow_program,
         CONTRACT[1],
         SELLER[1],
@@ -29,11 +29,11 @@ fn two_different_escrows() {
         AMOUNT[1],
     );
 
-    deposit(&escrow_program, CONTRACT[0], BUYER[0], AMOUNT[0]);
-    deposit(&escrow_program, CONTRACT[1], BUYER[1], AMOUNT[1]);
+    check::deposit(&escrow_program, CONTRACT[0], BUYER[0], AMOUNT[0]);
+    check::deposit(&escrow_program, CONTRACT[1], BUYER[1], AMOUNT[1]);
 
-    confirm(&escrow_program, CONTRACT[0], BUYER[0], SELLER[0], AMOUNT[0]);
-    confirm(&escrow_program, CONTRACT[1], BUYER[1], SELLER[1], AMOUNT[1]);
+    check::confirm(&escrow_program, CONTRACT[0], BUYER[0], SELLER[0], AMOUNT[0]);
+    check::confirm(&escrow_program, CONTRACT[1], BUYER[1], SELLER[1], AMOUNT[1]);
 
     check_balance(&ft_program, BUYER[0], AMOUNT_REMAINDER);
     check_balance(&ft_program, BUYER[1], AMOUNT_REMAINDER);
@@ -49,7 +49,7 @@ fn reuse_after_refund() {
     let ft_program = init_fungible_tokens(&system);
 
     mint(&ft_program, BUYER[0], AMOUNT[0]);
-    create(
+    check::create(
         &escrow_program,
         CONTRACT[0],
         SELLER[0],
@@ -57,13 +57,13 @@ fn reuse_after_refund() {
         SELLER[0],
         AMOUNT[0],
     );
-    deposit(&escrow_program, CONTRACT[0], BUYER[0], AMOUNT[0]);
+    check::deposit(&escrow_program, CONTRACT[0], BUYER[0], AMOUNT[0]);
 
-    refund(&escrow_program, CONTRACT[0], BUYER[0], SELLER[0], AMOUNT[0]);
+    check::refund(&escrow_program, CONTRACT[0], BUYER[0], SELLER[0], AMOUNT[0]);
     check_balance(&ft_program, BUYER[0], AMOUNT[0]);
 
-    deposit(&escrow_program, CONTRACT[0], BUYER[0], AMOUNT[0]);
-    confirm(&escrow_program, CONTRACT[0], BUYER[0], SELLER[0], AMOUNT[0]);
+    check::deposit(&escrow_program, CONTRACT[0], BUYER[0], AMOUNT[0]);
+    check::confirm(&escrow_program, CONTRACT[0], BUYER[0], SELLER[0], AMOUNT[0]);
 }
 
 #[test]
@@ -73,8 +73,8 @@ fn interact_with_non_existend_contract() {
     let system = init_system();
     let escrow_program = init_escrow(&system);
 
-    deposit_fail(&escrow_program, NONEXISTEND_CONTRACT, BUYER[0]);
-    cancel_fail(&escrow_program, NONEXISTEND_CONTRACT, BUYER[0]);
-    refund_fail(&escrow_program, NONEXISTEND_CONTRACT, BUYER[0]);
-    confirm_fail(&escrow_program, NONEXISTEND_CONTRACT, BUYER[0]);
+    fail::deposit(&escrow_program, NONEXISTEND_CONTRACT, BUYER[0]);
+    fail::cancel(&escrow_program, NONEXISTEND_CONTRACT, BUYER[0]);
+    fail::refund(&escrow_program, NONEXISTEND_CONTRACT, BUYER[0]);
+    fail::confirm(&escrow_program, NONEXISTEND_CONTRACT, BUYER[0]);
 }

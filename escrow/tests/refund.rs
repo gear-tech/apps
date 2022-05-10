@@ -8,7 +8,7 @@ fn refund_not_paid() {
     let ft_program = init_fungible_tokens(&system);
 
     mint(&ft_program, BUYER[0], AMOUNT[0]);
-    create(
+    check::create(
         &escrow_program,
         CONTRACT[0],
         SELLER[0],
@@ -16,8 +16,8 @@ fn refund_not_paid() {
         SELLER[0],
         AMOUNT[0],
     );
-    // Should fail because a seller tries to refund an unpaid contract
-    refund_fail(&escrow_program, CONTRACT[0], SELLER[0]);
+    // Should fail because a seller tries to refund an unpaid contract.
+    fail::refund(&escrow_program, CONTRACT[0], SELLER[0]);
 }
 
 #[test]
@@ -27,7 +27,7 @@ fn not_seller_refund() {
     let ft_program = init_fungible_tokens(&system);
 
     mint(&ft_program, BUYER[0], AMOUNT[0]);
-    create(
+    check::create(
         &escrow_program,
         CONTRACT[0],
         SELLER[0],
@@ -35,9 +35,9 @@ fn not_seller_refund() {
         SELLER[0],
         AMOUNT[0],
     );
-    deposit(&escrow_program, CONTRACT[0], BUYER[0], AMOUNT[0]);
-    // Should fail because not a seller saved in a contract tries to refund
-    refund_fail(&escrow_program, CONTRACT[0], FOREIGN_USER);
-    refund_fail(&escrow_program, CONTRACT[0], BUYER[0]);
-    refund_fail(&escrow_program, CONTRACT[0], SELLER[1]);
+    check::deposit(&escrow_program, CONTRACT[0], BUYER[0], AMOUNT[0]);
+    // Should fail because not a seller saved in a contract tries to refund.
+    fail::refund(&escrow_program, CONTRACT[0], FOREIGN_USER);
+    fail::refund(&escrow_program, CONTRACT[0], BUYER[0]);
+    fail::refund(&escrow_program, CONTRACT[0], SELLER[1]);
 }

@@ -1,8 +1,10 @@
-use escrow_io::*;
-use ft_io::*;
-use gstd::Encode;
-use gstd::String;
+use escrow_io::{EscrowAction, EscrowEvent, InitEscrow};
+use ft_io::{FTAction, FTEvent, InitConfig as InitFT};
+use gstd::prelude::*;
 use gtest::{Program, System};
+
+pub mod check;
+pub mod fail;
 
 pub const FT: u64 = 2;
 pub const FOREIGN_USER: u64 = 1337;
@@ -27,7 +29,7 @@ pub fn init_fungible_tokens(sys: &System) -> Program {
     assert!(ft_program
         .send(
             FOREIGN_USER,
-            InitConfig {
+            InitFT {
                 name: String::from("MyToken"),
                 symbol: String::from("MTK"),
             },
@@ -52,123 +54,6 @@ pub fn init_escrow(sys: &System) -> Program {
         .is_empty());
 
     escrow_program
-}
-
-pub fn create(
-    escrow_program: &Program,
-    contract_id: u128,
-    from: u64,
-    buyer: u64,
-    seller: u64,
-    amount: u128,
-) {
-    assert!(escrow_program
-        .send(
-            from,
-            EscrowAction::Create {
-                buyer: buyer.into(),
-                seller: seller.into(),
-                amount,
-            },
-        )
-        .contains(&(from, EscrowEvent::Created { contract_id }.encode())));
-}
-
-pub fn create_fail(escrow_program: &Program, from: u64, buyer: u64, seller: u64, amount: u128) {
-    assert!(escrow_program
-        .send(
-            from,
-            EscrowAction::Create {
-                buyer: buyer.into(),
-                seller: seller.into(),
-                amount,
-            },
-        )
-        .main_failed());
-}
-
-pub fn deposit(escrow_program: &Program, contract_id: u128, buyer: u64, amount: u128) {
-    assert!(escrow_program
-        .send(buyer, EscrowAction::Deposit { contract_id })
-        .contains(&(
-            buyer,
-            EscrowEvent::Deposited {
-                buyer: buyer.into(),
-                amount,
-            }
-            .encode()
-        )));
-}
-
-pub fn deposit_fail(escrow_program: &Program, contract_id: u128, from: u64) {
-    assert!(escrow_program
-        .send(from, EscrowAction::Deposit { contract_id })
-        .main_failed());
-}
-
-pub fn confirm(escrow_program: &Program, contract_id: u128, buyer: u64, seller: u64, amount: u128) {
-    assert!(escrow_program
-        .send(buyer, EscrowAction::Confirm { contract_id })
-        .contains(&(
-            buyer,
-            EscrowEvent::Confirmed {
-                seller: seller.into(),
-                amount,
-            }
-            .encode()
-        )));
-}
-
-pub fn confirm_fail(escrow_program: &Program, contract_id: u128, from: u64) {
-    assert!(escrow_program
-        .send(from, EscrowAction::Confirm { contract_id })
-        .main_failed());
-}
-
-pub fn refund(escrow_program: &Program, contract_id: u128, buyer: u64, seller: u64, amount: u128) {
-    assert!(escrow_program
-        .send(seller, EscrowAction::Refund { contract_id })
-        .contains(&(
-            seller,
-            EscrowEvent::Refunded {
-                buyer: buyer.into(),
-                amount
-            }
-            .encode()
-        )));
-}
-
-pub fn refund_fail(escrow_program: &Program, contract_id: u128, from: u64) {
-    assert!(escrow_program
-        .send(from, EscrowAction::Refund { contract_id })
-        .main_failed());
-}
-
-pub fn cancel(
-    escrow_program: &Program,
-    contract_id: u128,
-    from: u64,
-    buyer: u64,
-    seller: u64,
-    amount: u128,
-) {
-    assert!(escrow_program
-        .send(from, EscrowAction::Cancel { contract_id })
-        .contains(&(
-            from,
-            EscrowEvent::Cancelled {
-                buyer: buyer.into(),
-                seller: seller.into(),
-                amount
-            }
-            .encode()
-        )));
-}
-
-pub fn cancel_fail(escrow_program: &Program, contract_id: u128, from: u64) {
-    assert!(escrow_program
-        .send(from, EscrowAction::Cancel { contract_id })
-        .main_failed());
 }
 
 pub fn check_balance(ft_program: &Program, from: u64, amount: u128) {

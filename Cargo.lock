@@ -529,6 +529,7 @@ dependencies = [
  "gstd",
  "gtest",
  "parity-scale-codec",
+ "primitive-types",
 ]
 
 [[package]]
@@ -537,6 +538,8 @@ version = "0.1.0"
 dependencies = [
  "gstd",
  "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
 ]
 
 [[package]]
