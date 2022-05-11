@@ -1,5 +1,5 @@
 use concert_io::*;
-use gstd::{ActorId};
+use gstd::ActorId;
 use gstd::{Decode, Encode};
 use gtest::{Program, System, WasmProgram};
 
@@ -68,15 +68,17 @@ impl WasmProgram for MultiToken {
                     .encode(),
                 ));
             }
-            MTKAction::BalanceOfBatch { accounts: _, ids: _ } => {
+            MTKAction::BalanceOfBatch {
+                accounts: _,
+                ids: _,
+            } => {
                 let res = vec![BalanceOfBatchReply {
                     account: 1.into(),
                     id: CONCERT_ID,
                     amount: AMOUNT,
                 }];
                 return Ok(Some(MTKEvent::BalanceOfBatch(res).encode()));
-            }
-            // _ => return Ok(None),
+            } // _ => return Ok(None),
         }
     }
 
