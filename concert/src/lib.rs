@@ -11,7 +11,7 @@ pub struct Concert {
     pub owner_id: ActorId,
     pub contract_id: ActorId,
 
-    pub name: u128,
+    pub name: TokenId,
     pub creator: ActorId,
     pub number_of_tickets: u128,
     pub date: u128,
@@ -31,7 +31,7 @@ pub unsafe extern "C" fn init() {
     let concert = Concert {
         owner_id: config.owner_id,
         contract_id: config.mtk_contract,
-        ..Concert::default()
+        ..Default::default()
     };
     CONTRACT = Some(concert);
 }
@@ -74,7 +74,7 @@ impl Concert {
                 creator,
                 concert_id,
                 no_tickets: number_of_tickets,
-                date: date,
+                date,
             },
             0,
         )
@@ -103,13 +103,13 @@ impl Concert {
             panic!("CONCERT: Metadata not provided for all the tickets");
         }
 
-        mtd.into_iter().enumerate().for_each(|(_i, meta)| {
+        for meta in mtd.iter() {
             self.id_counter += 1;
             self.metadata
                 .entry(msg::source())
                 .or_default()
-                .insert(self.id_counter + 1, meta);
-        });
+                .insert(self.id_counter + 1, (*meta).clone());
+        }
 
         self.buyers.insert(msg::source());
 
@@ -173,11 +173,11 @@ impl Concert {
         }
 
         for actor in &self.buyers {
-            let mut ids: Vec<TokenId> = vec![];
-            let mut amounts: Vec<TokenId> = vec![];
-            let mut meta: Vec<Option<TokenMetadata>> = vec![];
-            let _actor_md = self.metadata.get(actor);
-            if let Some(actor_md) = _actor_md.cloned() {
+            let mut ids = vec![];
+            let mut amounts = vec![];
+            let mut meta = vec![];
+            let actor_metadata = self.metadata.get(actor);
+            if let Some(actor_md) = actor_metadata.cloned() {
                 for (token, token_meta) in actor_md {
                     ids.push(token);
                     amounts.push(NFT_COUNT);
