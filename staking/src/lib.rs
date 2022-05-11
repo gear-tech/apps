@@ -2,11 +2,9 @@
 
 use codec::{Decode, Encode};
 use ft_io::*;
-use gstd::{exec, msg, prelude::*, ActorId};
+use gstd::{debug, exec, msg, prelude::*, ActorId};
 use scale_info::TypeInfo;
 use staking_io::*;
-
-const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug, Default, Encode, Decode, TypeInfo)]
 struct Staking {
@@ -17,8 +15,6 @@ struct Staking {
     distribution_time: u64,
     produced_time: u64,
     reward_produced: u128,
-    reward_total: u128,
-    all_produced: u128,
     stakers: BTreeMap<ActorId, Staker>,
 }
 
@@ -46,28 +42,35 @@ impl Staking {
             },
             0,
         )
-        .expect("Error in sending message")
+        .unwrap()
         .await
         .expect("Error in transfer");
     }
 
     /// Calculates the reward produced so far
     fn produced(&mut self) -> u128 {
-        self.all_produced
-            + self.reward_total * (exec::block_timestamp() - self.produced_time) as u128
+        debug!("timestamp: {}", exec::block_timestamp());
+        self.reward_produced
+            + (exec::block_timestamp() - self.produced_time) as u128
                 / self.distribution_time as u128
     }
 
     /// Updates the reward produced so far and calculates tokens per stake
     fn update_reward(&mut self) {
-        let reward_produced_at_now: u128 = self.produced();
+        let reward_produced_at_now = self.produced();
+
+        debug!("reward_produced_at_now: {}", reward_produced_at_now);
 
         if reward_produced_at_now > self.reward_produced {
-            let produced_new: u128 = reward_produced_at_now - self.reward_produced;
+            let produced_new = reward_produced_at_now - self.reward_produced;
+
             if self.total_staked > 0 {
-                self.tokens_per_stake += produced_new * (1 << 20) / self.total_staked;
+                self.tokens_per_stake = self
+                    .tokens_per_stake
+                    .saturating_add(produced_new * (1 << 20) / self.total_staked);
             }
-            self.reward_produced += produced_new;
+
+            self.reward_produced = self.reward_produced.saturating_add(produced_new);
         }
     }
 
@@ -90,8 +93,10 @@ impl Staking {
             self.stakers
                 .entry(msg::source())
                 .and_modify(|stake| {
-                    stake.reward_debt += (amount * self.tokens_per_stake) / (1 << 20);
-                    stake.balance += amount;
+                    stake.reward_debt = stake
+                        .reward_debt
+                        .saturating_add((amount * self.tokens_per_stake) / (1 << 20));
+                    stake.balance = stake.balance.saturating_add(amount);
                 })
                 .or_insert(Staker {
                     reward_debt: (amount * self.tokens_per_stake) / (1 << 20),
@@ -99,7 +104,9 @@ impl Staking {
                     ..Default::default()
                 });
 
-            let token_address: ActorId = self.staking_token_address;
+            self.total_staked = self.total_staked.saturating_add(amount);
+
+            let token_address = self.staking_token_address;
 
             self.transfer_tokens(&token_address, &msg::source(), &exec::program_id(), amount)
                 .await;
@@ -113,14 +120,14 @@ impl Staking {
     ///Sends reward to the staker
     async fn send_reward(&mut self) {
         self.update_reward();
-        let reward: u128 = self.calc_reward();
+        let reward = self.calc_reward();
 
         if reward > 0 {
             self.stakers
                 .entry(msg::source())
-                .and_modify(|stake| stake.distributed += reward);
+                .and_modify(|stake| stake.distributed = stake.distributed.saturating_add(reward));
 
-            let mut token_address: ActorId = self.staking_token_address;
+            let mut token_address = self.staking_token_address;
 
             if self.reward_token_address.is_some() {
                 token_address = self.reward_token_address.unwrap();
@@ -128,9 +135,9 @@ impl Staking {
 
             self.transfer_tokens(&token_address, &exec::program_id(), &msg::source(), reward)
                 .await;
-
-            msg::reply(StakingEvent::Reward(reward), 0).unwrap();
         }
+
+        msg::reply(StakingEvent::Reward(reward), 0).unwrap();
     }
 
     async fn withdraw(&mut self, amount: u128) {
@@ -143,14 +150,16 @@ impl Staking {
                 panic!("withdraw(): staker.balance < amount");
             }
 
-            staker.reward_allowed += (amount * self.tokens_per_stake) / (1 << 20);
-            staker.balance -= amount;
+            staker.reward_allowed = staker
+                .reward_allowed
+                .saturating_add((amount * self.tokens_per_stake) / (1 << 20));
+            staker.balance = staker.balance.saturating_sub(amount);
 
             self.update_reward();
 
-            self.total_staked -= amount;
+            self.total_staked = self.total_staked.saturating_sub(amount);
 
-            let token_address: ActorId = self.staking_token_address;
+            let token_address = self.staking_token_address;
 
             self.transfer_tokens(&token_address, &exec::program_id(), &msg::source(), amount)
                 .await;
@@ -164,11 +173,7 @@ impl Staking {
 
 #[gstd::async_main]
 async unsafe fn main() {
-    if msg::source() == ZERO_ID {
-        panic!("Message from zero address");
-    }
-
-    let staking: &mut Staking = unsafe { STAKING.get_or_insert(Staking::default()) };
+    let staking = unsafe { STAKING.get_or_insert(Staking::default()) };
 
     let action: StakingAction = msg::load().expect("Could not load Action");
 
@@ -193,7 +198,7 @@ pub unsafe extern "C" fn init() {
 
     let staking = Staking {
         staking_token_address: config.staking_token_address,
-        reward_token_address: config.reward_token_address,
+        reward_token_address: Some(config.reward_token_address),
         distribution_time: config.distribution_time,
         produced_time: exec::block_timestamp(),
         ..Default::default()
@@ -205,7 +210,7 @@ pub unsafe extern "C" fn init() {
 #[no_mangle]
 pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let query: StakingState = msg::load().expect("failed to decode input argument");
-    let staking: &mut Staking = STAKING.get_or_insert(Staking::default());
+    let staking = STAKING.get_or_insert(Staking::default());
 
     let encoded = match query {
         StakingState::GetStakers => StakingStateReply::Stakers(staking.stakers.clone()).encode(),
@@ -224,6 +229,8 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
 
 gstd::metadata! {
     title: "Staking",
+    init:
+        input : InitStaking,
     handle:
         input: StakingAction,
         output: StakingEvent,

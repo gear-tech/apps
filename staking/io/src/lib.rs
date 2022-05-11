@@ -4,11 +4,10 @@ use codec::{Decode, Encode};
 use gstd::{prelude::*, ActorId};
 use scale_info::TypeInfo;
 
-#[derive(Decode, Encode)]
+#[derive(Decode, Encode, TypeInfo)]
 pub struct InitStaking {
-    pub token_address: ActorId,
     pub staking_token_address: ActorId,
-    pub reward_token_address: Option<ActorId>,
+    pub reward_token_address: ActorId,
     pub distribution_time: u64,
 }
 
