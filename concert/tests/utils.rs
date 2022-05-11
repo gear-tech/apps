@@ -1,13 +1,89 @@
 use concert_io::*;
-use gstd::Encode;
-use gstd::String;
-use gtest::{Program, System};
+use gstd::{ActorId};
+use gstd::{Decode, Encode};
+use gtest::{Program, System, WasmProgram};
 
 pub const USER: u64 = 193;
-pub const ERC1155_ID: u64 = 2;
+pub const MTK_ID: u64 = 2;
 pub const CONCERT_ID: u128 = 1;
 pub const NO_TICKETS: u128 = 100;
 pub const AMOUNT: u128 = 1;
+pub const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
+pub const DATE: u128 = 100000;
+
+#[derive(Debug)]
+struct MultiToken;
+
+impl WasmProgram for MultiToken {
+    fn init(&mut self, _: Vec<u8>) -> Result<Option<Vec<u8>>, &'static str> {
+        Ok(Some(b"INITIALIZED".to_vec()))
+    }
+
+    fn handle(&mut self, payload: Vec<u8>) -> Result<Option<Vec<u8>>, &'static str> {
+        let res = MTKAction::decode(&mut &payload[..]).map_err(|_| "Can not decode")?;
+        match res {
+            MTKAction::Mint {
+                account,
+                id,
+                amount,
+                meta: _,
+            } => {
+                return Ok(Some(
+                    MTKEvent::TransferSingle(TransferSingleReply {
+                        operator: 1.into(),
+                        from: ZERO_ID,
+                        to: account,
+                        id,
+                        amount,
+                    })
+                    .encode(),
+                ));
+            }
+            MTKAction::MintBatch {
+                account,
+                ids,
+                amounts,
+                meta: _,
+            } => {
+                return Ok(Some(
+                    MTKEvent::TransferBatch {
+                        operator: 1.into(),
+                        from: ZERO_ID,
+                        to: account,
+                        ids: ids.to_vec(),
+                        values: amounts.to_vec(),
+                    }
+                    .encode(),
+                ));
+            }
+            MTKAction::Burn { id, amount } => {
+                return Ok(Some(
+                    MTKEvent::TransferSingle(TransferSingleReply {
+                        operator: 1.into(),
+                        from: 1.into(),
+                        to: ZERO_ID,
+                        id,
+                        amount,
+                    })
+                    .encode(),
+                ));
+            }
+            MTKAction::BalanceOfBatch { accounts: _, ids: _ } => {
+                let res = vec![BalanceOfBatchReply {
+                    account: 1.into(),
+                    id: CONCERT_ID,
+                    amount: AMOUNT,
+                }];
+                return Ok(Some(MTKEvent::BalanceOfBatch(res).encode()));
+            }
+            // _ => return Ok(None),
+        }
+    }
+
+    fn handle_reply(&mut self, _: Vec<u8>) -> Result<Option<Vec<u8>>, &'static str> {
+        Ok(None)
+    }
+}
 
 pub fn init_system() -> System {
     let system = System::new();
@@ -18,14 +94,16 @@ pub fn init_system() -> System {
 
 pub fn init_concert(sys: &System) -> Program {
     let concert_program = Program::current(&sys);
-
+    // let ft = Program::mock(&sys, FungibleToken);
+    let mtk_program = Program::mock_with_id(&sys, MTK_ID, MultiToken);
+    let res = mtk_program.send_bytes(100001, "INIT");
+    assert!(!res.log().is_empty());
     assert!(concert_program
         .send(
             USER,
             InitConcert {
-                name: String::from("ERC1155 Concert"),
-                symbol: String::from("EC"),
-                base_uri: String::from("http://erc1155.concert"),
+                owner_id: USER.into(),
+                mtk_contract: MTK_ID.into(),
             },
         )
         .log()
@@ -34,73 +112,60 @@ pub fn init_concert(sys: &System) -> Program {
     concert_program
 }
 
-pub fn init_erc1155(sys: &System) {
-    let erc1155_program = Program::current(&sys);
-
-    assert!(erc1155_program
-        .send(
-            USER,
-            InitConfig {
-                name: String::from("ERC1155 Multitoken"),
-                symbol: String::from("MTK"),
-                base_uri: String::from("http://erc1155.multitoken"),
-            },
-        )
-        .log()
-        .is_empty());
-
-    erc1155_program
-}
-
 pub fn create(
-    concert: &Program,
-    contract_id: ActorId,
+    concert_program: &Program,
     creator: ActorId,
     concert_id: u128,
     no_tickets: u128,
+    date: u128,
 ) {
-    let res = concert.send(
+    let res = concert_program.send(
         USER,
         ConcertAction::Create {
-            contract_id: ERC1155_ID,
-            creator: ActorId,
-            concert_id: CONCERT_ID,
-            no_tickets: NO_TICKETS,
-        }
-        .encode(),
+            creator,
+            concert_id,
+            no_tickets,
+            date,
+        },
     );
 
     assert!(res.contains(&(
-        USERS[0],
+        USER,
         ConcertEvent::Creation {
-            creator: USER,
-            concert_id: CONCERT_ID,
-            no_tickets: NO_TICKETS,
+            creator,
+            concert_id,
+            no_tickets,
+            date,
         }
         .encode()
     )));
 }
 
 pub fn buy(
-    concert: &Program,
+    concert_program: &Program,
     concert_id: u128,
     amount: u128,
     metadata: Vec<Option<TokenMetadata>>,
+    should_fail: bool,
 ) {
-    let res = concert.send(
+    let res = concert_program.send(
         USER,
-        ConcertAction::BuyTicket {
+        ConcertAction::BuyTickets {
             concert_id,
             amount,
             metadata,
-        }
-        .encode(),
+        },
     );
 
-    assert!(res.contains(&(USER, ConcertEvent::Purchase { concert_id, amount }.encode())));
+    if should_fail {
+        assert!(res.main_failed());
+    } else {
+        assert!(res.contains(&(USER, ConcertEvent::Purchase { concert_id, amount }.encode())));
+    }
 }
 
-pub fn hold(concert: &Program, concert_id: u128) {
-    let res = concert.send(USER, ConcertAction::Hold { concert_id }.encode());
-    assert!(res.contains(&(USERS[0], ConcertEvent::Hold { concert_id }.encode())));
+pub fn hold(concert_program: &Program, concert_id: u128) {
+    let res = concert_program.send(USER, ConcertAction::Hold { concert_id });
+
+    assert!(res.contains(&(USER, ConcertEvent::Hold { concert_id }.encode())));
 }

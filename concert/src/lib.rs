@@ -14,6 +14,7 @@ pub struct Concert {
     pub name: u128,
     pub creator: ActorId,
     pub number_of_tickets: u128,
+    pub date: u128,
 
     pub buyers: BTreeSet<ActorId>,
 
@@ -44,7 +45,8 @@ async unsafe fn main() {
             creator,
             concert_id,
             no_tickets,
-        } => concert.create_concert(creator, concert_id, no_tickets),
+            date,
+        } => concert.create_concert(creator, concert_id, no_tickets, date),
         ConcertAction::Hold { concert_id } => concert.hold_concert(concert_id).await,
         ConcertAction::BuyTickets {
             concert_id,
@@ -55,16 +57,24 @@ async unsafe fn main() {
 }
 
 impl Concert {
-    fn create_concert(&mut self, creator: ActorId, concert_id: u128, number_of_tickets: u128) {
+    fn create_concert(
+        &mut self,
+        creator: ActorId,
+        concert_id: u128,
+        number_of_tickets: u128,
+        date: u128,
+    ) {
         self.creator = creator;
         self.id_counter = concert_id;
         self.name = concert_id;
         self.number_of_tickets = number_of_tickets;
+        self.date = date;
         msg::reply(
             ConcertEvent::Creation {
                 creator,
                 concert_id,
                 no_tickets: number_of_tickets,
+                date: date,
             },
             0,
         )
@@ -115,7 +125,7 @@ impl Concert {
         )
         .unwrap()
         .await
-        .expect("CONCERT: Error mintin concert tokens");
+        .expect("CONCERT: Error minting concert tokens");
 
         msg::reply(ConcertEvent::Purchase { concert_id, amount }, 0).unwrap();
     }

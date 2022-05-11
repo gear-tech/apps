@@ -75,7 +75,7 @@ pub enum ConcertAction {
         creator: ActorId,
         concert_id: u128,
         no_tickets: u128,
-        // date: u128,
+        date: u128,
     },
     Hold {
         concert_id: u128,
@@ -93,6 +93,7 @@ pub enum ConcertEvent {
         creator: ActorId,
         concert_id: u128,
         no_tickets: u128,
+        date: u128,
     },
     Hold {
         concert_id: u128,

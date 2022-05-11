@@ -1,40 +1,58 @@
-pub mod utils;
 use concert_io::*;
-use gstd::Encode;
 use gstd::String;
-use gtest::{Program, System};
+
+mod utils;
 use utils::*;
 
 #[test]
 fn create_concert() {
     let system = init_system();
     let concert_program = init_concert(&system);
-
-    create(concert_program, ERC1155_ID, USER, CONCERT_ID, NO_TICKETS);
+    create(&concert_program, USER.into(), CONCERT_ID, NO_TICKETS, DATE);
 }
 
 #[test]
 fn buy_tickets() {
     let system = init_system();
     let concert_program = init_concert(&system);
+    create(&concert_program, USER.into(), CONCERT_ID, NO_TICKETS, DATE);
 
-    create(concert_program, ERC1155_ID, USER, CONCERT_ID, NO_TICKETS);
-
-    let metadata = vec![TokenMetadata {
+    let metadata = vec![Some(TokenMetadata {
         title: Some(String::from("SUM41_TORONTO")),
-        title: Some(String::from("SUM 41 Torotno Ticket. Row 4. Seat 4.")),
-        title: Some(String::from("sum41.com")),
-        title: Some(String::from("UNKNOWN")),
-    }];
-    buy(concert_program, CONCERT_ID, AMOUNT, metadata);
+        description: Some(String::from("SUM 41 Torotno Ticket. Row 4. Seat 4.")),
+        media: Some(String::from("sum41.com")),
+        reference: Some(String::from("UNKNOWN")),
+    })];
+
+    buy(&concert_program, CONCERT_ID, AMOUNT, metadata, false);
 }
 
 #[test]
 fn buy_tickets_failures() {
     let system = init_system();
     let concert_program = init_concert(&system);
+    create(&concert_program, USER.into(), CONCERT_ID, NO_TICKETS, DATE);
 
-    create(concert_program, ERC1155_ID, USER, CONCERT_ID, NO_TICKETS);
+    // MUST FAIL since we're buying < 1 ticket
+    buy(&concert_program, CONCERT_ID, 0, vec![None], true);
+
+    // MUST FAIL since we're buying more tickets than there are
+    buy(
+        &concert_program,
+        CONCERT_ID,
+        NO_TICKETS + 1,
+        vec![None; (NO_TICKETS + 1) as usize],
+        true,
+    );
+
+    // MUST FAIL since metadata is not provided for all tickets
+    buy(
+        &concert_program,
+        CONCERT_ID,
+        AMOUNT + 3,
+        vec![None; (AMOUNT + 1) as usize],
+        true,
+    );
 }
 
 #[test]
@@ -42,15 +60,16 @@ fn hold_concert() {
     let system = init_system();
     let concert_program = init_concert(&system);
 
-    create(concert_program, ERC1155_ID, USER, CONCERT_ID, NO_TICKETS);
+    create(&concert_program, USER.into(), CONCERT_ID, NO_TICKETS, DATE);
 
-    let metadata = vec![TokenMetadata {
+    let metadata = vec![Some(TokenMetadata {
         title: Some(String::from("SUM41_TORONTO")),
-        title: Some(String::from("SUM 41 Torotno Ticket. Row 4. Seat 4.")),
-        title: Some(String::from("sum41.com")),
-        title: Some(String::from("UNKNOWN")),
-    }];
-    buy(concert_program, CONCERT_ID, AMOUNT, metadata);
-    hold(concert_program, CONCERT_ID);
-    // check for tokens
+        description: Some(String::from("SUM 41 Torotno Ticket. Row 4. Seat 4.")),
+        media: Some(String::from("sum41.com")),
+        reference: Some(String::from("UNKNOWN")),
+    })];
+
+    buy(&concert_program, CONCERT_ID, AMOUNT, metadata, false);
+
+    hold(&concert_program, CONCERT_ID);
 }
