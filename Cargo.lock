@@ -198,6 +198,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "concert"
+version = "0.1.0"
+dependencies = [
+ "concert-io",
+ "gear-wasm-builder",
+ "gstd",
+ "gtest",
+ "parity-scale-codec",
+ "scale-info",
+]
+
+[[package]]
+name = "concert-io"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "parity-scale-codec",
+ "scale-info",
+]
+
+[[package]]
 name = "constant_time_eq"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
