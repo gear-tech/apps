@@ -42,3 +42,28 @@ pub enum EscrowEvent {
     },
     Created(U256),
 }
+
+#[derive(Decode, Encode, TypeInfo)]
+pub enum EscrowState {
+    GetInfo(U256),
+}
+
+#[derive(Decode, Encode, TypeInfo)]
+pub enum EscrowStateReply {
+    Info(Account),
+}
+
+#[derive(Decode, Encode, TypeInfo, Clone, Copy)]
+pub struct Account {
+    pub buyer: ActorId,
+    pub seller: ActorId,
+    pub state: AccountState,
+    pub amount: u128,
+}
+
+#[derive(Decode, Encode, TypeInfo, PartialEq, Clone, Copy)]
+pub enum AccountState {
+    AwaitingDeposit,
+    AwaitingConfirmation,
+    Closed,
+}

@@ -1,7 +1,7 @@
 #![no_std]
 
 use escrow_io::*;
-use ft_io::*;
+use ft_io::{FTAction, FTEvent};
 use gstd::{
     async_main, exec,
     msg::{self, CodecMessageFuture},
@@ -9,13 +9,6 @@ use gstd::{
     ActorId,
 };
 use primitive_types::U256;
-
-#[derive(PartialEq)]
-enum State {
-    AwaitingDeposit,
-    AwaitingConfirmation,
-    Completed,
-}
 
 fn transfer_tokens(
     ft_program_id: ActorId,
@@ -26,26 +19,26 @@ fn transfer_tokens(
     msg::send_and_wait_for_reply(ft_program_id, FTAction::Transfer { from, to, amount }, 0).unwrap()
 }
 
-fn get(contracts: &mut BTreeMap<U256, Contract>, contract_id: U256) -> &mut Contract {
-    if let Some(contract) = contracts.get_mut(&contract_id) {
-        contract
+fn get(accounts: &mut BTreeMap<U256, Account>, account_id: U256) -> &mut Account {
+    if let Some(account) = accounts.get_mut(&account_id) {
+        account
     } else {
-        panic!("A contract with the {contract_id} ID does not exist");
+        panic!("An account with the {account_id} ID doesn't exist");
     }
 }
 
 #[derive(Default)]
 struct Escrow {
     ft_program_id: ActorId,
-    contracts: BTreeMap<U256, Contract>,
+    accounts: BTreeMap<U256, Account>,
     id_nonce: U256,
 }
 
 impl Escrow {
-    /// Creates one escrow contract and replies with an ID of this created contract.
+    /// Creates one escrow account and replies with its ID.
     ///
     /// Requirements:
-    /// * `msg::source()` must be a buyer or seller for this contract.
+    /// * `msg::source()` must be a buyer or seller for this account.
     ///
     /// Arguments:
     /// * `buyer`: a buyer.
@@ -53,101 +46,101 @@ impl Escrow {
     /// * `amount`: an amount of tokens.
     fn create(&mut self, buyer: ActorId, seller: ActorId, amount: u128) {
         if msg::source() != buyer && msg::source() != seller {
-            panic!("msg::source() must be a buyer or seller to create this contract");
+            panic!("msg::source() must be a buyer or seller to create an escrow account");
         }
 
-        let contract_id = self.id_nonce;
+        let account_id = self.id_nonce;
         self.id_nonce = self.id_nonce.saturating_add(U256::one());
 
-        self.contracts.insert(
-            contract_id,
-            Contract {
+        self.accounts.insert(
+            account_id,
+            Account {
                 buyer,
                 seller,
                 amount,
-                state: State::AwaitingDeposit,
+                state: AccountState::AwaitingDeposit,
             },
         );
 
-        msg::reply(EscrowEvent::Created(contract_id), 0).unwrap();
+        msg::reply(EscrowEvent::Created(account_id), 0).unwrap();
     }
 
     /// Makes a deposit from a buyer to an escrow account
-    /// and changes a contract state to `AwaitingConfirmation`.
+    /// and changes an account state to `AwaitingConfirmation`.
     ///
     /// Requirements:
-    /// * `msg::source()` must be a buyer saved in a contract.
-    /// * Contract must not be paid or completed.
+    /// * `msg::source()` must be a buyer saved in the account.
+    /// * Account must not be paid or closed.
     ///
     /// Arguments:
-    /// * `contract_id`: a contract ID.
-    async fn deposit(&mut self, contract_id: U256) {
-        let contract = get(&mut self.contracts, contract_id);
+    /// * `account_id`: an account ID.
+    async fn deposit(&mut self, account_id: U256) {
+        let account = get(&mut self.accounts, account_id);
 
-        if msg::source() != contract.buyer {
-            panic!("msg::source() must a buyer saved in a contract to make a deposit");
+        if msg::source() != account.buyer {
+            panic!("msg::source() must a buyer saved in an account to make a deposit");
         }
 
-        if contract.state != State::AwaitingDeposit {
-            panic!("Contract can't take deposit if it's paid or completed");
+        if account.state != AccountState::AwaitingDeposit {
+            panic!("Account can't take deposit if it's paid or closed");
         }
 
         transfer_tokens(
             self.ft_program_id,
-            contract.buyer,
+            account.buyer,
             exec::program_id(),
-            contract.amount,
+            account.amount,
         )
         .await
         .expect("Error when taking a deposit");
 
-        contract.state = State::AwaitingConfirmation;
+        account.state = AccountState::AwaitingConfirmation;
 
         msg::reply(
             EscrowEvent::Deposited {
-                buyer: contract.buyer,
-                amount: contract.amount,
+                buyer: account.buyer,
+                amount: account.amount,
             },
             0,
         )
         .unwrap();
     }
 
-    /// Confirms contract by transferring tokens from an escrow account
-    /// to a seller and changing contract state to `Completed`.
+    /// Confirms an escrow account by transferring tokens from it
+    /// to a seller and changing an account state to `Closed`.
     ///
     /// Requirements:
-    /// * `msg::source()` must be a buyer saved in contract.
-    /// * Contract must be paid and uncompleted.
+    /// * `msg::source()` must be a buyer saved in the account.
+    /// * Account must be paid and unclosed.
     ///
     /// Arguments:
-    /// * `contract_id`: a contract ID.
-    async fn confirm(&mut self, contract_id: U256) {
-        let contract = get(&mut self.contracts, contract_id);
+    /// * `account_id`: an account ID.
+    async fn confirm(&mut self, account_id: U256) {
+        let account = get(&mut self.accounts, account_id);
 
-        if msg::source() != contract.buyer {
-            panic!("msg::source() must a buyer saved in a contract to confirm it")
+        if msg::source() != account.buyer {
+            panic!("msg::source() must a buyer saved in an account to confirm it");
         }
 
-        if contract.state != State::AwaitingConfirmation {
-            panic!("Contract can't be confirmed if it's not paid or completed");
+        if account.state != AccountState::AwaitingConfirmation {
+            panic!("Account can't be confirmed if it's not paid or closed");
         }
 
         transfer_tokens(
             self.ft_program_id,
             exec::program_id(),
-            contract.seller,
-            contract.amount,
+            account.seller,
+            account.amount,
         )
         .await
-        .expect("Error when confirming a contract");
+        .expect("Error when confirming an account");
 
-        contract.state = State::Completed;
+        account.state = AccountState::Closed;
 
         msg::reply(
             EscrowEvent::Confirmed {
-                amount: contract.amount,
-                seller: contract.seller,
+                amount: account.amount,
+                seller: account.seller,
             },
             0,
         )
@@ -155,85 +148,78 @@ impl Escrow {
     }
 
     /// Refunds tokens from an escrow account to a buyer
-    /// and changes contract state to `AwaitingDeposit`
-    /// (that is, a contract can be reused).
+    /// and changes an account state back to `AwaitingDeposit`
+    /// (that is, the account can be reused).
     ///
     /// Requirements:
-    /// * `msg::source()` must be a seller saved in contract.
-    /// * Contract must be paid and uncompleted.
+    /// * `msg::source()` must be a seller saved in the account.
+    /// * Account must be paid and unclosed.
     ///
     /// Arguments:
-    /// * `contract_id`: a contract ID.
-    async fn refund(&mut self, contract_id: U256) {
-        let contract = get(&mut self.contracts, contract_id);
+    /// * `account_id`: an account ID.
+    async fn refund(&mut self, account_id: U256) {
+        let account = get(&mut self.accounts, account_id);
 
-        if msg::source() != contract.seller {
-            panic!("msg::source() must be a seller saved in contract to refund")
+        if msg::source() != account.seller {
+            panic!("msg::source() must be a seller saved in an account to refund");
         }
 
-        if contract.state != State::AwaitingConfirmation {
-            panic!("Contract can't be refunded if it's not paid or completed");
+        if account.state != AccountState::AwaitingConfirmation {
+            panic!("Account can't be refunded if it's not paid or closed");
         }
 
         transfer_tokens(
             self.ft_program_id,
             exec::program_id(),
-            contract.buyer,
-            contract.amount,
+            account.buyer,
+            account.amount,
         )
         .await
-        .expect("Error when refunding a contract");
+        .expect("Error when refunding from an account");
 
-        contract.state = State::AwaitingDeposit;
+        account.state = AccountState::AwaitingDeposit;
 
         msg::reply(
             EscrowEvent::Refunded {
-                amount: contract.amount,
-                buyer: contract.buyer,
+                amount: account.amount,
+                buyer: account.buyer,
             },
             0,
         )
         .unwrap();
     }
 
-    /// Cancels (early completes) a contract by changing its state to `Completed`.
+    /// Cancels (early closes) an escrow account by changing its state to `Closed`.
     ///
     /// Requirements:
-    /// * `msg::source()` must be a buyer or seller saved in contract.
-    /// * Contract must not be paid or completed.
+    /// * `msg::source()` must be a buyer or seller saved in the account.
+    /// * Account must not be paid or closed.
     ///
     /// Arguments:
-    /// * `contract_id`: a contract ID.
-    async fn cancel(&mut self, contract_id: U256) {
-        let contract = get(&mut self.contracts, contract_id);
+    /// * `account_id`: an account ID.
+    async fn cancel(&mut self, account_id: U256) {
+        let account = get(&mut self.accounts, account_id);
 
-        if msg::source() != contract.buyer && msg::source() != contract.seller {
-            panic!("msg::source() must be a buyer or seller saved in contract to cancel it");
+        if msg::source() != account.buyer && msg::source() != account.seller {
+            panic!("msg::source() must be a buyer or seller saved in an account to cancel it");
         }
 
-        if contract.state != State::AwaitingDeposit {
-            panic!("Contract can't be cancelled if it's paid or completed");
+        if account.state != AccountState::AwaitingDeposit {
+            panic!("Account can't be canceled if it's paid or closed");
         }
 
-        contract.state = State::Completed;
+        account.state = AccountState::Closed;
 
         msg::reply(
             EscrowEvent::Cancelled {
-                buyer: contract.buyer,
-                seller: contract.seller,
-                amount: contract.amount,
+                buyer: account.buyer,
+                seller: account.seller,
+                amount: account.amount,
             },
             0,
         )
         .unwrap();
     }
-}
-
-struct Contract {
-    buyer: ActorId,
-    seller: ActorId,
-    state: State,
-    amount: u128,
 }
 
 static mut ESCROW: Option<Escrow> = None;
@@ -260,11 +246,23 @@ pub async fn main() {
             seller,
             amount,
         } => escrow.create(buyer, seller, amount),
-        EscrowAction::Deposit(contract_id) => escrow.deposit(contract_id).await,
-        EscrowAction::Confirm(contract_id) => escrow.confirm(contract_id).await,
-        EscrowAction::Refund(contract_id) => escrow.refund(contract_id).await,
-        EscrowAction::Cancel(contract_id) => escrow.cancel(contract_id).await,
+        EscrowAction::Deposit(account_id) => escrow.deposit(account_id).await,
+        EscrowAction::Confirm(account_id) => escrow.confirm(account_id).await,
+        EscrowAction::Refund(account_id) => escrow.refund(account_id).await,
+        EscrowAction::Cancel(account_id) => escrow.cancel(account_id).await,
     }
+}
+
+#[no_mangle]
+pub extern "C" fn meta_state() -> *mut [i32; 2] {
+    let state: EscrowState = msg::load().expect("Unable to decode EscrowState");
+    let escrow = unsafe { ESCROW.get_or_insert(Default::default()) };
+    let encoded = match state {
+        EscrowState::GetInfo(account_id) => {
+            EscrowStateReply::Info(*get(&mut escrow.accounts, account_id)).encode()
+        }
+    };
+    gstd::util::to_leak_ptr(encoded)
 }
 
 gstd::metadata! {
@@ -274,4 +272,7 @@ gstd::metadata! {
     handle:
         input: EscrowAction,
         output: EscrowEvent,
+    state:
+        input: EscrowState,
+        output: EscrowStateReply,
 }
