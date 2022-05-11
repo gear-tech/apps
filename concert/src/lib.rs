@@ -103,12 +103,12 @@ impl Concert {
             panic!("CONCERT: Metadata not provided for all the tickets");
         }
 
-        for meta in mtd.iter() {
+        for meta in mtd {
             self.id_counter += 1;
             self.metadata
                 .entry(msg::source())
                 .or_default()
-                .insert(self.id_counter + 1, (*meta).clone());
+                .insert(self.id_counter + 1, meta);
         }
 
         self.buyers.insert(msg::source());
