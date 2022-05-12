@@ -4,7 +4,6 @@ use rmrk_io::*;
 pub const USERS: &'static [u64] = &[3, 4, 5, 6];
 pub const ZERO_ID: u64 = 0;
 
-
 pub fn init_rmrk(sys: &System) {
     sys.init_logger();
     let rmrk = Program::current(&sys);
@@ -19,19 +18,28 @@ pub fn init_rmrk(sys: &System) {
 }
 
 pub fn mint_to_root_owner(rmrk: &Program, user: u64, to: u64, token_id: TokenId) -> RunResult {
-    rmrk.send(user, RMRKAction::MintToRootOwner { 
-        to: to.into(),
-        token_id,
-     })
+    rmrk.send(
+        user,
+        RMRKAction::MintToRootOwner {
+            to: to.into(),
+            token_id,
+        },
+    )
 }
 
-pub fn mint_to_nft(rmrk: &Program, user: u64, to: u64, token_id: TokenId, destination_id: TokenId) -> RunResult {
-    rmrk.send(user, RMRKAction::MintToNft { 
-        to: to.into(),
-        token_id: token_id.into(),
-        destination_id: destination_id.into()
-     })
+pub fn mint_to_nft(
+    rmrk: &Program,
+    user: u64,
+    to: u64,
+    token_id: TokenId,
+    destination_id: TokenId,
+) -> RunResult {
+    rmrk.send(
+        user,
+        RMRKAction::MintToNft {
+            to: to.into(),
+            token_id: token_id.into(),
+            destination_id: destination_id.into(),
+        },
+    )
 }
-
-
-
