@@ -8,6 +8,7 @@ pub mod approvals;
 pub mod checks;
 pub mod children;
 pub mod messages;
+pub mod burn;
 use messages::*;
 pub mod mint;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
@@ -23,6 +24,7 @@ pub struct RMRKOwner {
 pub struct Child {
     token_id: ActorId,
     status: ChildStatus,
+    actual_id: TokenId,
 }
 
 #[derive(Debug, Default)]
@@ -102,6 +104,9 @@ async unsafe fn main() {
             parent_token_id,
             child_token_id,
         } => rmrk.burn_child(parent_token_id, child_token_id),
+        RMRKAction::Burn {
+            token_id,
+        } => rmrk.burn(token_id).await,
         RMRKAction::AcceptChild {
             parent_token_id,
             child_token_id,

@@ -20,12 +20,13 @@ impl RMRKToken {
         // if child already exists
         if let Some(parent) = self.children.get(&parent_token_id) {
             if let Some(child) = parent.get(&child_token_id) {
-                
+
             }
         }
         let child = Child {
             token_id: msg::source(),
             status: ChildStatus::Pending,
+            actual_id: child_token_id,
         };
 
         self.children
@@ -57,6 +58,7 @@ impl RMRKToken {
         let child = Child {
             token_id: msg::source(),
             status: ChildStatus::Pending,
+            actual_id: child_token_id,
         };
 
         self.children

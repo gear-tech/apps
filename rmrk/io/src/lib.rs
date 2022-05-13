@@ -29,6 +29,9 @@ pub enum RMRKAction {
         to: ActorId,
         token_id: TokenId,
     },
+    Burn {
+        token_id: TokenId,
+    },
     BurnChild {
         parent_token_id: TokenId,
         child_token_id: TokenId,
@@ -99,5 +102,9 @@ pub enum RMRKEvent {
     },
     RootOwner {
         root_owner: ActorId,
+    },
+    Transfer {
+        to: ActorId,
+        token_id: TokenId,
     },
 }
