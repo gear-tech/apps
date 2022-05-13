@@ -2,7 +2,7 @@ use super::*;
 
 pub fn create(
     escrow_program: &Program,
-    contract_id: u128,
+    account_id: u128,
     from: u64,
     buyer: u64,
     seller: u64,
@@ -17,12 +17,12 @@ pub fn create(
                 amount,
             },
         )
-        .contains(&(from, EscrowEvent::Created(contract_id.into()).encode())));
+        .contains(&(from, EscrowEvent::Created(account_id.into()).encode())));
 }
 
-pub fn deposit(escrow_program: &Program, contract_id: u128, buyer: u64, amount: u128) {
+pub fn deposit(escrow_program: &Program, account_id: u128, buyer: u64, amount: u128) {
     assert!(escrow_program
-        .send(buyer, EscrowAction::Deposit(contract_id.into()))
+        .send(buyer, EscrowAction::Deposit(account_id.into()))
         .contains(&(
             buyer,
             EscrowEvent::Deposited {
@@ -33,9 +33,9 @@ pub fn deposit(escrow_program: &Program, contract_id: u128, buyer: u64, amount: 
         )));
 }
 
-pub fn confirm(escrow_program: &Program, contract_id: u128, buyer: u64, seller: u64, amount: u128) {
+pub fn confirm(escrow_program: &Program, account_id: u128, buyer: u64, seller: u64, amount: u128) {
     assert!(escrow_program
-        .send(buyer, EscrowAction::Confirm(contract_id.into()))
+        .send(buyer, EscrowAction::Confirm(account_id.into()))
         .contains(&(
             buyer,
             EscrowEvent::Confirmed {
@@ -46,9 +46,9 @@ pub fn confirm(escrow_program: &Program, contract_id: u128, buyer: u64, seller: 
         )));
 }
 
-pub fn refund(escrow_program: &Program, contract_id: u128, buyer: u64, seller: u64, amount: u128) {
+pub fn refund(escrow_program: &Program, account_id: u128, buyer: u64, seller: u64, amount: u128) {
     assert!(escrow_program
-        .send(seller, EscrowAction::Refund(contract_id.into()))
+        .send(seller, EscrowAction::Refund(account_id.into()))
         .contains(&(
             seller,
             EscrowEvent::Refunded {
@@ -61,14 +61,14 @@ pub fn refund(escrow_program: &Program, contract_id: u128, buyer: u64, seller: u
 
 pub fn cancel(
     escrow_program: &Program,
-    contract_id: u128,
+    account_id: u128,
     from: u64,
     buyer: u64,
     seller: u64,
     amount: u128,
 ) {
     assert!(escrow_program
-        .send(from, EscrowAction::Cancel(contract_id.into()))
+        .send(from, EscrowAction::Cancel(account_id.into()))
         .contains(&(
             from,
             EscrowEvent::Cancelled {

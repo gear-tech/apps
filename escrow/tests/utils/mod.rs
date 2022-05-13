@@ -6,12 +6,12 @@ use gtest::{Program, System};
 pub mod check;
 pub mod fail;
 
-pub const FT: u64 = 2;
+pub const FT_PROGRAM_ID: u64 = 2;
 pub const FOREIGN_USER: u64 = 1337;
 pub const BUYER: [u64; 2] = [12, 34];
 pub const SELLER: [u64; 2] = [56, 78];
 pub const AMOUNT: [u128; 2] = [12345, 54321];
-pub const CONTRACT: [u128; 2] = [0, 1];
+pub const ACCOUNT: [u128; 2] = [0, 1];
 
 pub fn init_system() -> System {
     let system = System::new();
@@ -20,7 +20,7 @@ pub fn init_system() -> System {
     system
 }
 
-pub fn init_fungible_tokens(sys: &System) -> Program {
+pub fn init_ft(sys: &System) -> Program {
     let ft_program = Program::from_file(
         &sys,
         "../target/wasm32-unknown-unknown/release/fungible_token.wasm",
@@ -47,7 +47,7 @@ pub fn init_escrow(sys: &System) -> Program {
         .send(
             FOREIGN_USER,
             InitEscrow {
-                ft_program_id: FT.into(),
+                ft_program_id: FT_PROGRAM_ID.into(),
             },
         )
         .log()

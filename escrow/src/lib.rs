@@ -23,7 +23,7 @@ fn get(accounts: &mut BTreeMap<U256, Account>, account_id: U256) -> &mut Account
     if let Some(account) = accounts.get_mut(&account_id) {
         account
     } else {
-        panic!("An account with the {account_id} ID doesn't exist");
+        panic!("Account with the {account_id} ID doesn't exist");
     }
 }
 
@@ -46,7 +46,7 @@ impl Escrow {
     /// * `amount`: an amount of tokens.
     fn create(&mut self, buyer: ActorId, seller: ActorId, amount: u128) {
         if msg::source() != buyer && msg::source() != seller {
-            panic!("msg::source() must be a buyer or seller to create an escrow account");
+            panic!("msg::source() must be a buyer or seller to create the escrow account");
         }
 
         let account_id = self.id_nonce;
@@ -78,11 +78,11 @@ impl Escrow {
         let account = get(&mut self.accounts, account_id);
 
         if msg::source() != account.buyer {
-            panic!("msg::source() must a buyer saved in an account to make a deposit");
+            panic!("msg::source() must be a buyer saved in the account to make a deposit");
         }
 
         if account.state != AccountState::AwaitingDeposit {
-            panic!("Account can't take deposit if it's paid or closed");
+            panic!("Paid or closed account can't take a deposit");
         }
 
         transfer_tokens(
@@ -119,11 +119,11 @@ impl Escrow {
         let account = get(&mut self.accounts, account_id);
 
         if msg::source() != account.buyer {
-            panic!("msg::source() must a buyer saved in an account to confirm it");
+            panic!("msg::source() must a buyer saved in the account to confirm it");
         }
 
         if account.state != AccountState::AwaitingConfirmation {
-            panic!("Account can't be confirmed if it's not paid or closed");
+            panic!("Unpaid or closed account can't be confirmed");
         }
 
         transfer_tokens(
@@ -161,11 +161,11 @@ impl Escrow {
         let account = get(&mut self.accounts, account_id);
 
         if msg::source() != account.seller {
-            panic!("msg::source() must be a seller saved in an account to refund");
+            panic!("msg::source() must be a seller saved in the account to refund");
         }
 
         if account.state != AccountState::AwaitingConfirmation {
-            panic!("Account can't be refunded if it's not paid or closed");
+            panic!("Unpaid or closed account can't be refunded");
         }
 
         transfer_tokens(
@@ -201,11 +201,11 @@ impl Escrow {
         let account = get(&mut self.accounts, account_id);
 
         if msg::source() != account.buyer && msg::source() != account.seller {
-            panic!("msg::source() must be a buyer or seller saved in an account to cancel it");
+            panic!("msg::source() must be a buyer or seller saved in the account to cancel it");
         }
 
         if account.state != AccountState::AwaitingDeposit {
-            panic!("Account can't be canceled if it's paid or closed");
+            panic!("Paid or closed account can't be canceled");
         }
 
         account.state = AccountState::Closed;
@@ -267,6 +267,7 @@ pub extern "C" fn meta_state() -> *mut [i32; 2] {
 
 gstd::metadata! {
     title: "Escrow",
+
     init:
         input: InitEscrow,
     handle:
