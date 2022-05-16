@@ -1,5 +1,5 @@
 use crate::*;
-use gstd::{exec, msg, prelude::*, ActorId};
+use gstd::msg;
 
 impl RMRKToken {
     /// That function is designed to be from another RMRK contracts
@@ -19,14 +19,11 @@ impl RMRKToken {
 
         // if child already exists
         if let Some(parent) = self.children.get(&parent_token_id) {
-            if let Some(child) = parent.get(&child_token_id) {
-
-            }
+            if let Some(_child) = parent.get(&child_token_id) {}
         }
         let child = Child {
             token_id: msg::source(),
             status: ChildStatus::Pending,
-            actual_id: child_token_id,
         };
 
         self.children
@@ -58,7 +55,6 @@ impl RMRKToken {
         let child = Child {
             token_id: msg::source(),
             status: ChildStatus::Pending,
-            actual_id: child_token_id,
         };
 
         self.children
@@ -104,6 +100,53 @@ impl RMRKToken {
         msg::reply(
             RMRKEvent::AcceptedChild {
                 child_token_address: child.token_id,
+                child_token_id,
+                parent_token_id,
+            },
+            0,
+        )
+        .unwrap();
+    }
+
+    pub fn reject_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
+        self.assert_approved_or_owner(parent_token_id);
+
+        let children_map = self
+            .children
+            .get_mut(&parent_token_id)
+            .expect("Parent does not exist");
+        let child_token_address = children_map
+            .get_mut(&child_token_id)
+            .expect("Child does not exist")
+            .token_id;
+        children_map.remove(&child_token_id);
+        msg::reply(
+            RMRKEvent::PendingChildRemoved {
+                child_token_address,
+                child_token_id,
+                parent_token_id,
+            },
+            0,
+        )
+        .unwrap();
+    }
+
+    // is a copy of reject some how, need to distinguish from pending?
+    pub fn remove_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
+        // simply remove from children and emit event
+        self.assert_approved_or_owner(parent_token_id);
+        let children_map = self
+            .children
+            .get_mut(&parent_token_id)
+            .expect("Parent does not exist");
+        let child_token_address = children_map
+            .get_mut(&child_token_id)
+            .expect("Child does not exist")
+            .token_id;
+        children_map.remove(&child_token_id);
+        msg::reply(
+            RMRKEvent::ChildRejected {
+                child_token_address,
                 child_token_id,
                 parent_token_id,
             },

@@ -1,5 +1,5 @@
 use crate::*;
-use gstd::{exec, msg, prelude::*, ActorId};
+use gstd::{exec, msg, ActorId};
 
 impl RMRKToken {
     pub fn assert_zero_address(&self, account: &ActorId) {

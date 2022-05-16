@@ -1,5 +1,5 @@
 use crate::*;
-use gstd::{exec, msg, prelude::*, ActorId};
+use gstd::{msg, ActorId};
 
 impl RMRKToken {
     pub async fn mint_to_nft(&mut self, to: &ActorId, token_id: TokenId, destination_id: TokenId) {
@@ -22,7 +22,7 @@ impl RMRKToken {
             },
         );
 
-       add_child(to, destination_id, token_id).await;
+        add_child(to, destination_id, token_id).await;
 
         msg::reply(
             RMRKEvent::MintToNft {

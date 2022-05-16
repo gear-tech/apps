@@ -1,14 +1,13 @@
 #![no_std]
 
 use codec::Encode;
-use gstd::{debug, exec, msg, prelude::*, ActorId};
-use primitive_types::U256;
+use gstd::{msg, prelude::*, ActorId};
 use rmrk_io::*;
 pub mod approvals;
+pub mod burn;
 pub mod checks;
 pub mod children;
 pub mod messages;
-pub mod burn;
 use messages::*;
 pub mod mint;
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
@@ -24,7 +23,6 @@ pub struct RMRKOwner {
 pub struct Child {
     token_id: ActorId,
     status: ChildStatus,
-    actual_id: TokenId,
 }
 
 #[derive(Debug, Default)]
@@ -72,9 +70,11 @@ impl RMRKToken {
 #[no_mangle]
 pub unsafe extern "C" fn init() {
     let config: InitRMRK = msg::load().expect("Unable to decode InitRMRK");
-    let mut rmrk = RMRKToken::default();
-    rmrk.name = config.name;
-    rmrk.symbol = config.symbol;
+    let rmrk = RMRKToken {
+        name: config.name,
+        symbol: config.symbol,
+        ..RMRKToken::default()
+    };
     RMRK = Some(rmrk);
 }
 
@@ -100,17 +100,31 @@ async unsafe fn main() {
             parent_token_id,
             child_token_id,
         } => rmrk.add_child(parent_token_id, child_token_id).await,
-        RMRKAction::BurnChild {
-            parent_token_id,
-            child_token_id,
-        } => rmrk.burn_child(parent_token_id, child_token_id),
-        RMRKAction::Burn {
-            token_id,
-        } => rmrk.burn(token_id).await,
         RMRKAction::AcceptChild {
             parent_token_id,
             child_token_id,
         } => rmrk.accept_child(parent_token_id, child_token_id),
+        // my implementation
+        RMRKAction::BurnChild {
+            parent_token_id,
+            child_token_id,
+        } => rmrk.burn_child(parent_token_id, child_token_id),
+        RMRKAction::Burn { token_id } => rmrk.burn(token_id).await,
+        RMRKAction::RejectChild {
+            parent_token_id,
+            child_token_id,
+        } => rmrk.reject_child(parent_token_id, child_token_id),
+        RMRKAction::RemoveChild {
+            parent_token_id,
+            child_token_id,
+        } => rmrk.remove_child(parent_token_id, child_token_id),
+        RMRKAction::AddChildAccepted {
+            parent_token_id,
+            child_token_id,
+        } => {
+            rmrk.add_accepted_child(parent_token_id, child_token_id)
+                .await
+        }
         RMRKAction::NFTParent { token_id } => rmrk.nft_parent(token_id),
         RMRKAction::RootOwner { token_id } => rmrk.root_owner(token_id),
     }

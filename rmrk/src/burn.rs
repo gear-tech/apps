@@ -1,27 +1,26 @@
 use crate::*;
-use gstd::{exec, msg, prelude::*, ActorId};
+use gstd::{msg, ActorId};
 
 impl RMRKToken {
     pub async fn burn(&mut self, token_id: TokenId) {
+        let zero_id = &ActorId::new([0u8; 32]);
         self.assert_approved_or_owner(token_id);
         let owner = msg::source();
         self.balances
             .entry(owner)
             .and_modify(|balance| *balance -= 1);
-        self.approve(0.into(), token_id);
+        self.approve(zero_id, token_id).await;
         if let Some(ch_map) = self.children.get(&token_id) {
-            let children: Vec<Child> = ch_map.clone().into_values().collect();
-            for i in 0..children.len() {
-                self.burn_child(token_id, children[0].actual_id);
-                let _status = burn_child(&children[i].token_id, token_id, children[i].actual_id).await;
+            for (child_token_id, child) in ch_map.clone().iter() {
+                self.burn_child(token_id, *child_token_id);
+                let _status = burn_child(&child.token_id, token_id, *child_token_id);
             }
         }
-
         self.rmrk_owners.remove(&token_id);
         msg::reply(
             RMRKEvent::Transfer {
-                to: 0.into(),
-                token_id: token_id,
+                to: *zero_id,
+                token_id,
             },
             0,
         )

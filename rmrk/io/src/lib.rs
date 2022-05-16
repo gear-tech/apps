@@ -16,6 +16,7 @@ pub struct InitRMRK {
 pub enum ChildStatus {
     Pending,
     Accepted,
+    Unknown,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -53,10 +54,23 @@ pub enum RMRKAction {
         parent_token_id: TokenId,
         child_token_id: TokenId,
     },
+    AddChildAccepted {
+        parent_token_id: TokenId,
+        child_token_id: TokenId,
+    },
     AcceptChild {
         parent_token_id: TokenId,
         child_token_id: TokenId,
     },
+    RejectChild {
+        parent_token_id: TokenId,
+        child_token_id: TokenId,
+    },
+    RemoveChild {
+        parent_token_id: TokenId,
+        child_token_id: TokenId,
+    },
+
     NFTParent {
         token_id: TokenId,
     },
@@ -91,11 +105,30 @@ pub enum RMRKEvent {
         child_token_id: TokenId,
         parent_token_id: TokenId,
     },
-    ChildAdded,
+    ChildAdded {
+        parent_token_id: TokenId,
+        child_token_id: TokenId,
+        child_status: ChildStatus,
+    },
     ChildBurnt {
         parent_token_id: TokenId,
         child_token_id: TokenId,
         child_status: ChildStatus,
+    },
+    PendingChildRemoved {
+        child_token_address: ActorId,
+        child_token_id: TokenId,
+        parent_token_id: TokenId,
+    },
+    ChildRemoved {
+        child_token_address: ActorId,
+        child_token_id: TokenId,
+        parent_token_id: TokenId,
+    },
+    ChildRejected {
+        child_token_address: ActorId,
+        child_token_id: TokenId,
+        parent_token_id: TokenId,
     },
     NFTParent {
         parent: ActorId,
