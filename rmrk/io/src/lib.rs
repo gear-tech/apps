@@ -12,7 +12,7 @@ pub struct InitRMRK {
     pub symbol: String,
 }
 
-#[derive(Debug, Clone, Encode, Decode, TypeInfo)]
+#[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq)]
 pub enum ChildStatus {
     Pending,
     Accepted,
@@ -70,7 +70,6 @@ pub enum RMRKAction {
         parent_token_id: TokenId,
         child_token_id: TokenId,
     },
-
     NFTParent {
         token_id: TokenId,
     },

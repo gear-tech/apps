@@ -33,6 +33,60 @@ pub async fn add_child(
     .expect("Error in message to nft contract");
 }
 
+pub async fn add_accepted_child(
+    parent_contract_id: &ActorId,
+    parent_token_id: TokenId,
+    child_token_id: TokenId,
+) {
+    let _response: RMRKEvent = msg::send_and_wait_for_reply(
+        *parent_contract_id,
+        RMRKAction::AddChildAccepted {
+            parent_token_id,
+            child_token_id,
+        },
+        0,
+    )
+    .unwrap()
+    .await
+    .expect("Error in message to nft contract");
+}
+
+pub async fn reject_child(
+    parent_contract_id: &ActorId,
+    parent_token_id: TokenId,
+    child_token_id: TokenId,
+) {
+    let _response: RMRKEvent = msg::send_and_wait_for_reply(
+        *parent_contract_id,
+        RMRKAction::RejectChild {
+            parent_token_id,
+            child_token_id,
+        },
+        0,
+    )
+    .unwrap()
+    .await
+    .expect("Error in message to nft contract");
+}
+
+pub async fn remove_child(
+    parent_contract_id: &ActorId,
+    parent_token_id: TokenId,
+    child_token_id: TokenId,
+) {
+    let _response: RMRKEvent = msg::send_and_wait_for_reply(
+        *parent_contract_id,
+        RMRKAction::RemoveChild {
+            parent_token_id,
+            child_token_id,
+        },
+        0,
+    )
+    .unwrap()
+    .await
+    .expect("Error in message to nft contract");
+}
+
 pub async fn burn_child(
     parent_contract_id: &ActorId,
     parent_token_id: TokenId,

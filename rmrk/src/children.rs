@@ -19,7 +19,10 @@ impl RMRKToken {
 
         // if child already exists
         if let Some(parent) = self.children.get(&parent_token_id) {
-            if let Some(_child) = parent.get(&child_token_id) {}
+            if let Some(_child) = parent.get(&child_token_id) {
+                // why not just panic?
+                panic!("RMRKCore: child already exists");
+            }
         }
         let child = Child {
             token_id: msg::source(),

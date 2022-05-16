@@ -12,6 +12,7 @@ impl RMRKToken {
         self.approve(zero_id, token_id).await;
         if let Some(ch_map) = self.children.get(&token_id) {
             for (child_token_id, child) in ch_map.clone().iter() {
+                // TODO: initial solidity contract has some weird nested struct
                 self.burn_child(token_id, *child_token_id);
                 let _status = burn_child(&child.token_id, token_id, *child_token_id);
             }
