@@ -51,6 +51,7 @@ impl RMRKToken {
             .rmrk_owners
             .get(&token_id)
             .expect("RMRK: Token does not exist");
+
         msg::reply(
             RMRKEvent::RootOwner {
                 root_owner: rmrk_owner.root_owner,

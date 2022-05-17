@@ -51,3 +51,11 @@ pub fn approve_utils(rmrk: &Program, user: u64, to: u64, token_id: TokenId) -> R
 pub fn burn_utils(rmrk: &Program, user: u64, token_id: TokenId) -> RunResult {
     rmrk.send(user, RMRKAction::Burn{ token_id })
 }
+
+pub fn nft_parent_utils(rmrk: &Program, user: u64, token_id: TokenId) -> RunResult {
+    rmrk.send(user, RMRKAction::NFTParent{ token_id })
+}
+
+pub fn root_owner_utils(rmrk: &Program, user: u64, token_id: TokenId) -> RunResult {
+    rmrk.send(user, RMRKAction::RootOwner{ token_id })
+}
