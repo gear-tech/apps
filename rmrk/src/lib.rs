@@ -1,7 +1,7 @@
 #![no_std]
 
 use codec::Encode;
-use gstd::{msg, prelude::*, ActorId};
+use gstd::{debug, msg, prelude::*, ActorId};
 use rmrk_io::*;
 pub mod approvals;
 pub mod burn;
@@ -16,7 +16,6 @@ pub mod mint;
 pub struct RMRKOwner {
     pub token_id: Option<TokenId>,
     pub owner_id: ActorId,
-    pub root_owner: ActorId,
 }
 
 #[derive(Debug, Default)]
@@ -46,19 +45,17 @@ impl RMRKToken {
         .unwrap();
     }
 
-    fn root_owner(&self, token_id: TokenId) {
+    async fn root_owner(&self, token_id: TokenId) {
         let rmrk_owner = self
             .rmrk_owners
             .get(&token_id)
             .expect("RMRK: Token does not exist");
-
-        msg::reply(
-            RMRKEvent::RootOwner {
-                root_owner: rmrk_owner.root_owner,
-            },
-            0,
-        )
-        .unwrap();
+        let root_owner = if rmrk_owner.token_id.is_some() {
+            get_root_owner(&rmrk_owner.owner_id, rmrk_owner.token_id.unwrap()).await
+        } else {
+            rmrk_owner.owner_id
+        };
+        msg::reply(RMRKEvent::RootOwner { root_owner }, 0).unwrap();
     }
 }
 
@@ -98,7 +95,7 @@ async unsafe fn main() {
         RMRKAction::AcceptChild {
             parent_token_id,
             child_token_id,
-        } => rmrk.accept_child(parent_token_id, child_token_id),
+        } => rmrk.accept_child(parent_token_id, child_token_id).await,
         // my implementation
         RMRKAction::BurnChild {
             parent_token_id,
@@ -122,6 +119,6 @@ async unsafe fn main() {
             .await;
         }
         RMRKAction::NFTParent { token_id } => rmrk.nft_parent(token_id),
-        RMRKAction::RootOwner { token_id } => rmrk.root_owner(token_id),
+        RMRKAction::RootOwner { token_id } => rmrk.root_owner(token_id).await,
     }
 }

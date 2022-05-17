@@ -3,6 +3,9 @@ use gtest::{Program, RunResult, System};
 use rmrk_io::*;
 pub const USERS: &'static [u64] = &[3, 4, 5, 6];
 pub const ZERO_ID: u64 = 0;
+pub const PARENT_NFT_CONTRACT: u64 = 2;
+pub const CHILD_NFT_CONTRACT: u64 = 1;
+pub const PARENT_TOKEN_ID: u64 = 0;
 
 pub fn init_rmrk(sys: &System) {
     sys.init_logger();
@@ -45,17 +48,23 @@ pub fn mint_to_nft(
 }
 
 pub fn approve_utils(rmrk: &Program, user: u64, to: u64, token_id: TokenId) -> RunResult {
-    rmrk.send(user, RMRKAction::Approve{ to: to.into(), token_id })
+    rmrk.send(
+        user,
+        RMRKAction::Approve {
+            to: to.into(),
+            token_id,
+        },
+    )
 }
 
 pub fn burn_utils(rmrk: &Program, user: u64, token_id: TokenId) -> RunResult {
-    rmrk.send(user, RMRKAction::Burn{ token_id })
+    rmrk.send(user, RMRKAction::Burn { token_id })
 }
 
 pub fn nft_parent_utils(rmrk: &Program, user: u64, token_id: TokenId) -> RunResult {
-    rmrk.send(user, RMRKAction::NFTParent{ token_id })
+    rmrk.send(user, RMRKAction::NFTParent { token_id })
 }
 
 pub fn root_owner_utils(rmrk: &Program, user: u64, token_id: TokenId) -> RunResult {
-    rmrk.send(user, RMRKAction::RootOwner{ token_id })
+    rmrk.send(user, RMRKAction::RootOwner { token_id })
 }

@@ -153,7 +153,7 @@ fn burn() {
     let res = burn_utils(&rmrk, USERS[1], 0.into());
     assert!(res.contains(&(
         USERS[1],
-        RMRKEvent::Transfer{
+        RMRKEvent::Transfer {
             to: ZERO_ID.into(),
             token_id: 0.into(),
         }
@@ -179,6 +179,7 @@ fn burn_with_approval() {
     // Approval { owner: ActorId([4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), approved_account: ActorId([5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), token_id: 0 }
     // pub const USERS: &'static [u64] = &[3, 4, 5, 6];
     let res = approve_utils(&rmrk, USERS[1], USERS[2], 0.into());
+    println!("{:?}", res.decoded_log::<RMRKEvent>());
     assert!(res.contains(&(
         USERS[1],
         RMRKEvent::Approval {
@@ -192,7 +193,7 @@ fn burn_with_approval() {
     let res = burn_utils(&rmrk, USERS[2], 0.into());
     assert!(res.contains(&(
         USERS[2],
-        RMRKEvent::Transfer{
+        RMRKEvent::Transfer {
             to: ZERO_ID.into(),
             token_id: 0.into(),
         }
@@ -222,7 +223,7 @@ fn burn_with_children() {
     let res = burn_utils(&rmrk_parent, USERS[1], 0.into());
     assert!(res.contains(&(
         USERS[2],
-        RMRKEvent::Transfer{
+        RMRKEvent::Transfer {
             to: ZERO_ID.into(),
             token_id: 0.into(),
         }
@@ -248,4 +249,3 @@ fn burn_failures() {
     // no ownership
     assert!(!burn_utils(&rmrk, USERS[3], 0.into()).main_failed());
 }
-

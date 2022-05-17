@@ -19,8 +19,8 @@ pub async fn add_child(
     parent_contract_id: &ActorId,
     parent_token_id: TokenId,
     child_token_id: TokenId,
-) {
-    let _response: RMRKEvent = msg::send_and_wait_for_reply(
+) -> ActorId {
+    let response: RMRKEvent = msg::send_and_wait_for_reply(
         *parent_contract_id,
         RMRKAction::AddChild {
             parent_token_id,
@@ -31,6 +31,11 @@ pub async fn add_child(
     .unwrap()
     .await
     .expect("Error in message to nft contract");
+    if let RMRKEvent::PendingChild { root_owner, .. } = response {
+        return root_owner;
+    } else {
+        panic!("");
+    }
 }
 
 pub async fn transfer_children(
@@ -69,7 +74,7 @@ pub async fn burn_child(
     parent_contract_id: &ActorId,
     parent_token_id: TokenId,
     child_token_id: TokenId,
-) -> ChildStatus {
+) {
     let response: RMRKEvent = msg::send_and_wait_for_reply(
         *parent_contract_id,
         RMRKAction::BurnChild {
@@ -81,10 +86,4 @@ pub async fn burn_child(
     .unwrap()
     .await
     .expect("Error in message to nft contract");
-
-    if let RMRKEvent::ChildBurnt { child_status, .. } = response {
-        child_status
-    } else {
-        panic!("wrong received message");
-    }
 }

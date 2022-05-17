@@ -13,8 +13,40 @@ impl RMRKToken {
         destination_id: TokenId,
         token_id: TokenId,
     ) {
-        self._transfer(to, &msg::source(), token_id, destination_id)
-            .await;
+        let rmrk_owner = self
+            .rmrk_owners
+            .get(&token_id)
+            .expect("Token does not exist");
+
+        self.assert_zero_address(to);
+        self.assert_approved_or_owner(token_id).await;
+        // if that NFT has parent NFT contract
+        let previous_root_owner = if rmrk_owner.token_id.is_some() {
+            // burn that child from previous parent NFT contract
+            burn_child(&rmrk_owner.owner_id, rmrk_owner.token_id.unwrap(), token_id).await;
+            get_root_owner(&rmrk_owner.owner_id, rmrk_owner.token_id.unwrap()).await
+        } else {
+            rmrk_owner.owner_id
+        };
+
+        let root_owner = add_child(to, destination_id, token_id).await;
+        // if new root owner differs from the previous one
+        if root_owner != previous_root_owner{
+            self.balances
+                .entry(root_owner)
+                .and_modify(|balance| *balance += 1)
+                .or_insert(1);
+            self.balances
+                .entry(previous_root_owner)
+                .and_modify(|balance| *balance -= 1);
+        }
+        self.rmrk_owners.insert(
+            token_id,
+            RMRKOwner {
+                token_id: Some(destination_id),
+                owner_id: *to,
+            },
+        );
     }
 
     pub async fn _transfer(
@@ -89,31 +121,18 @@ impl RMRKToken {
     }
 
     pub async fn approve(&mut self, to: &ActorId, token_id: TokenId) {
-        let owner = self.assert_owner(token_id);
+        let owner = self.assert_owner(token_id).await;
         self.assert_zero_address(to);
         self.token_approvals
             .entry(token_id)
             .and_modify(|approvals| approvals.push(*to))
             .or_insert_with(|| vec![*to]);
-        debug!("ADDED TO APPROVAL");
-
-        let ev = RMRKEvent::Approval {
-            owner,
-            approved_account: *to,
-            token_id,
-        };
-        debug!("MSG:SOURCE: {:?}", msg::source());
-        debug!("OWNER: {:?}",owner);
-        debug!("TO: {:?}", to);
-        debug!("TOKEN_ID: {:?}", token_id);
-        debug!("event: {:?}", ev);
         msg::reply(
             RMRKEvent::Approval {
                 owner,
                 approved_account: *to,
                 token_id,
-            }
-            .encode(),
+            },
             0,
         )
         .unwrap();

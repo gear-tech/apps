@@ -99,6 +99,7 @@ pub enum RMRKEvent {
         child_token_address: ActorId,
         child_token_id: TokenId,
         parent_token_id: TokenId,
+        root_owner: ActorId,
     },
     AcceptedChild {
         child_token_address: ActorId,

@@ -14,19 +14,26 @@ impl RMRKToken {
     /// * `child_token_id`: is the tokenId of the child instance
     pub async fn add_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
         // checks that `msg::source()` is a deployed program
-        // checks that parent indicated in the child contract is the address of that program
-        self.assert_parent(child_token_id).await;
+        let rmrk_owner = self
+            .rmrk_owners
+            .get(&parent_token_id)
+            .expect("Token does not exist");
 
-        // if child already exists
-        if let Some(parent) = self.children.get(&parent_token_id) {
-            if let Some(_child) = parent.get(&child_token_id) {
-                // why not just panic?
+        if let Some(children) = self.children.get(&parent_token_id) {
+            // if child already exists
+            if let Some(_child) = children.get(&child_token_id) {
                 panic!("RMRKCore: child already exists");
             }
         }
         let child = Child {
             token_id: msg::source(),
             status: ChildStatus::Pending,
+        };
+
+        let root_owner = if rmrk_owner.token_id.is_some() {
+            get_root_owner(&rmrk_owner.owner_id, rmrk_owner.token_id.unwrap()).await
+        } else {
+            rmrk_owner.owner_id
         };
 
         self.children
@@ -45,6 +52,7 @@ impl RMRKToken {
                 child_token_address: msg::source(),
                 child_token_id,
                 parent_token_id,
+                root_owner,
             },
             0,
         )
@@ -71,15 +79,15 @@ impl RMRKToken {
                 a
             });
 
-        msg::reply(
-            RMRKEvent::PendingChild {
-                child_token_address: msg::source(),
-                child_token_id,
-                parent_token_id,
-            },
-            0,
-        )
-        .unwrap();
+        // msg::reply(
+        //     RMRKEvent::PendingChild {
+        //         child_token_address: msg::source(),
+        //         child_token_id,
+        //         parent_token_id,
+        //     },
+        //     0,
+        // )
+        // .unwrap();
     }
 
     /// Accepts an NFT child being in the `Pending` status
@@ -90,8 +98,8 @@ impl RMRKToken {
     /// Arguments:
     /// * `parent_token_id`: is the tokenId of the parent NFT
     /// * `child_token_id`: is the tokenId of the child instance
-    pub fn accept_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
-        self.assert_approved_or_owner(parent_token_id);
+    pub async fn accept_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
+        self.assert_approved_or_owner(parent_token_id).await;
         let child = self
             .children
             .get_mut(&parent_token_id)

@@ -32,28 +32,29 @@ impl RMRKToken {
     }
 
     /// Checks that `msg::source()` is the owner of the token with indicated `token_id`
-    pub fn assert_owner(&self, token_id: TokenId) -> ActorId {
+    pub async fn assert_owner(&self, token_id: TokenId) -> ActorId {
         let rmrk_owner = self
             .rmrk_owners
             .get(&token_id)
             .expect("NonFungibleToken: token does not exist");
 
-        if rmrk_owner.root_owner != msg::source() {
-            panic!("RMRK: Not approved or owner");
+        let root_owner = if rmrk_owner.token_id.is_some() {
+            get_root_owner(&rmrk_owner.owner_id, rmrk_owner.token_id.unwrap()).await
+        } else {
+            rmrk_owner.owner_id
+        };
+        if msg::source() != root_owner {
+            panic!("Wrong owner");
         }
-        rmrk_owner.root_owner
+        root_owner
     }
 
-    pub fn assert_approved_or_owner(&self, token_id: TokenId) {
-        // ??? Logic mismatch? Fails if msg::source() is the owner, but not token_approval exists
-        if self
-            .token_approvals
-            .get(&token_id)
-            .expect("token does not exist")
-            .contains(&msg::source())
-        {
-            return;
+    pub async fn assert_approved_or_owner(&self, token_id: TokenId) {
+        if let Some(approved_accounts) = self.token_approvals.get(&token_id) {
+            if approved_accounts.contains(&msg::source()) {
+                return;
+            }
         }
-        self.assert_owner(token_id);
+        self.assert_owner(token_id).await;
     }
 }
