@@ -12,7 +12,13 @@ pub struct InitRMRK {
     pub symbol: String,
 }
 
-#[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq)]
+#[derive(Debug, Clone, Encode)]
+pub struct Child {
+    pub token_id: ActorId,
+    pub status: ChildStatus,
+}
+
+#[derive(Debug, Clone, Encode, Decode, TypeInfo, Copy)]
 pub enum ChildStatus {
     Pending,
     Accepted,
@@ -54,21 +60,16 @@ pub enum RMRKAction {
         parent_token_id: TokenId,
         child_token_id: TokenId,
     },
-    AddChildAccepted {
-        parent_token_id: TokenId,
-        child_token_id: TokenId,
-    },
     AcceptChild {
         parent_token_id: TokenId,
         child_token_id: TokenId,
     },
-    RejectChild {
+    TransferChildren {
         parent_token_id: TokenId,
-        child_token_id: TokenId,
-    },
-    RemoveChild {
-        parent_token_id: TokenId,
-        child_token_id: TokenId,
+        children_ids: Vec<TokenId>,
+        children_token_ids: Vec<ActorId>,
+        children_statuses: Vec<ChildStatus>,
+        add: bool,
     },
     NFTParent {
         token_id: TokenId,
@@ -114,26 +115,18 @@ pub enum RMRKEvent {
         child_token_id: TokenId,
         child_status: ChildStatus,
     },
-    PendingChildRemoved {
-        child_token_address: ActorId,
-        child_token_id: TokenId,
-        parent_token_id: TokenId,
-    },
-    ChildRemoved {
-        child_token_address: ActorId,
-        child_token_id: TokenId,
-        parent_token_id: TokenId,
-    },
-    ChildRejected {
-        child_token_address: ActorId,
-        child_token_id: TokenId,
-        parent_token_id: TokenId,
-    },
     NFTParent {
         parent: ActorId,
     },
     RootOwner {
         root_owner: ActorId,
+    },
+    TransferChildren {
+        parent_token_id: TokenId,
+        children_ids: Vec<TokenId>,
+        children_token_ids: Vec<ActorId>,
+        children_statuses: Vec<ChildStatus>,
+        add: bool,
     },
     Transfer {
         to: ActorId,

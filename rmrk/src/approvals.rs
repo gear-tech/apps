@@ -7,10 +7,20 @@ impl RMRKToken {
             .await;
     }
 
+    pub async fn transfer_to_nft(
+        &mut self,
+        to: &ActorId,
+        destination_id: TokenId,
+        token_id: TokenId,
+    ) {
+        self._transfer(to, &msg::source(), token_id, destination_id)
+            .await;
+    }
+
     pub async fn _transfer(
         &mut self,
         to: &ActorId,
-        from: &ActorId,
+        _from: &ActorId,
         token_id: TokenId,
         to_token_id: TokenId,
     ) {
@@ -21,41 +31,39 @@ impl RMRKToken {
             .get(&token_id)
             .expect("Token does not exist");
 
-        let rmk_dest = self
-            .rmrk_owners
-            .get(&token_id)
-            .expect("Token does not exist");
-
+        self.balances
+            .entry(rmrk_owner.owner_id)
+            .and_modify(|balance| *balance -= 1);
+        let mut ch_ids: Vec<TokenId> = Vec::new();
+        let mut ch_token_ids: Vec<ActorId> = Vec::new();
+        let mut ch_statuses: Vec<ChildStatus> = Vec::new();
         // // our owner is an nft also
         if rmrk_owner.token_id.is_some() {
             let parent_contract = rmrk_owner.owner_id;
             // transfer all the children
             if let Some(ch_map) = self.children.get(&token_id) {
                 for (child_token_id, child) in ch_map.clone().iter() {
-                    match child.status {
-                        ChildStatus::Pending => {
-                            reject_child(&parent_contract, token_id, *child_token_id).await
-                        }
-                        ChildStatus::Accepted => {
-                            remove_child(&parent_contract, token_id, *child_token_id).await
-                        }
-                        ChildStatus::Unknown => {
-                            // find status
-                            let un_status = ChildStatus::Accepted;
-                            match un_status {
-                                ChildStatus::Pending => {
-                                    reject_child(&parent_contract, token_id, *child_token_id).await
-                                }
-                                ChildStatus::Accepted => {
-                                    remove_child(&parent_contract, token_id, *child_token_id).await
-                                }
-                                ChildStatus::Unknown => panic!("RMRKCore: Invalid child status"),
-                            }
-                        }
-                    }
+                    ch_ids.push(*child_token_id);
+                    ch_token_ids.push(child.token_id);
+                    ch_statuses.push(child.status);
                 }
+                // transfer children with add = false, since we want to remove those
+                transfer_children(
+                    &parent_contract,
+                    token_id,
+                    ch_ids.clone(),
+                    ch_token_ids.clone(),
+                    ch_statuses.clone(),
+                    false,
+                )
+                .await;
             }
         }
+
+        let rmk_dest = self
+            .rmrk_owners
+            .get(&to_token_id)
+            .expect("Token does not exist");
         // the destination is an nft
         if rmk_dest.token_id.is_some() {
             // get nextOwner
@@ -63,23 +71,21 @@ impl RMRKToken {
             self.balances
                 .entry(next_owner)
                 .and_modify(|balance| *balance += 1);
-            if let Some(ch_map) = self.children.get(&token_id) {
-                for (child_token_id, child) in ch_map.clone().iter() {
-                    if next_owner == *from && child.status == ChildStatus::Accepted {
-                        let _response = add_accepted_child(&next_owner, token_id, *child_token_id);
-                    } else {
-                        let _response = add_child(&next_owner, token_id, *child_token_id);
-                    }
-                }
-            }
+
+            transfer_children(
+                &next_owner,
+                to_token_id,
+                ch_ids.clone(),
+                ch_token_ids.clone(),
+                ch_statuses.clone(),
+                true,
+            )
+            .await;
         } else {
             self.balances.entry(*to).and_modify(|balance| *balance += 1);
         }
 
         msg::reply(RMRKEvent::Transfer { to: *to, token_id }.encode(), 0).unwrap();
-    }
-
-    pub fn transfer_to_nft(&mut self, _to: &ActorId, _destination_id: TokenId, _token_id: TokenId) {
     }
 
     pub async fn approve(&mut self, to: &ActorId, token_id: TokenId) {

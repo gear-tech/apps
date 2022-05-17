@@ -1,3 +1,4 @@
+use crate::constants::ZERO_ID;
 use crate::*;
 use gstd::{exec, msg, ActorId};
 

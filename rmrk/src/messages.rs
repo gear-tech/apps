@@ -33,16 +33,22 @@ pub async fn add_child(
     .expect("Error in message to nft contract");
 }
 
-pub async fn add_accepted_child(
+pub async fn transfer_children(
     parent_contract_id: &ActorId,
     parent_token_id: TokenId,
-    child_token_id: TokenId,
+    children_ids: Vec<TokenId>,
+    children_token_ids: Vec<ActorId>,
+    children_statuses: Vec<ChildStatus>,
+    add: bool,
 ) {
     let _response: RMRKEvent = msg::send_and_wait_for_reply(
         *parent_contract_id,
-        RMRKAction::AddChildAccepted {
+        RMRKAction::TransferChildren {
             parent_token_id,
-            child_token_id,
+            children_ids,
+            children_token_ids,
+            children_statuses,
+            add,
         },
         0,
     )
@@ -51,40 +57,12 @@ pub async fn add_accepted_child(
     .expect("Error in message to nft contract");
 }
 
-pub async fn reject_child(
-    parent_contract_id: &ActorId,
-    parent_token_id: TokenId,
-    child_token_id: TokenId,
-) {
-    let _response: RMRKEvent = msg::send_and_wait_for_reply(
-        *parent_contract_id,
-        RMRKAction::RejectChild {
-            parent_token_id,
-            child_token_id,
-        },
-        0,
-    )
-    .unwrap()
-    .await
-    .expect("Error in message to nft contract");
-}
-
-pub async fn remove_child(
-    parent_contract_id: &ActorId,
-    parent_token_id: TokenId,
-    child_token_id: TokenId,
-) {
-    let _response: RMRKEvent = msg::send_and_wait_for_reply(
-        *parent_contract_id,
-        RMRKAction::RemoveChild {
-            parent_token_id,
-            child_token_id,
-        },
-        0,
-    )
-    .unwrap()
-    .await
-    .expect("Error in message to nft contract");
+pub async fn burn(parent_contract_id: &ActorId, token_id: TokenId) {
+    let _response: RMRKEvent =
+        msg::send_and_wait_for_reply(*parent_contract_id, RMRKAction::Burn { token_id }, 0)
+            .unwrap()
+            .await
+            .expect("Error in message to nft contract");
 }
 
 pub async fn burn_child(

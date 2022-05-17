@@ -7,22 +7,16 @@ pub mod approvals;
 pub mod burn;
 pub mod checks;
 pub mod children;
+pub mod constants;
 pub mod messages;
 use messages::*;
 pub mod mint;
-const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 #[derive(Debug)]
 pub struct RMRKOwner {
     pub token_id: Option<TokenId>,
     pub owner_id: ActorId,
     pub root_owner: ActorId,
-}
-
-#[derive(Debug, Clone)]
-pub struct Child {
-    token_id: ActorId,
-    status: ChildStatus,
 }
 
 #[derive(Debug, Default)]
@@ -94,7 +88,7 @@ async unsafe fn main() {
             to,
             destination_id,
             token_id,
-        } => rmrk.transfer_to_nft(&to, destination_id, token_id),
+        } => rmrk.transfer_to_nft(&to, destination_id, token_id).await,
         RMRKAction::Approve { to, token_id } => rmrk.approve(&to, token_id).await,
         RMRKAction::AddChild {
             parent_token_id,
@@ -110,20 +104,21 @@ async unsafe fn main() {
             child_token_id,
         } => rmrk.burn_child(parent_token_id, child_token_id),
         RMRKAction::Burn { token_id } => rmrk.burn(token_id).await,
-        RMRKAction::RejectChild {
+        RMRKAction::TransferChildren {
             parent_token_id,
-            child_token_id,
-        } => rmrk.reject_child(parent_token_id, child_token_id),
-        RMRKAction::RemoveChild {
-            parent_token_id,
-            child_token_id,
-        } => rmrk.remove_child(parent_token_id, child_token_id),
-        RMRKAction::AddChildAccepted {
-            parent_token_id,
-            child_token_id,
+            children_ids,
+            children_token_ids,
+            children_statuses,
+            add,
         } => {
-            rmrk.add_accepted_child(parent_token_id, child_token_id)
-                .await
+            rmrk.transfer_children(
+                parent_token_id,
+                children_ids,
+                children_token_ids,
+                children_statuses,
+                add,
+            )
+            .await;
         }
         RMRKAction::NFTParent { token_id } => rmrk.nft_parent(token_id),
         RMRKAction::RootOwner { token_id } => rmrk.root_owner(token_id),

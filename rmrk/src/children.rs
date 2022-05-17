@@ -111,51 +111,60 @@ impl RMRKToken {
         .unwrap();
     }
 
-    pub fn reject_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
-        self.assert_approved_or_owner(parent_token_id);
-
-        let children_map = self
-            .children
-            .get_mut(&parent_token_id)
-            .expect("Parent does not exist");
-        let child_token_address = children_map
-            .get_mut(&child_token_id)
-            .expect("Child does not exist")
-            .token_id;
-        children_map.remove(&child_token_id);
-        msg::reply(
-            RMRKEvent::PendingChildRemoved {
-                child_token_address,
-                child_token_id,
-                parent_token_id,
-            },
-            0,
-        )
-        .unwrap();
-    }
-
-    // is a copy of reject some how, need to distinguish from pending?
-    pub fn remove_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
-        // simply remove from children and emit event
-        self.assert_approved_or_owner(parent_token_id);
-        let children_map = self
-            .children
-            .get_mut(&parent_token_id)
-            .expect("Parent does not exist");
-        let child_token_address = children_map
-            .get_mut(&child_token_id)
-            .expect("Child does not exist")
-            .token_id;
-        children_map.remove(&child_token_id);
-        msg::reply(
-            RMRKEvent::ChildRejected {
-                child_token_address,
-                child_token_id,
-                parent_token_id,
-            },
-            0,
-        )
-        .unwrap();
+    /// That function is designed to be from another RMRK contracts
+    /// when transfering a token
+    /// It adds or removes children to/from the NFT with tokenId `parent_token_id`
+    /// Requirements:
+    /// * All argument must have the same len
+    /// * Ownership and etc is checked before calling transfer_children
+    /// * The parent's address of the NFT in the child RMRK contract must be the address of that program
+    /// Arguments:
+    /// * `parent_token_id`: is the tokenId of the parent NFT
+    /// * `children_ids`: are the tokenIds of the children instances
+    /// * `children_token_ids`: are the addresses of parents of the children instances
+    /// * `children_statuses`: are the statuses of the children instances
+    /// * `add`: is the direction of the operation, true - we add, false - we remove
+    pub async fn transfer_children(
+        &mut self,
+        parent_token_id: TokenId,
+        children_ids: Vec<TokenId>,
+        children_token_ids: Vec<ActorId>,
+        children_statuses: Vec<ChildStatus>,
+        add: bool,
+    ) {
+        let ch_amount = children_ids.len();
+        if ch_amount != children_token_ids.len() || ch_amount != children_statuses.len() {
+            panic!("RMRKCore: children data len varies");
+        }
+        if add {
+            for it in children_ids.iter() {
+                self.children.entry(parent_token_id).and_modify(|children| {
+                    children.remove(it);
+                });
+            }
+        } else {
+            for it in children_ids
+                .iter()
+                .zip(children_token_ids.iter())
+                .zip(children_statuses.iter())
+            {
+                let ((id, token_id), status) = it;
+                let child = Child {
+                    token_id: *token_id,
+                    status: *status,
+                };
+                self.children
+                    .entry(parent_token_id)
+                    .and_modify(|children| {
+                        children.insert(*id, child.clone());
+                    })
+                    .or_insert_with(|| {
+                        let mut a = BTreeMap::new();
+                        a.insert(*id, child);
+                        a
+                    });
+            }
+        }
     }
 
     pub fn burn_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
