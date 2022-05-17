@@ -43,3 +43,11 @@ pub fn mint_to_nft(
         },
     )
 }
+
+pub fn approve_utils(rmrk: &Program, user: u64, to: u64, token_id: TokenId) -> RunResult {
+    rmrk.send(user, RMRKAction::Approve{ to: to.into(), token_id })
+}
+
+pub fn burn_utils(rmrk: &Program, user: u64, token_id: TokenId) -> RunResult {
+    rmrk.send(user, RMRKAction::Burn{ token_id })
+}

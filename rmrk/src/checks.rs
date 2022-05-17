@@ -45,6 +45,7 @@ impl RMRKToken {
     }
 
     pub fn assert_approved_or_owner(&self, token_id: TokenId) {
+        // ??? Logic mismatch? Fails if msg::source() is the owner, but not token_approval exists
         if self
             .token_approvals
             .get(&token_id)

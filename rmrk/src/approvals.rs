@@ -1,5 +1,5 @@
 use crate::*;
-use gstd::{msg, ActorId};
+use gstd::{debug, msg, ActorId};
 
 impl RMRKToken {
     pub async fn transfer(&mut self, to: &ActorId, token_id: TokenId) {
@@ -95,6 +95,18 @@ impl RMRKToken {
             .entry(token_id)
             .and_modify(|approvals| approvals.push(*to))
             .or_insert_with(|| vec![*to]);
+        debug!("ADDED TO APPROVAL");
+
+        let ev = RMRKEvent::Approval {
+            owner,
+            approved_account: *to,
+            token_id,
+        };
+        debug!("MSG:SOURCE: {:?}", msg::source());
+        debug!("OWNER: {:?}",owner);
+        debug!("TO: {:?}", to);
+        debug!("TOKEN_ID: {:?}", token_id);
+        debug!("event: {:?}", ev);
         msg::reply(
             RMRKEvent::Approval {
                 owner,

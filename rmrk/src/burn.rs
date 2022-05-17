@@ -1,6 +1,6 @@
 use crate::constants::ZERO_ID;
 use crate::*;
-use gstd::msg;
+use gstd::{debug, msg};
 
 impl RMRKToken {
     /// That function is designed to be from another RMRK contracts
@@ -14,7 +14,9 @@ impl RMRKToken {
     /// Arguments:
     /// * `token_id`: is the tokenId of the burnt token
     pub async fn burn(&mut self, token_id: TokenId) {
-        self.assert_approved_or_owner(token_id);
+        debug!("TOKEN_ID: {:?}", token_id);
+        debug!("SOURCE: {:?}", msg::source());
+        let _ = self.assert_owner(token_id);
         self.balances
             .entry(msg::source())
             .and_modify(|balance| *balance -= 1);
