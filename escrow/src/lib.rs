@@ -19,7 +19,7 @@ fn transfer_tokens(
     msg::send_and_wait_for_reply(ft_program_id, FTAction::Transfer { from, to, amount }, 0).unwrap()
 }
 
-fn get(accounts: &mut BTreeMap<U256, Account>, account_id: U256) -> &mut Account {
+fn get(accounts: &mut BTreeMap<AccountId, Account>, account_id: AccountId) -> &mut Account {
     if let Some(account) = accounts.get_mut(&account_id) {
         account
     } else {
@@ -30,7 +30,7 @@ fn get(accounts: &mut BTreeMap<U256, Account>, account_id: U256) -> &mut Account
 #[derive(Default)]
 struct Escrow {
     ft_program_id: ActorId,
-    accounts: BTreeMap<U256, Account>,
+    accounts: BTreeMap<AccountId, Account>,
     id_nonce: U256,
 }
 
@@ -74,7 +74,7 @@ impl Escrow {
     ///
     /// Arguments:
     /// * `account_id`: an account ID.
-    async fn deposit(&mut self, account_id: U256) {
+    async fn deposit(&mut self, account_id: AccountId) {
         let account = get(&mut self.accounts, account_id);
 
         if msg::source() != account.buyer {
@@ -115,7 +115,7 @@ impl Escrow {
     ///
     /// Arguments:
     /// * `account_id`: an account ID.
-    async fn confirm(&mut self, account_id: U256) {
+    async fn confirm(&mut self, account_id: AccountId) {
         let account = get(&mut self.accounts, account_id);
 
         if msg::source() != account.buyer {
@@ -157,7 +157,7 @@ impl Escrow {
     ///
     /// Arguments:
     /// * `account_id`: an account ID.
-    async fn refund(&mut self, account_id: U256) {
+    async fn refund(&mut self, account_id: AccountId) {
         let account = get(&mut self.accounts, account_id);
 
         if msg::source() != account.seller {
@@ -197,7 +197,7 @@ impl Escrow {
     ///
     /// Arguments:
     /// * `account_id`: an account ID.
-    async fn cancel(&mut self, account_id: U256) {
+    async fn cancel(&mut self, account_id: AccountId) {
         let account = get(&mut self.accounts, account_id);
 
         if msg::source() != account.buyer && msg::source() != account.seller {

@@ -3,6 +3,8 @@
 use gstd::{prelude::*, ActorId};
 use primitive_types::U256;
 
+pub type AccountId = U256;
+
 #[derive(Decode, Encode, TypeInfo)]
 pub struct InitEscrow {
     pub ft_program_id: ActorId,
@@ -15,10 +17,10 @@ pub enum EscrowAction {
         seller: ActorId,
         amount: u128,
     },
-    Deposit(U256),
-    Confirm(U256),
-    Refund(U256),
-    Cancel(U256),
+    Deposit(AccountId),
+    Confirm(AccountId),
+    Refund(AccountId),
+    Cancel(AccountId),
 }
 
 #[derive(Decode, Encode, TypeInfo)]
@@ -40,12 +42,12 @@ pub enum EscrowEvent {
         buyer: ActorId,
         amount: u128,
     },
-    Created(U256),
+    Created(AccountId),
 }
 
 #[derive(Decode, Encode, TypeInfo)]
 pub enum EscrowState {
-    GetInfo(U256),
+    GetInfo(AccountId),
 }
 
 #[derive(Decode, Encode, TypeInfo)]
