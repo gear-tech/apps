@@ -40,9 +40,6 @@ pub enum MWEvent {
     Execution {
         transaction_id: U256,
     },
-    ExecutionFailure {
-        transaction_id: U256,
-    },
     Deposit {
         sender: ActorId,
     },

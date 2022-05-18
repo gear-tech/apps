@@ -5,12 +5,9 @@ const USERS: &'static [u64] = &[3, 4, 5, 6];
 fn common_init(sys: &System, users: &[u64], required: u64) -> RunResult {
     sys.init_logger();
 
-    let nft = Program::from_file(
-        &sys,
-        "../target/wasm32-unknown-unknown/release/multisig_wallet.wasm",
-    );
+    let wallet = Program::current(&sys);
 
-    nft.send(
+    wallet.send(
         USERS[0],
         MWInitConfig {
             owners: users.iter().copied().map(|x| x.into()).collect(),

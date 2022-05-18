@@ -22,13 +22,13 @@ fn common_init<'a>(sys: &'a System, users: &[u64], required: u64) -> Program<'a>
 #[test]
 fn common() {
     let sys = System::new();
-    let wallet = common_init(&sys, &USERS[0..1], 1);
+    let wallet = common_init(&sys, &USERS[0..2], 1);
 
     let res = wallet.send_with_value(
         USERS[0],
         MWAction::SubmitTransaction {
             destination: 1.into(),
-            data: MWAction::AddOwner(USERS[1].into()).encode(),
+            data: MWAction::RemoveOwner(USERS[1].into()).encode(),
             value: 0,
         },
         1_000_000_000,
@@ -49,21 +49,17 @@ fn common() {
         },
     );
 
-    let expect = MWEvent::Submission {
-        transaction_id: 1.into(),
-    };
-
-    assert!(res.contains(&(USERS[1], expect.encode())));
+    assert!(res.main_failed());
 }
 
 #[test]
 fn try_to_send_directly() {
     let sys = System::new();
-    let wallet = common_init(&sys, &USERS[0..1], 1);
+    let wallet = common_init(&sys, &USERS[0..2], 1);
 
     let res = wallet.send_with_value(
         USERS[0],
-        MWAction::AddOwner(USERS[1].into()).encode(),
+        MWAction::RemoveOwner(USERS[1].into()).encode(),
         1_000_000_000,
     );
 
@@ -71,25 +67,7 @@ fn try_to_send_directly() {
 }
 
 #[test]
-fn try_to_add_existing_owner() {
-    let sys = System::new();
-    let wallet = common_init(&sys, &USERS[0..2], 1);
-
-    let res = wallet.send_with_value(
-        USERS[0],
-        MWAction::SubmitTransaction {
-            destination: 1.into(),
-            data: MWAction::AddOwner(USERS[1].into()).encode(),
-            value: 0,
-        },
-        1_000_000_000,
-    );
-
-    assert!(res.others_failed());
-}
-
-#[test]
-fn try_to_add_the_same_owner_twice() {
+fn try_to_remove_not_existing_owner() {
     let sys = System::new();
     let wallet = common_init(&sys, &USERS[0..1], 1);
 
@@ -97,23 +75,7 @@ fn try_to_add_the_same_owner_twice() {
         USERS[0],
         MWAction::SubmitTransaction {
             destination: 1.into(),
-            data: MWAction::AddOwner(USERS[1].into()).encode(),
-            value: 0,
-        },
-        1_000_000_000,
-    );
-
-    let expect = MWEvent::Submission {
-        transaction_id: 0.into(),
-    };
-
-    assert!(res.contains(&(USERS[0], expect.encode())));
-
-    let res = wallet.send_with_value(
-        USERS[0],
-        MWAction::SubmitTransaction {
-            destination: 1.into(),
-            data: MWAction::AddOwner(USERS[1].into()).encode(),
+            data: MWAction::RemoveOwner(USERS[1].into()).encode(),
             value: 0,
         },
         1_000_000_000,
@@ -123,16 +85,15 @@ fn try_to_add_the_same_owner_twice() {
 }
 
 #[test]
-fn try_to_add_to_max_owners() {
+fn try_to_remove_last_owner() {
     let sys = System::new();
-    let max: [u64; 50] = (3..=52).collect::<Vec<_>>().try_into().unwrap();
-    let wallet = common_init(&sys, &max, 1);
+    let wallet = common_init(&sys, &USERS[0..1], 1);
 
     let res = wallet.send_with_value(
         USERS[0],
         MWAction::SubmitTransaction {
             destination: 1.into(),
-            data: MWAction::AddOwner(53.into()).encode(),
+            data: MWAction::RemoveOwner(USERS[0].into()).encode(),
             value: 0,
         },
         1_000_000_000,
@@ -142,9 +103,9 @@ fn try_to_add_to_max_owners() {
 }
 
 #[test]
-fn remove_than_add() {
+fn try_to_remove_the_same_owner_twice() {
     let sys = System::new();
-    let wallet = common_init(&sys, &USERS[0..3], 1);
+    let wallet = common_init(&sys, &USERS[0..2], 1);
 
     let res = wallet.send_with_value(
         USERS[0],
@@ -166,6 +127,49 @@ fn remove_than_add() {
         USERS[0],
         MWAction::SubmitTransaction {
             destination: 1.into(),
+            data: MWAction::RemoveOwner(USERS[1].into()).encode(),
+            value: 0,
+        },
+        1_000_000_000,
+    );
+
+    assert!(res.others_failed());
+}
+
+#[test]
+fn change_requirement() {
+    let sys = System::new();
+    let wallet = common_init(&sys, &USERS[0..2], 2);
+
+    let res = wallet.send_with_value(
+        USERS[0],
+        MWAction::SubmitTransaction {
+            destination: 1.into(),
+            data: MWAction::RemoveOwner(USERS[1].into()).encode(),
+            value: 0,
+        },
+        1_000_000_000,
+    );
+
+    let expect = MWEvent::Submission {
+        transaction_id: 0.into(),
+    };
+
+    assert!(res.contains(&(USERS[0], expect.encode())));
+
+    let res = wallet.send(USERS[1], MWAction::ConfirmTransaction(0.into()));
+
+    let expect = MWEvent::Confirmation {
+        sender: USERS[1].into(),
+        transaction_id: 0.into(),
+    };
+
+    assert!(res.contains(&(USERS[1], expect.encode())));
+
+    let res = wallet.send_with_value(
+        USERS[0],
+        MWAction::SubmitTransaction {
+            destination: 1.into(),
             data: MWAction::AddOwner(USERS[1].into()).encode(),
             value: 0,
         },
@@ -178,13 +182,14 @@ fn remove_than_add() {
 
     assert!(res.contains(&(USERS[0], expect.encode())));
 
-    let res = wallet.send(
+    let res = wallet.send_with_value(
         USERS[1],
         MWAction::SubmitTransaction {
-            destination: USERS[2].into(),
+            destination: USERS[3].into(),
             data: vec![],
             value: 1000,
         },
+        1_000_000_000,
     );
 
     let expect = MWEvent::Submission {
@@ -192,4 +197,52 @@ fn remove_than_add() {
     };
 
     assert!(res.contains(&(USERS[1], expect.encode())));
+}
+
+#[test]
+fn add_than_remove() {
+    let sys = System::new();
+    let wallet = common_init(&sys, &USERS[0..3], 1);
+
+    let res = wallet.send_with_value(
+        USERS[0],
+        MWAction::SubmitTransaction {
+            destination: 1.into(),
+            data: MWAction::AddOwner(USERS[3].into()).encode(),
+            value: 0,
+        },
+        1_000_000_000,
+    );
+
+    let expect = MWEvent::Submission {
+        transaction_id: 0.into(),
+    };
+
+    assert!(res.contains(&(USERS[0], expect.encode())));
+
+    let res = wallet.send(
+        USERS[0],
+        MWAction::SubmitTransaction {
+            destination: 1.into(),
+            data: MWAction::RemoveOwner(USERS[3].into()).encode(),
+            value: 0,
+        },
+    );
+
+    let expect = MWEvent::Submission {
+        transaction_id: 1.into(),
+    };
+
+    assert!(res.contains(&(USERS[0], expect.encode())));
+
+    let res = wallet.send(
+        USERS[3],
+        MWAction::SubmitTransaction {
+            destination: USERS[2].into(),
+            data: vec![],
+            value: 1000,
+        },
+    );
+
+    assert!(res.main_failed());
 }

@@ -1,15 +1,14 @@
 use codec::Encode;
-use gtest::{Program, RunResult, System};
+use gstd::ActorId;
+use gtest::{Program, System};
 use multisig_wallet_io::*;
 const USERS: &'static [u64] = &[3, 4, 5, 6];
+const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 fn common_init<'a>(sys: &'a System, users: &[u64], required: u64) -> Program<'a> {
     sys.init_logger();
 
-    let wallet = Program::from_file(
-        &sys,
-        "../target/wasm32-unknown-unknown/release/multisig_wallet.wasm",
-    );
+    let wallet = Program::current(&sys);
 
     wallet.send(
         USERS[0],
@@ -26,14 +25,13 @@ fn common_init<'a>(sys: &'a System, users: &[u64], required: u64) -> Program<'a>
 fn common() {
     let sys = System::new();
     let wallet = common_init(&sys, &USERS[0..3], 3);
-    let res = wallet.send_with_value(
+    let res = wallet.send(
         USERS[0],
         MWAction::SubmitTransaction {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
         },
-        0,
     );
 
     let expect = MWEvent::Submission {
@@ -47,14 +45,13 @@ fn common() {
 fn submit_several_transactions() {
     let sys = System::new();
     let wallet = common_init(&sys, &USERS[0..3], 3);
-    let res = wallet.send_with_value(
+    let res = wallet.send(
         USERS[0],
         MWAction::SubmitTransaction {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
         },
-        0,
     );
 
     let expect = MWEvent::Submission {
@@ -63,14 +60,13 @@ fn submit_several_transactions() {
 
     assert!(res.contains(&(USERS[0], expect.encode())));
 
-    let res = wallet.send_with_value(
+    let res = wallet.send(
         USERS[0],
         MWAction::SubmitTransaction {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
         },
-        0,
     );
 
     let expect = MWEvent::Submission {
@@ -89,15 +85,31 @@ fn submit_and_execute_automatically() {
         MWAction::SubmitTransaction {
             destination: USERS[3].into(),
             data: vec![],
-            value: 100,
+            value: 10000,
         },
-        1000,
+        1_000_000_000,
     );
 
     let expect = MWEvent::Submission {
         transaction_id: 0.into(),
     };
-    // contains(&(USERS[0], expect.encode()))
-    // assert!(res.main_failed());
+
     assert!(res.contains(&(USERS[0], expect.encode())));
+}
+
+#[test]
+fn submit_transaction_with_zero_destination() {
+    let sys = System::new();
+    let wallet = common_init(&sys, &USERS[0..3], 2);
+    let res = wallet.send_with_value(
+        USERS[0],
+        MWAction::SubmitTransaction {
+            destination: ZERO_ID,
+            data: vec![],
+            value: 1000,
+        },
+        10000,
+    );
+
+    assert!(res.main_failed());
 }

@@ -3,6 +3,7 @@
 
 extern crate alloc;
 
+use core::cmp::min;
 use gstd::{exec, msg, prelude::*, ActorId};
 pub use multisig_wallet_io::*;
 use primitive_types::U256;
@@ -129,7 +130,11 @@ impl MultisigWallet {
     fn remove_owner(&mut self, owner: &ActorId) {
         self.validate_only_wallet();
         self.validate_owner_exists(owner);
-        validate_requirement(self.owners.len() - 1, self.required);
+        let next_owners_count = self.owners.len() - 1;
+        validate_requirement(
+            next_owners_count,
+            min(next_owners_count as u64, self.required),
+        );
 
         *self.is_owner.get_mut(owner).unwrap() = false;
         self.owners.retain(|&x| x != *owner);
@@ -156,8 +161,8 @@ impl MultisigWallet {
             .expect("Can't find old owner");
         self.owners[old_owner_index] = *new_owner;
 
-        *self.is_owner.get_mut(old_owner).unwrap() = false;
-        *self.is_owner.get_mut(new_owner).unwrap() = true;
+        *self.is_owner.entry(*old_owner).or_default() = false;
+        *self.is_owner.entry(*new_owner).or_default() = true;
 
         msg::reply(
             MWEvent::OwnerReplace {
@@ -185,14 +190,9 @@ impl MultisigWallet {
     ///  value Transaction ether value.
     ///  data Transaction data payload.
     ///  Returns transaction ID.
-    async fn submit_transaction(
-        &mut self,
-        destination: &ActorId,
-        data: Vec<u8>,
-        value: u128,
-    ) -> U256 {
+    fn submit_transaction(&mut self, destination: &ActorId, data: Vec<u8>, value: u128) -> U256 {
         let transaction_id = self.add_transaction(destination, data, value);
-        self.confirm_transaction(&transaction_id).await;
+        self.confirm_transaction(&transaction_id);
 
         msg::reply(MWEvent::Submission { transaction_id }, 0).unwrap();
 
@@ -201,7 +201,7 @@ impl MultisigWallet {
 
     /// Allows an owner to confirm a transaction.
     /// transactionId Transaction ID.
-    async fn confirm_transaction(&mut self, transaction_id: &U256) {
+    fn confirm_transaction(&mut self, transaction_id: &U256) {
         self.validate_owner_exists(&msg::source());
         self.validate_transaction_exists(transaction_id);
         self.validate_not_confirmed(transaction_id, &msg::source());
@@ -215,12 +215,11 @@ impl MultisigWallet {
 
         *confirmation = true;
 
-        self.execute_transaction(transaction_id, None::<fn(_)>)
-            .await;
+        self.execute_transaction(transaction_id, None::<fn()>);
     }
 
-    async fn external_confirm_transaction(&mut self, transaction_id: &U256) {
-        self.confirm_transaction(transaction_id).await;
+    fn external_confirm_transaction(&mut self, transaction_id: &U256) {
+        self.confirm_transaction(transaction_id);
 
         msg::reply(
             MWEvent::Confirmation {
@@ -260,9 +259,9 @@ impl MultisigWallet {
 
     /// Allows anyone to execute a confirmed transaction.
     /// transactionId Transaction ID.
-    async fn execute_transaction<F>(&mut self, transaction_id: &U256, completion: Option<F>)
+    fn execute_transaction<F>(&mut self, transaction_id: &U256, completion: Option<F>)
     where
-        F: Fn(bool),
+        F: Fn(),
     {
         let sender = msg::source();
         self.validate_owner_exists(&sender);
@@ -275,36 +274,26 @@ impl MultisigWallet {
 
         let txn = self.transactions.get_mut(transaction_id).unwrap();
 
-        let result =
-            msg::send_bytes_and_wait_for_reply(txn.destination, txn.payload.clone(), txn.value)
-                .unwrap()
-                .await;
+        msg::send_bytes(txn.destination, txn.payload.clone(), txn.value)
+            .expect("Sending message failed");
 
-        let executed = result.is_ok();
-
-        txn.executed = executed;
+        txn.executed = true;
 
         if let Some(completion) = completion {
-            completion(executed);
+            completion();
         }
     }
 
-    async fn external_execute_transaction(&mut self, transaction_id: &U256) {
-        let completion = |executed| {
-            let payload = if executed {
-                MWEvent::Execution {
-                    transaction_id: *transaction_id,
-                }
-            } else {
-                MWEvent::ExecutionFailure {
-                    transaction_id: *transaction_id,
-                }
+    fn external_execute_transaction(&mut self, transaction_id: &U256) {
+        let completion = || {
+            let payload = MWEvent::Execution {
+                transaction_id: *transaction_id,
             };
 
             msg::reply(payload, 0).unwrap();
         };
 
-        self.execute_transaction(transaction_id, Some(completion)).await;
+        self.execute_transaction(transaction_id, Some(completion));
     }
 
     /*
@@ -474,14 +463,14 @@ async unsafe fn main() {
             data,
             value,
         } => {
-            wallet.submit_transaction(&destination, data, value).await;
+            wallet.submit_transaction(&destination, data, value);
         }
         MWAction::ConfirmTransaction(transaction_id) => {
-            wallet.external_confirm_transaction(&transaction_id).await
+            wallet.external_confirm_transaction(&transaction_id)
         }
         MWAction::RevokeConfirmation(transaction_id) => wallet.revoke_confirmation(&transaction_id),
         MWAction::ExecuteTransaction(transaction_id) => {
-            wallet.external_execute_transaction(&transaction_id).await
+            wallet.external_execute_transaction(&transaction_id)
         }
     }
 }
@@ -515,7 +504,5 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     }
     .encode();
 
-    let result = gstd::macros::util::to_wasm_ptr(&(encoded[..]));
-    core::mem::forget(encoded);
-    result
+    gstd::util::to_leak_ptr(encoded)
 }
