@@ -64,13 +64,6 @@ pub enum RMRKAction {
         parent_token_id: TokenId,
         child_token_id: TokenId,
     },
-    TransferChildren {
-        parent_token_id: TokenId,
-        children_ids: Vec<TokenId>,
-        children_token_ids: Vec<ActorId>,
-        children_statuses: Vec<ChildStatus>,
-        add: bool,
-    },
     NFTParent {
         token_id: TokenId,
     },
@@ -121,13 +114,6 @@ pub enum RMRKEvent {
     },
     RootOwner {
         root_owner: ActorId,
-    },
-    TransferChildren {
-        parent_token_id: TokenId,
-        children_ids: Vec<TokenId>,
-        children_token_ids: Vec<ActorId>,
-        children_statuses: Vec<ChildStatus>,
-        add: bool,
     },
     Transfer {
         to: ActorId,

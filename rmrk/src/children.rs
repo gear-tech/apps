@@ -119,61 +119,61 @@ impl RMRKToken {
         .unwrap();
     }
 
-    /// That function is designed to be from another RMRK contracts
-    /// when transfering a token
-    /// It adds or removes children to/from the NFT with tokenId `parent_token_id`
-    /// Requirements:
-    /// * All argument must have the same len
-    /// * Ownership and etc is checked before calling transfer_children
-    /// * The parent's address of the NFT in the child RMRK contract must be the address of that program
-    /// Arguments:
-    /// * `parent_token_id`: is the tokenId of the parent NFT
-    /// * `children_ids`: are the tokenIds of the children instances
-    /// * `children_token_ids`: are the addresses of parents of the children instances
-    /// * `children_statuses`: are the statuses of the children instances
-    /// * `add`: is the direction of the operation, true - we add, false - we remove
-    pub async fn transfer_children(
-        &mut self,
-        parent_token_id: TokenId,
-        children_ids: Vec<TokenId>,
-        children_token_ids: Vec<ActorId>,
-        children_statuses: Vec<ChildStatus>,
-        add: bool,
-    ) {
-        let ch_amount = children_ids.len();
-        if ch_amount != children_token_ids.len() || ch_amount != children_statuses.len() {
-            panic!("RMRKCore: children data len varies");
-        }
-        if add {
-            for it in children_ids.iter() {
-                self.children.entry(parent_token_id).and_modify(|children| {
-                    children.remove(it);
-                });
-            }
-        } else {
-            for it in children_ids
-                .iter()
-                .zip(children_token_ids.iter())
-                .zip(children_statuses.iter())
-            {
-                let ((id, token_id), status) = it;
-                let child = Child {
-                    token_id: *token_id,
-                    status: *status,
-                };
-                self.children
-                    .entry(parent_token_id)
-                    .and_modify(|children| {
-                        children.insert(*id, child.clone());
-                    })
-                    .or_insert_with(|| {
-                        let mut a = BTreeMap::new();
-                        a.insert(*id, child);
-                        a
-                    });
-            }
-        }
-    }
+    // /// That function is designed to be from another RMRK contracts
+    // /// when transfering a token
+    // /// It adds or removes children to/from the NFT with tokenId `parent_token_id`
+    // /// Requirements:
+    // /// * All argument must have the same len
+    // /// * Ownership and etc is checked before calling transfer_children
+    // /// * The parent's address of the NFT in the child RMRK contract must be the address of that program
+    // /// Arguments:
+    // /// * `parent_token_id`: is the tokenId of the parent NFT
+    // /// * `children_ids`: are the tokenIds of the children instances
+    // /// * `children_token_ids`: are the addresses of parents of the children instances
+    // /// * `children_statuses`: are the statuses of the children instances
+    // /// * `add`: is the direction of the operation, true - we add, false - we remove
+    // pub async fn transfer_children(
+    //     &mut self,
+    //     parent_token_id: TokenId,
+    //     children_ids: Vec<TokenId>,
+    //     children_token_ids: Vec<ActorId>,
+    //     children_statuses: Vec<ChildStatus>,
+    //     add: bool,
+    // ) {
+    //     let ch_amount = children_ids.len();
+    //     if ch_amount != children_token_ids.len() || ch_amount != children_statuses.len() {
+    //         panic!("RMRKCore: children data len varies");
+    //     }
+    //     if add {
+    //         for it in children_ids.iter() {
+    //             self.children.entry(parent_token_id).and_modify(|children| {
+    //                 children.remove(it);
+    //             });
+    //         }
+    //     } else {
+    //         for it in children_ids
+    //             .iter()
+    //             .zip(children_token_ids.iter())
+    //             .zip(children_statuses.iter())
+    //         {
+    //             let ((id, token_id), status) = it;
+    //             let child = Child {
+    //                 token_id: *token_id,
+    //                 status: *status,
+    //             };
+    //             self.children
+    //                 .entry(parent_token_id)
+    //                 .and_modify(|children| {
+    //                     children.insert(*id, child.clone());
+    //                 })
+    //                 .or_insert_with(|| {
+    //                     let mut a = BTreeMap::new();
+    //                     a.insert(*id, child);
+    //                     a
+    //                 });
+    //         }
+    //     }
+    // }
 
     pub fn burn_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
         let child = self

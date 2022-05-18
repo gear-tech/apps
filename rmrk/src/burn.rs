@@ -1,6 +1,6 @@
 use crate::constants::ZERO_ID;
 use crate::*;
-use gstd::{debug, msg};
+use gstd::msg;
 
 impl RMRKToken {
     /// That function is designed to be from another RMRK contracts
@@ -14,8 +14,6 @@ impl RMRKToken {
     /// Arguments:
     /// * `token_id`: is the tokenId of the burnt token
     pub async fn burn(&mut self, token_id: TokenId) {
-        debug!("TOKEN_ID: {:?}", token_id);
-        debug!("SOURCE: {:?}", msg::source());
         let _ = self.assert_owner(token_id);
         self.balances
             .entry(msg::source())
@@ -34,6 +32,7 @@ impl RMRKToken {
         }
 
         self.rmrk_owners.remove(&token_id);
+
         msg::reply(
             RMRKEvent::Transfer {
                 to: ZERO_ID,

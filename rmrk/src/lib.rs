@@ -102,22 +102,6 @@ async unsafe fn main() {
             child_token_id,
         } => rmrk.burn_child(parent_token_id, child_token_id),
         RMRKAction::Burn { token_id } => rmrk.burn(token_id).await,
-        RMRKAction::TransferChildren {
-            parent_token_id,
-            children_ids,
-            children_token_ids,
-            children_statuses,
-            add,
-        } => {
-            rmrk.transfer_children(
-                parent_token_id,
-                children_ids,
-                children_token_ids,
-                children_statuses,
-                add,
-            )
-            .await;
-        }
         RMRKAction::NFTParent { token_id } => rmrk.nft_parent(token_id),
         RMRKAction::RootOwner { token_id } => rmrk.root_owner(token_id).await,
     }
