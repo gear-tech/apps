@@ -3,10 +3,12 @@
 use gstd::{prelude::*, ActorId};
 use primitive_types::U256;
 
+/// Escrow account ID.
 pub type AccountId = U256;
 
 #[derive(Decode, Encode, TypeInfo)]
 pub struct InitEscrow {
+    /// Address of a fungible token program.
     pub ft_program_id: ActorId,
 }
 
