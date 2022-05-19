@@ -2,17 +2,12 @@ use crate::*;
 use gstd::{debug, msg, ActorId};
 
 impl RMRKToken {
-    /// That function is designed to be from another RMRK contracts
-    /// when transfering tokens to a non-nft address
-    /// It checks for the ownership and whether the msg::source is an NFT contract
-    /// if it is it burns itself from root_owner
-    /// then it just swaps the balances
+    /// Transfers RMRK token to another users
+    /// If the previous owner is another RMRK contract, it burns the RMRK child token from the RMRK parent contract
     /// Requirements:
-    ///
-    /// * The `msg::source()` must be a deployed RMRK contract
     /// * The ``token_id` should exist
-    /// * The `to` address should be a non-zero address
     /// * The `msg::source()` must be approved or owner of the token
+    /// * The `to` address should be a non-zero address
     /// Arguments:
     /// * `to`: is the receiving address
     /// * `token_id`: is the tokenId of the transfered token
@@ -30,25 +25,34 @@ impl RMRKToken {
         } else {
             rmrk_owner.owner_id
         };
+        if *to != previous_root_owner {
+            self.balances
+                .entry(*to)
+                .and_modify(|balance| *balance += 1)
+                .or_insert(1);
+            self.balances
+                .entry(previous_root_owner)
+                .and_modify(|balance| *balance -= 1);
+        }
+        self.rmrk_owners.insert(
+            token_id,
+            RMRKOwner {
+                token_id: None,
+                owner_id: *to,
+            },
+        );
         msg::reply(RMRKEvent::Transfer { to: *to, token_id }, 0).unwrap();
     }
 
-
-    /// That function is designed to be from another RMRK contracts
-    /// when transfering tokens to a non-nft address
-    /// It checks for the ownership and whether the msg::source is an NFT contract
-    /// if it is it burns itself from root_owner
-    /// then it just swaps the balances
-    /// If to is also an NFT contract it adds a child to destination_id token
+    /// Transfers RMRK token to another RMRK contract
+    /// If the previous owner is another RMRK contract, it burns the RMRK child token from the RMRK parent contract
     /// Requirements:
-    ///
-    /// * The `msg::source()` must be a deployed RMRK contract
     /// * The ``token_id` should exist
-    /// *
-    /// * The `to` address should be a non-zero address
     /// * The `msg::source()` must be approved or owner of the token
+    /// * The `to` address should be a non-zero address
     /// Arguments:
-    /// * `to`: is the receiving address
+    /// * `to`: is the address of new parent RMRK contract
+    /// * `destination_id: is the tokenId of the parent RMRK token
     /// * `token_id`: is the tokenId of the transfered token
     pub async fn transfer_to_nft(
         &mut self,

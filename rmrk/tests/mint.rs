@@ -18,6 +18,16 @@ fn mint_to_root_owner_success() {
         }
         .encode()
     )));
+
+    let res = owner(&rmrk, 0.into());
+    assert!(res.contains(&(
+        10,
+        RMRKEvent::Owner {
+            token_id: None,
+            owner_id: USERS[1].into(),
+        }
+        .encode()
+    )));
 }
 
 #[test]
@@ -46,6 +56,16 @@ fn mint_to_nft_success() {
             to: PARENT_NFT_CONTRACT.into(),
             token_id: 0.into(),
             destination_id: PARENT_TOKEN_ID.into(),
+        }
+        .encode()
+    )));
+
+    let res = owner(&rmrk_child, 0.into());
+    assert!(res.contains(&(
+        10,
+        RMRKEvent::Owner {
+            token_id: Some(0.into()),
+            owner_id: PARENT_NFT_CONTRACT.into(),
         }
         .encode()
     )));

@@ -1,6 +1,13 @@
 use crate::*;
 use gstd::msg;
 
+fn get_child_vec(child_contract_id: &ActorId, child_token_id: TokenId) -> Vec<u8> {
+    let mut nft_contract_and_token: Vec<u8> = <[u8; 32]>::from(*child_contract_id).into();
+    let token_id_vec: Vec<u8> = <[u8; 32]>::from(child_token_id).into();
+    nft_contract_and_token.extend(token_id_vec);
+    nft_contract_and_token
+}
+
 impl RMRKToken {
     /// That function is designed to be from another RMRK contracts
     /// when minting tokens to NFT
@@ -18,17 +25,14 @@ impl RMRKToken {
             .rmrk_owners
             .get(&parent_token_id)
             .expect("Token does not exist");
-
-        if let Some(children) = self.children.get(&parent_token_id) {
+        // get the vector of `child_nft_contract` + `child_token_id`
+        let child_vec = get_child_vec(&msg::source(), child_token_id);
+        if let Some(children) = self.parent_to_children.get(&parent_token_id) {
             // if child already exists
-            if let Some(_child) = children.get(&child_token_id) {
+            if children.contains(&child_vec) {
                 panic!("RMRKCore: child already exists");
             }
         }
-        let child = Child {
-            token_id: msg::source(),
-            status: ChildStatus::Pending,
-        };
 
         let root_owner = if rmrk_owner.token_id.is_some() {
             get_root_owner(&rmrk_owner.owner_id, rmrk_owner.token_id.unwrap()).await
@@ -36,17 +40,14 @@ impl RMRKToken {
             rmrk_owner.owner_id
         };
 
-        self.children
+        self.parent_to_children
             .entry(parent_token_id)
             .and_modify(|children| {
-                children.insert(child_token_id, child.clone());
+                children.push(child_vec.clone());
             })
-            .or_insert_with(|| {
-                let mut a = BTreeMap::new();
-                a.insert(child_token_id, child);
-                a
-            });
+            .or_insert_with(|| vec![child_vec.clone()]);
 
+        self.children_status.insert(child_vec, ChildStatus::Pending);
         msg::reply(
             RMRKEvent::PendingChild {
                 child_token_address: msg::source(),
@@ -59,58 +60,38 @@ impl RMRKToken {
         .unwrap();
     }
 
-    pub async fn add_accepted_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
-        // checks that `msg::source()` is a deployed program
-        // checks that parent indicated in the child contract is the address of that program
-        self.assert_parent(child_token_id).await;
-        let child = Child {
-            token_id: msg::source(),
-            status: ChildStatus::Pending,
-        };
-
-        self.children
-            .entry(parent_token_id)
-            .and_modify(|children| {
-                children.insert(child_token_id, child.clone());
-            })
-            .or_insert_with(|| {
-                let mut a = BTreeMap::new();
-                a.insert(child_token_id, child);
-                a
-            });
-
-        // msg::reply(
-        //     RMRKEvent::PendingChild {
-        //         child_token_address: msg::source(),
-        //         child_token_id,
-        //         parent_token_id,
-        //     },
-        //     0,
-        // )
-        // .unwrap();
-    }
-
-    /// Accepts an NFT child being in the `Pending` status
+    /// Accepts an RMRK child being in the `Pending` status
     /// The status of NFT child becomes `Accepted`
     /// Requirements:
-    /// * The `msg::source()` must be an NFT owner or an approved account
+    /// * The `msg::source()` must be an RMRK owner or an approved account
     /// * The parent's address of the NFT in the child RMRK contract must be the address of that program
     /// Arguments:
     /// * `parent_token_id`: is the tokenId of the parent NFT
     /// * `child_token_id`: is the tokenId of the child instance
-    pub async fn accept_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
+    pub async fn accept_child(
+        &mut self,
+        parent_token_id: TokenId,
+        child_contract_id: &ActorId,
+        child_token_id: TokenId,
+    ) {
         self.assert_approved_or_owner(parent_token_id).await;
-        let child = self
-            .children
-            .get_mut(&parent_token_id)
-            .expect("Parent does not exist")
-            .get_mut(&child_token_id)
-            .expect("Child does not exist");
-        child.status = ChildStatus::Accepted;
+        // get the vector of `child_nft_contract` + `child_token_id`
+        let child_vec = get_child_vec(child_contract_id, child_token_id);
+
+        if let Some(children) = self.parent_to_children.get(&parent_token_id) {
+            if children.contains(&child_vec) {
+                self.children_status
+                    .insert(child_vec, ChildStatus::Accepted);
+            } else {
+                panic!("RMRKCore: child does not exist");
+            }
+        } else {
+            panic!("RMRKCore: token has no children");
+        }
 
         msg::reply(
             RMRKEvent::AcceptedChild {
-                child_token_address: child.token_id,
+                child_token_address: *child_contract_id,
                 child_token_id,
                 parent_token_id,
             },
@@ -119,82 +100,29 @@ impl RMRKToken {
         .unwrap();
     }
 
-    // /// That function is designed to be from another RMRK contracts
-    // /// when transfering a token
-    // /// It adds or removes children to/from the NFT with tokenId `parent_token_id`
-    // /// Requirements:
-    // /// * All argument must have the same len
-    // /// * Ownership and etc is checked before calling transfer_children
-    // /// * The parent's address of the NFT in the child RMRK contract must be the address of that program
-    // /// Arguments:
-    // /// * `parent_token_id`: is the tokenId of the parent NFT
-    // /// * `children_ids`: are the tokenIds of the children instances
-    // /// * `children_token_ids`: are the addresses of parents of the children instances
-    // /// * `children_statuses`: are the statuses of the children instances
-    // /// * `add`: is the direction of the operation, true - we add, false - we remove
-    // pub async fn transfer_children(
-    //     &mut self,
-    //     parent_token_id: TokenId,
-    //     children_ids: Vec<TokenId>,
-    //     children_token_ids: Vec<ActorId>,
-    //     children_statuses: Vec<ChildStatus>,
-    //     add: bool,
-    // ) {
-    //     let ch_amount = children_ids.len();
-    //     if ch_amount != children_token_ids.len() || ch_amount != children_statuses.len() {
-    //         panic!("RMRKCore: children data len varies");
-    //     }
-    //     if add {
-    //         for it in children_ids.iter() {
-    //             self.children.entry(parent_token_id).and_modify(|children| {
-    //                 children.remove(it);
-    //             });
-    //         }
-    //     } else {
-    //         for it in children_ids
-    //             .iter()
-    //             .zip(children_token_ids.iter())
-    //             .zip(children_statuses.iter())
-    //         {
-    //             let ((id, token_id), status) = it;
-    //             let child = Child {
-    //                 token_id: *token_id,
-    //                 status: *status,
-    //             };
-    //             self.children
-    //                 .entry(parent_token_id)
-    //                 .and_modify(|children| {
-    //                     children.insert(*id, child.clone());
-    //                 })
-    //                 .or_insert_with(|| {
-    //                     let mut a = BTreeMap::new();
-    //                     a.insert(*id, child);
-    //                     a
-    //                 });
-    //         }
-    //     }
-    // }
-
+    /// Burns a child of RMRK token
+    /// That function must be called from the child RMRK contract during `transfer`, `transfer_to_nft` and `burn` functions
+    /// Requirements:
+    /// * The `msg::source()` must be a child RMRK contract
+    /// Arguments:
+    /// * `parent_token_id`: is the tokenId of the parent NFT
+    /// * `child_token_id`: is the tokenId of the child instance
     pub fn burn_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
-        let child = self
-            .children
-            .get_mut(&parent_token_id)
-            .expect("Parent does not exist")
-            .get_mut(&child_token_id)
-            .expect("Child does not exist")
-            .clone();
-        if child.token_id != msg::source() {
-            panic!("the caller must be the child nft contract");
+        let child_vec = get_child_vec(&msg::source(), child_token_id);
+        if let Some(children) = self.parent_to_children.get_mut(&parent_token_id) {
+            if let Some(index) = children.iter().position(|child| child == &child_vec) {
+                children.swap_remove(index);
+            } else {
+                panic!("RMRKCore: child does not exist");
+            }
+        } else {
+            panic!("RMRKCore: token has no children");
         }
-        self.children.entry(parent_token_id).and_modify(|children| {
-            children.remove(&child_token_id);
-        });
 
         msg::reply(
             RMRKEvent::ChildBurnt {
                 parent_token_id,
                 child_token_id,
-                child_status: child.status,
             },
             0,
         )

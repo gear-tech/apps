@@ -38,12 +38,12 @@ pub async fn add_child(
     }
 }
 
-pub async fn burn(parent_contract_id: &ActorId, token_id: TokenId) {
+pub async fn burn_from_parent(child_contract_id: &ActorId, token_id: TokenId) {
     let _response: RMRKEvent =
-        msg::send_and_wait_for_reply(*parent_contract_id, RMRKAction::Burn { token_id }, 0)
+        msg::send_and_wait_for_reply(*child_contract_id, RMRKAction::Burn { token_id }, 0)
             .unwrap()
             .await
-            .expect("Error in message to nft contract");
+            .expect("Error in message to burning RMRK token");
 }
 
 pub async fn burn_child(
@@ -51,7 +51,7 @@ pub async fn burn_child(
     parent_token_id: TokenId,
     child_token_id: TokenId,
 ) {
-    let response: RMRKEvent = msg::send_and_wait_for_reply(
+    let _response: RMRKEvent = msg::send_and_wait_for_reply(
         *parent_contract_id,
         RMRKAction::BurnChild {
             parent_token_id,
@@ -61,5 +61,5 @@ pub async fn burn_child(
     )
     .unwrap()
     .await
-    .expect("Error in message to nft contract");
+    .expect("Error in burning RMRK token child");
 }

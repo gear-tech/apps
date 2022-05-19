@@ -14,7 +14,7 @@ pub struct InitRMRK {
 
 #[derive(Debug, Clone, Encode)]
 pub struct Child {
-    pub token_id: ActorId,
+    pub token_id: TokenId,
     pub status: ChildStatus,
 }
 
@@ -62,12 +62,16 @@ pub enum RMRKAction {
     },
     AcceptChild {
         parent_token_id: TokenId,
+        child_contract_id: ActorId,
         child_token_id: TokenId,
     },
     NFTParent {
         token_id: TokenId,
     },
     RootOwner {
+        token_id: TokenId,
+    },
+    Owner {
         token_id: TokenId,
     },
 }
@@ -107,7 +111,6 @@ pub enum RMRKEvent {
     ChildBurnt {
         parent_token_id: TokenId,
         child_token_id: TokenId,
-        child_status: ChildStatus,
     },
     NFTParent {
         parent: ActorId,
@@ -118,5 +121,9 @@ pub enum RMRKEvent {
     Transfer {
         to: ActorId,
         token_id: TokenId,
+    },
+    Owner {
+        token_id: Option<TokenId>,
+        owner_id: ActorId,
     },
 }

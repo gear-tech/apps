@@ -1,4 +1,3 @@
-use crate::constants::ZERO_ID;
 use crate::*;
 use gstd::{exec, msg, ActorId};
 
@@ -43,6 +42,7 @@ impl RMRKToken {
         } else {
             rmrk_owner.owner_id
         };
+        debug!("OWNER {:?}", root_owner);
         if msg::source() != root_owner {
             panic!("Wrong owner");
         }

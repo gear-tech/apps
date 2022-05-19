@@ -3,12 +3,11 @@
 use codec::Encode;
 use gstd::{debug, msg, prelude::*, ActorId};
 use rmrk_io::*;
-pub mod approvals;
 pub mod burn;
 pub mod checks;
 pub mod children;
-pub mod constants;
 pub mod messages;
+pub mod transfer;
 use messages::*;
 pub mod mint;
 
@@ -24,11 +23,13 @@ pub struct RMRKToken {
     pub symbol: String,
     pub token_approvals: BTreeMap<TokenId, Vec<ActorId>>,
     pub rmrk_owners: BTreeMap<TokenId, RMRKOwner>,
-    pub children: BTreeMap<TokenId, BTreeMap<TokenId, Child>>,
+    pub parent_to_children: BTreeMap<TokenId, Vec<Vec<u8>>>,
+    pub children_status: BTreeMap<Vec<u8>, ChildStatus>,
     pub balances: BTreeMap<ActorId, u128>,
 }
 
 static mut RMRK: Option<RMRKToken> = None;
+pub const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 impl RMRKToken {
     fn nft_parent(&self, token_id: TokenId) {
@@ -94,8 +95,12 @@ async unsafe fn main() {
         } => rmrk.add_child(parent_token_id, child_token_id).await,
         RMRKAction::AcceptChild {
             parent_token_id,
+            child_contract_id,
             child_token_id,
-        } => rmrk.accept_child(parent_token_id, child_token_id).await,
+        } => {
+            rmrk.accept_child(parent_token_id, &child_contract_id, child_token_id)
+                .await
+        }
         // my implementation
         RMRKAction::BurnChild {
             parent_token_id,
@@ -104,5 +109,19 @@ async unsafe fn main() {
         RMRKAction::Burn { token_id } => rmrk.burn(token_id).await,
         RMRKAction::NFTParent { token_id } => rmrk.nft_parent(token_id),
         RMRKAction::RootOwner { token_id } => rmrk.root_owner(token_id).await,
+        RMRKAction::Owner { token_id } => {
+            let rmrk_owner = rmrk
+                .rmrk_owners
+                .get(&token_id)
+                .expect("RMRK: Token does not exist");
+            msg::reply(
+                RMRKEvent::Owner {
+                    token_id: rmrk_owner.token_id,
+                    owner_id: rmrk_owner.owner_id,
+                },
+                0,
+            )
+            .unwrap();
+        }
     }
 }

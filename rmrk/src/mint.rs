@@ -2,6 +2,14 @@ use crate::*;
 use gstd::{msg, ActorId};
 
 impl RMRKToken {
+    /// Mints token that will belong to another token in another RMRK contract
+    /// Requirements:
+    /// * The `to`  must be a deployed RMRK contract
+    /// * The `token_id` must not exist
+    /// Arguments:
+    /// * `to`: is the address of RMRK parent contract
+    /// * `destination_id`: is the parent RMRK token
+    /// * `token_id`: is the tokenId of new RMRK token
     pub async fn mint_to_nft(&mut self, to: &ActorId, token_id: TokenId, destination_id: TokenId) {
         self.assert_token_exists(token_id);
         //check that `to` is a deployed program
@@ -32,7 +40,13 @@ impl RMRKToken {
         .unwrap();
     }
 
-    // usual mint
+    /// Mints token to the user
+    /// Requirements:
+    /// * The ``token_id` must not exist
+    /// * The `to` address should be a non-zero address
+    /// Arguments:
+    /// * `to`: is the address who will own the token
+    /// * `token_id`: is the tokenId of new RMRK token
     pub fn mint_to_root_owner(&mut self, to: &ActorId, token_id: TokenId) {
         self.assert_zero_address(to);
         // check that token does not exist
