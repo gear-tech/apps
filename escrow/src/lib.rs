@@ -19,26 +19,26 @@ fn transfer_tokens(
     msg::send_and_wait_for_reply(ft_program_id, FTAction::Transfer { from, to, amount }, 0).unwrap()
 }
 
-fn get(accounts: &mut BTreeMap<AccountId, Account>, account_id: AccountId) -> &mut Account {
-    if let Some(account) = accounts.get_mut(&account_id) {
-        account
+fn get(wallets: &mut BTreeMap<WalletId, Wallet>, wallet_id: WalletId) -> &mut Wallet {
+    if let Some(wallet) = wallets.get_mut(&wallet_id) {
+        wallet
     } else {
-        panic!("Account with the {account_id} ID doesn't exist");
+        panic!("Wallet with the {wallet_id} ID doesn't exist");
     }
 }
 
 #[derive(Default)]
 struct Escrow {
     ft_program_id: ActorId,
-    accounts: BTreeMap<AccountId, Account>,
+    wallets: BTreeMap<WalletId, Wallet>,
     id_nonce: U256,
 }
 
 impl Escrow {
-    /// Creates one escrow account and replies with its ID.
+    /// Creates one escrow wallet and replies with its ID.
     ///
     /// Requirements:
-    /// * `msg::source()` must be a buyer or seller for this account.
+    /// * `msg::source()` must be a buyer or seller for this wallet.
     ///
     /// Arguments:
     /// * `buyer`: a buyer.
@@ -46,175 +46,175 @@ impl Escrow {
     /// * `amount`: an amount of tokens.
     fn create(&mut self, buyer: ActorId, seller: ActorId, amount: u128) {
         if msg::source() != buyer && msg::source() != seller {
-            panic!("msg::source() must be a buyer or seller to create the escrow account");
+            panic!("msg::source() must be a buyer or seller to create this escrow wallet");
         }
 
-        let account_id = self.id_nonce;
+        let wallet_id = self.id_nonce;
         self.id_nonce = self.id_nonce.saturating_add(U256::one());
 
-        self.accounts.insert(
-            account_id,
-            Account {
+        self.wallets.insert(
+            wallet_id,
+            Wallet {
                 buyer,
                 seller,
                 amount,
-                state: AccountState::AwaitingDeposit,
+                state: WalletState::AwaitingDeposit,
             },
         );
 
-        msg::reply(EscrowEvent::Created(account_id), 0).unwrap();
+        msg::reply(EscrowEvent::Created(wallet_id), 0).unwrap();
     }
 
-    /// Makes a deposit from a buyer to an escrow account
-    /// and changes an account state to `AwaitingConfirmation`.
+    /// Makes a deposit from a buyer to an escrow wallet
+    /// and changes a wallet state to `AwaitingConfirmation`.
     ///
     /// Requirements:
-    /// * `msg::source()` must be a buyer saved in the account.
-    /// * Account must not be paid or closed.
+    /// * `msg::source()` must be a buyer for this wallet.
+    /// * Wallet must not be paid or closed.
     ///
     /// Arguments:
-    /// * `account_id`: an account ID.
-    async fn deposit(&mut self, account_id: AccountId) {
-        let account = get(&mut self.accounts, account_id);
+    /// * `wallet_id`: a wallet ID.
+    async fn deposit(&mut self, wallet_id: WalletId) {
+        let wallet = get(&mut self.wallets, wallet_id);
 
-        if msg::source() != account.buyer {
-            panic!("msg::source() must be a buyer saved in the account to make a deposit");
+        if msg::source() != wallet.buyer {
+            panic!("msg::source() must be a buyer for this wallet to make a deposit");
         }
 
-        if account.state != AccountState::AwaitingDeposit {
-            panic!("Paid or closed account can't take a deposit");
+        if wallet.state != WalletState::AwaitingDeposit {
+            panic!("Paid or closed wallet can't take a deposit");
         }
 
         transfer_tokens(
             self.ft_program_id,
-            account.buyer,
+            wallet.buyer,
             exec::program_id(),
-            account.amount,
+            wallet.amount,
         )
         .await
-        .expect("Error when taking a deposit");
+        .expect("Error when taking the deposit");
 
-        account.state = AccountState::AwaitingConfirmation;
+        wallet.state = WalletState::AwaitingConfirmation;
 
         msg::reply(
             EscrowEvent::Deposited {
-                buyer: account.buyer,
-                amount: account.amount,
+                buyer: wallet.buyer,
+                amount: wallet.amount,
             },
             0,
         )
         .unwrap();
     }
 
-    /// Confirms an escrow account by transferring tokens from it
-    /// to a seller and changing an account state to `Closed`.
+    /// Confirms a deal by transferring tokens from an escrow wallet
+    /// to a seller and changing a wallet state to `Closed`.
     ///
     /// Requirements:
-    /// * `msg::source()` must be a buyer saved in the account.
-    /// * Account must be paid and unclosed.
+    /// * `msg::source()` must be a buyer for this wallet.
+    /// * Wallet must be paid and unclosed.
     ///
     /// Arguments:
-    /// * `account_id`: an account ID.
-    async fn confirm(&mut self, account_id: AccountId) {
-        let account = get(&mut self.accounts, account_id);
+    /// * `wallet_id`: a wallet ID.
+    async fn confirm(&mut self, wallet_id: WalletId) {
+        let wallet = get(&mut self.wallets, wallet_id);
 
-        if msg::source() != account.buyer {
-            panic!("msg::source() must a buyer saved in the account to confirm it");
+        if msg::source() != wallet.buyer {
+            panic!("msg::source() must a buyer for this wallet to confirm the deal");
         }
 
-        if account.state != AccountState::AwaitingConfirmation {
-            panic!("Unpaid or closed account can't be confirmed");
+        if wallet.state != WalletState::AwaitingConfirmation {
+            panic!("Deal can't be confirmed with the unpaid or closed wallet");
         }
 
         transfer_tokens(
             self.ft_program_id,
             exec::program_id(),
-            account.seller,
-            account.amount,
+            wallet.seller,
+            wallet.amount,
         )
         .await
-        .expect("Error when confirming an account");
+        .expect("Error when transferring tokens to the seller");
 
-        account.state = AccountState::Closed;
+        wallet.state = WalletState::Closed;
 
         msg::reply(
             EscrowEvent::Confirmed {
-                amount: account.amount,
-                seller: account.seller,
+                amount: wallet.amount,
+                seller: wallet.seller,
             },
             0,
         )
         .unwrap();
     }
 
-    /// Refunds tokens from an escrow account to a buyer
-    /// and changes an account state back to `AwaitingDeposit`
-    /// (that is, the account can be reused).
+    /// Refunds tokens from an escrow wallet to a buyer
+    /// and changes a wallet state back to `AwaitingDeposit`
+    /// (that is, a wallet can be reused).
     ///
     /// Requirements:
-    /// * `msg::source()` must be a seller saved in the account.
-    /// * Account must be paid and unclosed.
+    /// * `msg::source()` must be a seller for this wallet.
+    /// * Wallet must be paid and unclosed.
     ///
     /// Arguments:
-    /// * `account_id`: an account ID.
-    async fn refund(&mut self, account_id: AccountId) {
-        let account = get(&mut self.accounts, account_id);
+    /// * `wallet_id`: a wallet ID.
+    async fn refund(&mut self, wallet_id: WalletId) {
+        let wallet = get(&mut self.wallets, wallet_id);
 
-        if msg::source() != account.seller {
-            panic!("msg::source() must be a seller saved in the account to refund");
+        if msg::source() != wallet.seller {
+            panic!("msg::source() must be a seller for this wallet to refund");
         }
 
-        if account.state != AccountState::AwaitingConfirmation {
-            panic!("Unpaid or closed account can't be refunded");
+        if wallet.state != WalletState::AwaitingConfirmation {
+            panic!("Unpaid or closed wallet can't be refunded");
         }
 
         transfer_tokens(
             self.ft_program_id,
             exec::program_id(),
-            account.buyer,
-            account.amount,
+            wallet.buyer,
+            wallet.amount,
         )
         .await
-        .expect("Error when refunding from an account");
+        .expect("Error when refunding from the wallet");
 
-        account.state = AccountState::AwaitingDeposit;
+        wallet.state = WalletState::AwaitingDeposit;
 
         msg::reply(
             EscrowEvent::Refunded {
-                amount: account.amount,
-                buyer: account.buyer,
+                amount: wallet.amount,
+                buyer: wallet.buyer,
             },
             0,
         )
         .unwrap();
     }
 
-    /// Cancels (early closes) an escrow account by changing its state to `Closed`.
+    /// Cancels a deal and closes an escrow wallet by changing its state to `Closed`.
     ///
     /// Requirements:
-    /// * `msg::source()` must be a buyer or seller saved in the account.
-    /// * Account must not be paid or closed.
+    /// * `msg::source()` must be a buyer or seller for this wallet.
+    /// * Wallet must not be paid or closed.
     ///
     /// Arguments:
-    /// * `account_id`: an account ID.
-    async fn cancel(&mut self, account_id: AccountId) {
-        let account = get(&mut self.accounts, account_id);
+    /// * `wallet_id`: a wallet ID.
+    async fn cancel(&mut self, wallet_id: WalletId) {
+        let wallet = get(&mut self.wallets, wallet_id);
 
-        if msg::source() != account.buyer && msg::source() != account.seller {
-            panic!("msg::source() must be a buyer or seller saved in the account to cancel it");
+        if msg::source() != wallet.buyer && msg::source() != wallet.seller {
+            panic!("msg::source() must be a buyer or seller for this wallet to cancel the deal");
         }
 
-        if account.state != AccountState::AwaitingDeposit {
-            panic!("Paid or closed account can't be canceled");
+        if wallet.state != WalletState::AwaitingDeposit {
+            panic!("Deal can't be canceled with the paid or closed wallet");
         }
 
-        account.state = AccountState::Closed;
+        wallet.state = WalletState::Closed;
 
         msg::reply(
             EscrowEvent::Cancelled {
-                buyer: account.buyer,
-                seller: account.seller,
-                amount: account.amount,
+                buyer: wallet.buyer,
+                seller: wallet.seller,
+                amount: wallet.amount,
             },
             0,
         )
@@ -246,10 +246,10 @@ pub async fn main() {
             seller,
             amount,
         } => escrow.create(buyer, seller, amount),
-        EscrowAction::Deposit(account_id) => escrow.deposit(account_id).await,
-        EscrowAction::Confirm(account_id) => escrow.confirm(account_id).await,
-        EscrowAction::Refund(account_id) => escrow.refund(account_id).await,
-        EscrowAction::Cancel(account_id) => escrow.cancel(account_id).await,
+        EscrowAction::Deposit(wallet_id) => escrow.deposit(wallet_id).await,
+        EscrowAction::Confirm(wallet_id) => escrow.confirm(wallet_id).await,
+        EscrowAction::Refund(wallet_id) => escrow.refund(wallet_id).await,
+        EscrowAction::Cancel(wallet_id) => escrow.cancel(wallet_id).await,
     }
 }
 
@@ -258,8 +258,8 @@ pub extern "C" fn meta_state() -> *mut [i32; 2] {
     let state: EscrowState = msg::load().expect("Unable to decode EscrowState");
     let escrow = unsafe { ESCROW.get_or_insert(Default::default()) };
     let encoded = match state {
-        EscrowState::GetInfo(account_id) => {
-            EscrowStateReply::Info(*get(&mut escrow.accounts, account_id)).encode()
+        EscrowState::GetInfo(wallet_id) => {
+            EscrowStateReply::Info(*get(&mut escrow.wallets, wallet_id)).encode()
         }
     };
     gstd::util::to_leak_ptr(encoded)

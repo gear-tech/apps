@@ -11,7 +11,7 @@ pub const FOREIGN_USER: u64 = 1337;
 pub const BUYER: [u64; 2] = [12, 34];
 pub const SELLER: [u64; 2] = [56, 78];
 pub const AMOUNT: [u128; 2] = [12345, 54321];
-pub const ACCOUNT: [u128; 2] = [0, 1];
+pub const WALLET: [u128; 2] = [0, 1];
 
 pub fn init_system() -> System {
     let system = System::new();

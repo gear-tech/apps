@@ -10,14 +10,14 @@ fn not_enougn_tokens() {
 
     check::create(
         &escrow_program,
-        ACCOUNT[0],
+        WALLET[0],
         SELLER[0],
         BUYER[0],
         SELLER[0],
         AMOUNT[0],
     );
     // Should fail because the buyer doesn't have enough tokens to deposit.
-    fail::deposit(&escrow_program, ACCOUNT[0], BUYER[0]);
+    fail::deposit(&escrow_program, WALLET[0], BUYER[0]);
 }
 
 #[test]
@@ -30,15 +30,15 @@ fn double_deposit() {
     mint(&ft_program, BUYER[0], AMOUNT[0] * 2);
     check::create(
         &escrow_program,
-        ACCOUNT[0],
+        WALLET[0],
         SELLER[0],
         BUYER[0],
         SELLER[0],
         AMOUNT[0],
     );
-    check::deposit(&escrow_program, ACCOUNT[0], BUYER[0], AMOUNT[0]);
-    // Should fail because the buyer tries to make the deposit twice.
-    fail::deposit(&escrow_program, ACCOUNT[0], BUYER[0]);
+    check::deposit(&escrow_program, WALLET[0], BUYER[0], AMOUNT[0]);
+    // Should fail because the buyer tries to deposit twice.
+    fail::deposit(&escrow_program, WALLET[0], BUYER[0]);
     check_balance(&ft_program, BUYER[0], AMOUNT[0]);
 }
 
@@ -49,14 +49,14 @@ fn not_buyer_deposit() {
 
     check::create(
         &escrow_program,
-        ACCOUNT[0],
+        WALLET[0],
         SELLER[0],
         BUYER[0],
         SELLER[0],
         AMOUNT[0],
     );
-    // Should fail because not a buyer saved in the account tries to make the deposit.
-    fail::deposit(&escrow_program, ACCOUNT[0], FOREIGN_USER);
-    fail::deposit(&escrow_program, ACCOUNT[0], BUYER[1]);
-    fail::deposit(&escrow_program, ACCOUNT[0], SELLER[0]);
+    // Should fail because not a buyer for this wallet tries to deposit.
+    fail::deposit(&escrow_program, WALLET[0], FOREIGN_USER);
+    fail::deposit(&escrow_program, WALLET[0], BUYER[1]);
+    fail::deposit(&escrow_program, WALLET[0], SELLER[0]);
 }

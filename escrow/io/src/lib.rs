@@ -3,8 +3,8 @@
 use gstd::{prelude::*, ActorId};
 use primitive_types::U256;
 
-/// Escrow account ID.
-pub type AccountId = U256;
+/// Escrow wallet ID.
+pub type WalletId = U256;
 
 #[derive(Decode, Encode, TypeInfo)]
 pub struct InitEscrow {
@@ -19,10 +19,10 @@ pub enum EscrowAction {
         seller: ActorId,
         amount: u128,
     },
-    Deposit(AccountId),
-    Confirm(AccountId),
-    Refund(AccountId),
-    Cancel(AccountId),
+    Deposit(WalletId),
+    Confirm(WalletId),
+    Refund(WalletId),
+    Cancel(WalletId),
 }
 
 #[derive(Decode, Encode, TypeInfo)]
@@ -44,29 +44,29 @@ pub enum EscrowEvent {
         buyer: ActorId,
         amount: u128,
     },
-    Created(AccountId),
+    Created(WalletId),
 }
 
 #[derive(Decode, Encode, TypeInfo)]
 pub enum EscrowState {
-    GetInfo(AccountId),
+    GetInfo(WalletId),
 }
 
 #[derive(Decode, Encode, TypeInfo)]
 pub enum EscrowStateReply {
-    Info(Account),
+    Info(Wallet),
 }
 
 #[derive(Decode, Encode, TypeInfo, Clone, Copy)]
-pub struct Account {
+pub struct Wallet {
     pub buyer: ActorId,
     pub seller: ActorId,
-    pub state: AccountState,
+    pub state: WalletState,
     pub amount: u128,
 }
 
 #[derive(Decode, Encode, TypeInfo, PartialEq, Clone, Copy)]
-pub enum AccountState {
+pub enum WalletState {
     AwaitingDeposit,
     AwaitingConfirmation,
     Closed,

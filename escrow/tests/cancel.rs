@@ -10,16 +10,16 @@ fn cancel_paid() {
     mint(&ft_program, BUYER[0], AMOUNT[0]);
     check::create(
         &escrow_program,
-        ACCOUNT[0],
+        WALLET[0],
         SELLER[0],
         BUYER[0],
         SELLER[0],
         AMOUNT[0],
     );
-    check::deposit(&escrow_program, ACCOUNT[0], BUYER[0], AMOUNT[0]);
-    // Should fail because the buyer/seller tries to close the paid account.
-    fail::cancel(&escrow_program, ACCOUNT[0], BUYER[0]);
-    fail::cancel(&escrow_program, ACCOUNT[0], SELLER[0]);
+    check::deposit(&escrow_program, WALLET[0], BUYER[0], AMOUNT[0]);
+    // Should fail because the buyer/seller tries to cancel the deal with the paid wallet.
+    fail::cancel(&escrow_program, WALLET[0], BUYER[0]);
+    fail::cancel(&escrow_program, WALLET[0], SELLER[0]);
 }
 
 #[test]
@@ -31,14 +31,14 @@ fn foreign_user_cancel() {
     mint(&ft_program, BUYER[0], AMOUNT[0]);
     check::create(
         &escrow_program,
-        ACCOUNT[0],
+        WALLET[0],
         SELLER[0],
         BUYER[0],
         SELLER[0],
         AMOUNT[0],
     );
-    // Should fail because not the buyer/seller saved in the account tries to close it.
-    fail::cancel(&escrow_program, ACCOUNT[0], FOREIGN_USER);
+    // Should fail because not the buyer/seller for this wallet tries to cancel the deal and close the wallet.
+    fail::cancel(&escrow_program, WALLET[0], FOREIGN_USER);
 }
 
 #[test]
@@ -50,7 +50,7 @@ fn interact_after_cancel() {
     mint(&ft_program, BUYER[0], AMOUNT[0]);
     check::create(
         &escrow_program,
-        ACCOUNT[0],
+        WALLET[0],
         SELLER[0],
         BUYER[0],
         SELLER[0],
@@ -58,16 +58,16 @@ fn interact_after_cancel() {
     );
     check::cancel(
         &escrow_program,
-        ACCOUNT[0],
+        WALLET[0],
         BUYER[0],
         BUYER[0],
         SELLER[0],
         AMOUNT[0],
     );
 
-    // All of this should fail because nobody can interact with a closed account.
-    fail::deposit(&escrow_program, ACCOUNT[0], BUYER[0]);
-    fail::refund(&escrow_program, ACCOUNT[0], SELLER[0]);
-    fail::confirm(&escrow_program, ACCOUNT[0], BUYER[0]);
-    fail::cancel(&escrow_program, ACCOUNT[0], SELLER[0]);
+    // All of this should fail because nobody can interact with a closed wallet.
+    fail::deposit(&escrow_program, WALLET[0], BUYER[0]);
+    fail::refund(&escrow_program, WALLET[0], SELLER[0]);
+    fail::confirm(&escrow_program, WALLET[0], BUYER[0]);
+    fail::cancel(&escrow_program, WALLET[0], SELLER[0]);
 }
