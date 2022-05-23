@@ -2,6 +2,7 @@
 resolver = "2"
 
 members = [
+    "concert",
     "dao",
     "dao-light",
     "dutch-auction",
