@@ -31,7 +31,6 @@ macro_rules! declare_derive_storage_trait {
                         field_ident = field.ident.clone();
                         field_ty = field.ty.clone();
                     } else {
-                        // let err_message = format!("Struct doesn't specify {} for trait {}", FIELD_SETTER, TRAIT_NAME);
                         return quote::quote! {
                             panic!();
                         }

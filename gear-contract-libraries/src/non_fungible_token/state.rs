@@ -95,12 +95,11 @@ pub trait NFTMetaState: NFTStateKeeper {
             .unwrap_or(0)
     }
     fn all_tokens(&self) -> Vec<Token> {
-        let mut tokens: Vec<Token> = Vec::new();
-        let token_ids: Vec<TokenId> = self.get().owner_by_id.keys().cloned().collect();
-        for token_id in token_ids {
-            tokens.push(self.token(token_id));
-        }
-        tokens
+        self.get()
+            .owner_by_id
+            .keys()
+            .map(|id| self.token(*id))
+            .collect()
     }
 
     fn proc_state(&self, query: NFTQuery) -> Option<Vec<u8>> {

@@ -44,7 +44,7 @@ pub trait NFTCore: NFTStateKeeper {
     fn burn(&mut self, token_id: TokenId) {
         self.assert_owner(token_id);
         let owner = *self
-            .get_mut()
+            .get()
             .owner_by_id
             .get(&token_id)
             .expect("NonFungibleToken: token does not exist");
@@ -176,18 +176,11 @@ pub trait NFTCore: NFTStateKeeper {
     /// Returns a `Payout` struct for a given token
     /// If NFT contract has no royalties it just returns BtreeMap {“owner”: "amount"}
     fn nft_payout(&self, owner: &ActorId, amount: u128) -> Payout {
-        let payouts: Payout = if self.get().royalties.is_some() {
-            self.get()
-                .royalties
-                .as_ref()
-                .unwrap()
-                .payouts(owner, amount)
+        if let Some(ref royalties) = self.get().royalties {
+            royalties.payouts(owner, amount)
         } else {
-            let mut single_payout = BTreeMap::new();
-            single_payout.insert(*owner, amount);
-            single_payout
-        };
-        payouts
+            [(*owner, amount)].into()
+        }
     }
 
     /// Checks that NFT with indicated ID already exists

@@ -66,10 +66,10 @@ impl MyNFTCore for NFT {
 gstd::metadata! {
     title: "NFT",
     init:
-        input : InitNFT,
+        input: InitNFT,
     handle:
-        input : NFTAction,
-        output : Vec<u8>,
+        input: NFTAction,
+        output: Vec<u8>,
     state:
         input: NFTQuery,
         output: NFTQueryReply,
