@@ -5,6 +5,7 @@ members = [
     "concert",
     "dao",
     "dao-light",
+    "dutch-auction",
     "erc1155",
     "escrow",
     "fungible-token",
