@@ -73,7 +73,7 @@ impl Concert {
             ConcertEvent::Creation {
                 creator,
                 concert_id,
-                number_of_tickets: number_of_tickets,
+                number_of_tickets,
                 date,
             },
             0,
