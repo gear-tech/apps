@@ -10,13 +10,6 @@ use gstd::{
 };
 use primitive_types::U256;
 
-#[derive(PartialEq, Eq)]
-enum State {
-    AwaitingDeposit,
-    AwaitingConfirmation,
-    Completed,
-}
-
 fn transfer_tokens(
     ft_program_id: ActorId,
     from: ActorId,
