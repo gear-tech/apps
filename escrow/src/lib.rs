@@ -8,9 +8,7 @@ use gstd::{
     prelude::*,
     ActorId,
 };
-<<<<<<< HEAD
 use primitive_types::U256;
-=======
 
 #[derive(PartialEq, Eq)]
 enum State {
@@ -18,7 +16,6 @@ enum State {
     AwaitingConfirmation,
     Completed,
 }
->>>>>>> master
 
 fn transfer_tokens(
     ft_program_id: ActorId,
