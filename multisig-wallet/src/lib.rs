@@ -33,7 +33,7 @@ pub struct MultisigWallet {
 static mut WALLET: Option<MultisigWallet> = None;
 
 fn validate_requirement(owners_count: usize, required: u64) {
-    if owners_count > MAX_OWNERS_COUNT.try_into().unwrap() {
+    if (owners_count as u64) > MAX_OWNERS_COUNT {
         panic!("Too much owners");
     }
 
@@ -59,14 +59,14 @@ impl MultisigWallet {
         }
     }
 
-    fn validate_owner_doesnt_exists(&self, owner: &ActorId) {
-        if self.is_owner.get(owner).copied().unwrap_or(false) {
+    fn validate_owner_doesnt_exist(&self, owner: &ActorId) {
+        if self.has_owner(owner) {
             panic!("Owner already exists")
         }
     }
 
     fn validate_owner_exists(&self, owner: &ActorId) {
-        if !self.is_owner.get(owner).copied().unwrap_or(false) {
+        if !self.has_owner(owner) {
             panic!("Owner doesn't exists")
         }
     }
@@ -112,11 +112,15 @@ impl MultisigWallet {
         }
     }
 
+    fn has_owner(&self, owner: &ActorId) -> bool {
+        self.is_owner.get(owner) == Some(&true)
+    }
+
     /// Allows to add a new owner. Transaction has to be sent by wallet.
-    /// owner - Address of new owner.
+    /// `owner` - Address of new owner.
     fn add_owner(&mut self, owner: &ActorId) {
         self.validate_only_wallet();
-        self.validate_owner_doesnt_exists(owner);
+        self.validate_owner_doesnt_exist(owner);
         validate_requirement(self.owners.len() + 1, self.required);
 
         *self.is_owner.entry(*owner).or_insert(true) = true;
@@ -126,7 +130,7 @@ impl MultisigWallet {
     }
 
     /// Allows to remove an owner. Transaction has to be sent by wallet.
-    /// owner Address of owner.
+    /// `owner` Address of owner.
     fn remove_owner(&mut self, owner: &ActorId) {
         self.validate_only_wallet();
         self.validate_owner_exists(owner);
@@ -147,12 +151,12 @@ impl MultisigWallet {
     }
 
     /// Allows to replace an owner with a new owner. Transaction has to be sent by wallet.
-    /// owner Address of owner to be replaced.
-    /// newOwner Address of new owner.
+    /// `owner` Address of owner to be replaced.
+    /// `newOwner` Address of new owner.
     fn replace_owner(&mut self, old_owner: &ActorId, new_owner: &ActorId) {
         self.validate_only_wallet();
         self.validate_owner_exists(old_owner);
-        self.validate_owner_doesnt_exists(new_owner);
+        self.validate_owner_doesnt_exist(new_owner);
 
         let old_owner_index = self
             .owners
@@ -175,7 +179,7 @@ impl MultisigWallet {
     }
 
     /// Allows to change the number of required confirmations. Transaction has to be sent by wallet.
-    /// required Number of required confirmations.
+    /// `required` Number of required confirmations.
     fn change_requirement(&mut self, required: u64) {
         self.validate_only_wallet();
         validate_requirement(self.owners.len(), required);
@@ -186,9 +190,9 @@ impl MultisigWallet {
     }
 
     ///  Allows an owner to submit and confirm a transaction.
-    ///  destination Transaction target address.
-    ///  value Transaction ether value.
-    ///  data Transaction data payload.
+    ///  `destination` Transaction target address.
+    ///  `value` Transaction ether value.
+    ///  `data` Transaction data payload.
     ///  Returns transaction ID.
     fn submit_transaction(&mut self, destination: &ActorId, data: Vec<u8>, value: u128) -> U256 {
         let transaction_id = self.add_transaction(destination, data, value);
@@ -200,7 +204,7 @@ impl MultisigWallet {
     }
 
     /// Allows an owner to confirm a transaction.
-    /// transactionId Transaction ID.
+    /// `transaction_id` Transaction ID.
     fn confirm_transaction(&mut self, transaction_id: &U256) {
         self.validate_owner_exists(&msg::source());
         self.validate_transaction_exists(transaction_id);
@@ -232,7 +236,7 @@ impl MultisigWallet {
     }
 
     /// Allows an owner to revoke a confirmation for a transaction.
-    /// transactionId Transaction ID.
+    /// `transaction_id` Transaction ID.
     fn revoke_confirmation(&mut self, transaction_id: &U256) {
         self.validate_owner_exists(&msg::source());
         self.validate_confirmed(transaction_id, &msg::source());
@@ -258,7 +262,7 @@ impl MultisigWallet {
     }
 
     /// Allows anyone to execute a confirmed transaction.
-    /// transactionId Transaction ID.
+    /// `transaction_id` Transaction ID.
     fn execute_transaction<F>(&mut self, transaction_id: &U256, completion: Option<F>)
     where
         F: Fn(),
@@ -301,7 +305,7 @@ impl MultisigWallet {
      */
 
     /// Returns the confirmation status of a transaction.
-    /// transactionId Transaction ID.
+    /// `transaction_id` Transaction ID.
     fn is_confirmed(&self, transaction_id: &U256) -> bool {
         let count = self.get_confirmation_count(transaction_id);
 
@@ -309,9 +313,9 @@ impl MultisigWallet {
     }
 
     /// Adds a new transaction to the transaction mapping, if transaction does not exist yet.
-    /// destination Transaction target address.
-    /// value Transaction ether value.
-    /// data Transaction data payload.
+    /// `destination` Transaction target address.
+    /// `value` Transaction ether value.
+    /// `data` Transaction data payload.
     /// Returns transaction ID.
     fn add_transaction(&mut self, destination: &ActorId, data: Vec<u8>, value: u128) -> U256 {
         validate_not_null_address(destination);
@@ -334,7 +338,7 @@ impl MultisigWallet {
      */
 
     /// Returns number of confirmations of a transaction.
-    /// transactionId Transaction ID.
+    /// `transaction_id` Transaction ID.
     /// Number of confirmations.
     fn get_confirmation_count(&self, transaction_id: &U256) -> u64 {
         self.owners
@@ -347,14 +351,12 @@ impl MultisigWallet {
                     .unwrap_or(false)
             })
             .filter(|confirm| *confirm)
-            .count()
-            .try_into()
-            .unwrap()
+            .count() as _
     }
 
     /// Returns total number of transactions after filers are applied.
-    /// pending Include pending transactions.
-    /// executed Include executed transactions.
+    /// `pending` Include pending transactions.
+    /// `executed` Include executed transactions.
     /// Total number of transactions after filters are applied.
     fn get_transaction_count(&self, pending: bool, executed: bool) -> u64 {
         self.transactions
@@ -362,9 +364,7 @@ impl MultisigWallet {
             .filter(|transaction| {
                 (pending && !transaction.executed) || (executed && transaction.executed)
             })
-            .count()
-            .try_into()
-            .unwrap()
+            .count() as _
     }
 
     /// Returns list of owners.
@@ -374,7 +374,7 @@ impl MultisigWallet {
     }
 
     /// Returns array with owner addresses, which confirmed transaction.
-    /// transactionId Transaction ID.
+    /// `transaction_id` Transaction ID.
     /// Returns array of owner addresses.
     fn get_confirmations(&self, transaction_id: &U256) -> Vec<ActorId> {
         self.confirmations
@@ -387,11 +387,11 @@ impl MultisigWallet {
     }
 
     /// Returns list of transaction IDs in defined range.
-    /// from Index start position of transaction array.
-    /// to Index end position of transaction array(not included).
-    /// pending Include pending transactions.
-    /// executed Include executed transactions.
-    /// Returns array of transaction IDs.
+    /// `from` Index start position of transaction array.
+    /// `to` Index end position of transaction array(not included).
+    /// `pending` Include pending transactions.
+    /// `executed` Include executed transactions.
+    /// `Returns` array of transaction IDs.
     fn get_transaction_ids(&self, from: u64, to: u64, pending: bool, executed: bool) -> Vec<U256> {
         self.transactions
             .iter()
@@ -406,10 +406,10 @@ impl MultisigWallet {
 gstd::metadata! {
     title: "MultisigWallet",
     init:
-        input : MWInitConfig,
+        input: MWInitConfig,
     handle:
-        input : MWAction,
-        output : MWEvent,
+        input: MWAction,
+        output: MWEvent,
     state:
         input: State,
         output: StateReply,
@@ -417,7 +417,7 @@ gstd::metadata! {
 
 #[no_mangle]
 pub unsafe extern "C" fn init() {
-    let config: MWInitConfig = msg::load().expect("Unable to decode InitDao");
+    let config: MWInitConfig = msg::load().expect("Unable to decode MWInitConfig");
 
     let owners_count = config.owners.len();
 
@@ -441,13 +441,7 @@ pub unsafe extern "C" fn init() {
 
 #[gstd::async_main]
 async unsafe fn main() {
-    let action = match msg::load::<MWAction>() {
-        Ok(action) => action,
-        Err(_) => {
-            let bytes: Vec<u8> = msg::load_bytes();
-            MWAction::decode(&mut bytes.as_slice()).expect("Could not load Action")
-        }
-    };
+    let action: MWAction = msg::load().expect("Could not load MWAction");
 
     let wallet: &mut MultisigWallet = unsafe { WALLET.get_or_insert(MultisigWallet::default()) };
     match action {
