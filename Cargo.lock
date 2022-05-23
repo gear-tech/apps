@@ -59,6 +59,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "auction-io"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -465,6 +475,21 @@ dependencies = [
  "page_size",
  "static_assertions",
  "str-buf",
+]
+
+[[package]]
+name = "dutch-auction"
+version = "0.1.0"
+dependencies = [
+ "auction-io",
+ "gear-wasm-builder",
+ "gstd",
+ "gtest",
+ "nft-example-io",
+ "non-fungible-token",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
 ]
 
 [[package]]

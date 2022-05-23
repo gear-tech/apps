@@ -9,7 +9,7 @@ use gstd::{
     ActorId,
 };
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 enum State {
     AwaitingDeposit,
     AwaitingConfirmation,
