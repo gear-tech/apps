@@ -1,9 +1,8 @@
-[workspace]
-resolver = "2"
-
 members = [
     "dao",
     "dao-light",
+    "dutch-auction",
+    "erc1155",
     "fungible-token",
     "gear-feeds-router",
     "lottery",
