@@ -1,10 +1,10 @@
 #![no_std]
-use derive_traits::{MTKCore, MTKTokenAssert, MTKTokenState, StateKeeper};
+use derive_traits::{MTKCore, MTKTokenState, StateKeeper};
 use gear_contract_libraries::multitoken::{io::*, mtk_core::*, state::*};
 use gstd::{msg, prelude::*, ActorId};
 use multitoken_io::*;
 
-#[derive(Debug, Default, MTKTokenState, MTKTokenAssert, MTKCore, StateKeeper)]
+#[derive(Debug, Default, MTKTokenState, MTKCore, StateKeeper)]
 pub struct SimpleMTK {
     #[MTKStateKeeper]
     pub tokens: MTKState,

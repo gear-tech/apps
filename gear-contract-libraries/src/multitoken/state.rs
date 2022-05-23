@@ -123,10 +123,7 @@ pub trait MTKTokenState: StateKeeper {
     }
 
     fn owner_of(&self, id: TokenId) -> ActorId {
-        *self.get()
-            .owners
-            .get(&id)
-            .expect("No owner for a token")
+        *self.get().owners.get(&id).expect("No owner for a token")
     }
 
     fn proc_state(&mut self, query: MTKQuery) -> Option<Vec<u8>> {

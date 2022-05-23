@@ -3,7 +3,7 @@ use gstd::{exec, msg, prelude::*, ActorId};
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
-pub trait MTKTokenAssert: StateKeeper + MTKTokenState {
+pub trait MTKCore: StateKeeper + MTKTokenState {
     fn assert_can_burn(&mut self, owner: &ActorId, id: &TokenId, amount: u128) {
         if self.get_balance(owner, id) < amount {
             panic!("MTK: Not enough balance");
@@ -26,9 +26,7 @@ pub trait MTKTokenAssert: StateKeeper + MTKTokenState {
             panic!("MTK: Caller is not approved");
         }
     }
-}
 
-pub trait MTKCore: StateKeeper + MTKTokenAssert + MTKTokenState {
     // The internal implementation of mint action with all the checks and panics
     fn mint_impl(
         &mut self,
