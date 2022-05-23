@@ -1,10 +1,10 @@
 #![no_std]
-use derive_traits::{BalanceTrait, MTKCore, MTKTokenAssert, MTKTokenState, StateKeeper};
+use derive_traits::{MTKCore, MTKTokenAssert, MTKTokenState, StateKeeper};
 use gear_contract_libraries::multitoken::{io::*, mtk_core::*, state::*};
 use gstd::{msg, prelude::*, ActorId};
 use multitoken_io::*;
 
-#[derive(Debug, Default, BalanceTrait, MTKTokenState, MTKTokenAssert, MTKCore, StateKeeper)]
+#[derive(Debug, Default, MTKTokenState, MTKTokenAssert, MTKCore, StateKeeper)]
 pub struct SimpleMTK {
     #[MTKStateKeeper]
     pub tokens: MTKState,
@@ -54,28 +54,30 @@ pub unsafe extern "C" fn handle() {
             token_metadata,
         } => SimpleMTKCore::mint(multi_token, amount, token_metadata),
         MyMTKAction::Burn { id, amount } => SimpleMTKCore::burn(multi_token, id, amount),
-        MyMTKAction::BalanceOf { account, id } => MTKCore::balance_of(multi_token, &account, &id),
+        MyMTKAction::BalanceOf { account, id } => {
+            MTKCore::balance_of(multi_token, vec![account], vec![id])
+        }
         MyMTKAction::BalanceOfBatch { accounts, ids } => {
-            MTKCore::balance_of_batch(multi_token, &accounts, &ids)
+            MTKCore::balance_of(multi_token, accounts, ids)
         }
         MyMTKAction::MintBatch {
             ids,
             amounts,
             tokens_metadata,
-        } => MTKCore::mint_batch(multi_token, &msg::source(), &ids, &amounts, tokens_metadata),
+        } => MTKCore::mint(multi_token, &msg::source(), ids, amounts, tokens_metadata),
         MyMTKAction::TransferFrom {
             from,
             to,
             id,
             amount,
-        } => MTKCore::transfer_from(multi_token, &from, &to, &id, amount),
+        } => MTKCore::transfer_from(multi_token, &from, &to, vec![id], vec![amount]),
         MyMTKAction::BatchTransferFrom {
             from,
             to,
             ids,
             amounts,
-        } => MTKCore::batch_transfer_from(multi_token, &from, &to, &ids, &amounts),
-        MyMTKAction::BurnBatch { ids, amounts } => MTKCore::burn_batch(multi_token, &ids, &amounts),
+        } => MTKCore::transfer_from(multi_token, &from, &to, ids, amounts),
+        MyMTKAction::BurnBatch { ids, amounts } => MTKCore::burn(multi_token, ids, amounts),
         MyMTKAction::Approve { account } => MTKCore::approve(multi_token, &account),
         MyMTKAction::RevokeApproval { account } => MTKCore::revoke_approval(multi_token, &account),
     }
@@ -94,16 +96,16 @@ impl SimpleMTKCore for SimpleMTK {
         MTKCore::mint(
             self,
             &msg::source(),
-            &(self.token_id.clone()),
-            amount,
-            token_metadata,
+            vec![(self.token_id)],
+            vec![amount],
+            vec![token_metadata],
         );
         self.supply.insert(self.token_id, amount);
         self.token_id = self.token_id.saturating_add(1);
     }
 
     fn burn(&mut self, id: TokenId, amount: u128) {
-        MTKCore::burn(self, &id, amount);
+        MTKCore::burn(self, vec![id], vec![amount]);
         let sup = self.supply(id);
         let mut _balance = self
             .supply

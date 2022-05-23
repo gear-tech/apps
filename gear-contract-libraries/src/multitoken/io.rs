@@ -25,17 +25,8 @@ pub struct InitConfig {
     pub base_uri: String,
 }
 
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub struct TransferSingleReply {
-    pub operator: ActorId,
-    pub from: ActorId,
-    pub to: ActorId,
-    pub id: TokenId,
-    pub amount: u128,
-}
-
 #[derive(Debug, Encode, Decode, TypeInfo)]
-pub struct BalanceOfBatchReply {
+pub struct BalanceReply {
     pub account: ActorId,
     pub id: TokenId,
     pub amount: u128,
@@ -43,18 +34,19 @@ pub struct BalanceOfBatchReply {
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
 pub enum MTKEvent {
-    TransferSingle(TransferSingleReply),
-    Balance(u128),
-    BalanceOfBatch(Vec<BalanceOfBatchReply>),
-    MintOfBatch(Vec<BalanceOfBatchReply>),
-    TransferBatch {
+    Transfer {
         operator: ActorId,
         from: ActorId,
         to: ActorId,
         ids: Vec<TokenId>,
-        values: Vec<u128>,
+        amounts: Vec<u128>,
     },
-    Approve {
+    BalanceOf(Vec<BalanceReply>),
+    Approval {
+        from: ActorId,
+        to: ActorId,
+    },
+    RevokeApproval {
         from: ActorId,
         to: ActorId,
     },

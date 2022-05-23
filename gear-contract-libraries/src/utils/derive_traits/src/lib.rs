@@ -6,7 +6,6 @@ extern crate proc_macro;
 use macros::*;
 
 declare_derive_storage_trait!(derive_mtk_state, StateKeeper, MTKStateKeeper);
-declare_impl_trait!(derive_mtk_balance, BalanceTrait);
 declare_impl_trait!(derive_mtk_token_state, MTKTokenState);
 declare_impl_trait!(derive_mtk_assert, MTKTokenAssert);
 declare_impl_trait!(derive_mtk_core, MTKCore);

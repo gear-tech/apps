@@ -51,13 +51,13 @@ fn init_with_mint(sys: &System) {
 
     assert!(res.contains(&(
         USERS[0],
-        MTKEvent::TransferSingle(TransferSingleReply {
+        MTKEvent::Transfer {
             operator: USERS[0].into(),
             from: ZERO_ID,
             to: USERS[0].into(),
-            id: TOKEN_ID,
-            amount: TOKEN_AMOUNT,
-        })
+            ids: vec![TOKEN_ID],
+            amounts: vec![TOKEN_AMOUNT],
+        }
         .encode()
     )));
 }
@@ -114,12 +114,12 @@ fn mint_batch() {
         },
     );
 
-    let codec = MTKEvent::TransferBatch {
+    let codec = MTKEvent::Transfer {
         operator: USERS[0].into(),
         from: ZERO_ID,
         to: USERS[0].into(),
         ids: vec![1u128, 2u128],
-        values: vec![TOKEN_AMOUNT, TOKEN_AMOUNT],
+        amounts: vec![TOKEN_AMOUNT, TOKEN_AMOUNT],
     }
     .encode();
 
@@ -141,13 +141,13 @@ fn burn() {
 
     assert!(res.contains(&(
         USERS[0],
-        MTKEvent::TransferSingle(TransferSingleReply {
+        MTKEvent::Transfer {
             operator: USERS[0].into(),
             from: ZERO_ID,
             to: USERS[0].into(),
-            id: TOKEN_ID,
-            amount: TOKEN_AMOUNT,
-        })
+            ids: vec![TOKEN_ID],
+            amounts: vec![TOKEN_AMOUNT],
+        }
         .encode()
     )));
 
@@ -161,13 +161,13 @@ fn burn() {
 
     assert!(res.contains(&(
         USERS[0],
-        MTKEvent::TransferSingle(TransferSingleReply {
+        MTKEvent::Transfer {
             operator: USERS[0].into(),
             from: USERS[0].into(),
             to: ZERO_ID,
-            id: TOKEN_ID,
-            amount: TOKEN_AMOUNT,
-        })
+            ids: vec![TOKEN_ID],
+            amounts: vec![TOKEN_AMOUNT],
+        }
         .encode()
     )));
 }
@@ -187,13 +187,13 @@ fn burn_failures() {
 
     assert!(res.contains(&(
         USERS[0],
-        MTKEvent::TransferSingle(TransferSingleReply {
+        MTKEvent::Transfer {
             operator: USERS[0].into(),
             from: ZERO_ID,
             to: USERS[0].into(),
-            id: TOKEN_ID,
-            amount: TOKEN_AMOUNT,
-        })
+            ids: vec![TOKEN_ID],
+            amounts: vec![TOKEN_AMOUNT],
+        }
         .encode()
     )));
 
@@ -223,12 +223,12 @@ fn burn_batch() {
         },
     );
 
-    let codec = MTKEvent::TransferBatch {
+    let codec = MTKEvent::Transfer {
         operator: USERS[0].into(),
         from: ZERO_ID,
         to: USERS[0].into(),
         ids: vec![1u128, 2u128],
-        values: vec![TOKEN_AMOUNT, TOKEN_AMOUNT],
+        amounts: vec![TOKEN_AMOUNT, TOKEN_AMOUNT],
     }
     .encode();
 
@@ -242,12 +242,12 @@ fn burn_batch() {
         },
     );
 
-    let codec = MTKEvent::TransferBatch {
+    let codec = MTKEvent::Transfer {
         operator: USERS[0].into(),
         from: USERS[0].into(),
         to: ZERO_ID,
         ids: vec![1u128, 2u128],
-        values: vec![TOKENS_TO_BURN, TOKENS_TO_BURN],
+        amounts: vec![TOKENS_TO_BURN, TOKENS_TO_BURN],
     }
     .encode();
     assert!(res.contains(&(USERS[0], codec)));
@@ -267,13 +267,13 @@ fn balance() {
 
     assert!(res.contains(&(
         USERS[0],
-        MTKEvent::TransferSingle(TransferSingleReply {
+        MTKEvent::Transfer {
             operator: USERS[0].into(),
             from: ZERO_ID,
             to: USERS[0].into(),
-            id: TOKEN_ID,
-            amount: TOKEN_AMOUNT,
-        })
+            ids: vec![TOKEN_ID],
+            amounts: vec![TOKEN_AMOUNT],
+        }
         .encode()
     )));
 
@@ -285,7 +285,15 @@ fn balance() {
         },
     );
 
-    assert!(res.contains(&(USERS[0], MTKEvent::Balance(TOKEN_AMOUNT).encode())));
+    assert!(res.contains(&(
+        USERS[0],
+        MTKEvent::BalanceOf(vec![BalanceReply {
+            account: USERS[0].into(),
+            id: TOKEN_ID,
+            amount: TOKEN_AMOUNT,
+        }])
+        .encode()
+    )));
 }
 
 #[test]
@@ -302,12 +310,12 @@ fn balance_of_batch() {
         },
     );
 
-    let codec = MTKEvent::TransferBatch {
+    let codec = MTKEvent::Transfer {
         operator: USERS[0].into(),
         from: ZERO_ID,
         to: USERS[0].into(),
         ids: vec![1u128, 2u128],
-        values: vec![TOKEN_AMOUNT, TOKEN_AMOUNT],
+        amounts: vec![TOKEN_AMOUNT, TOKEN_AMOUNT],
     }
     .encode();
 
@@ -323,13 +331,13 @@ fn balance_of_batch() {
         },
     );
 
-    let reply1 = BalanceOfBatchReply {
+    let reply1 = BalanceReply {
         account: USERS[0].into(),
         id: 1,
         amount: TOKEN_AMOUNT,
     };
 
-    let reply2 = BalanceOfBatchReply {
+    let reply2 = BalanceReply {
         account: USERS[0].into(),
         id: 2,
         amount: TOKEN_AMOUNT,
@@ -337,7 +345,7 @@ fn balance_of_batch() {
 
     let replies = vec![reply1, reply2];
 
-    let codec = MTKEvent::BalanceOfBatch(replies).encode();
+    let codec = MTKEvent::BalanceOf(replies).encode();
 
     assert!(res.contains(&(USERS[0], codec)));
 }
@@ -347,13 +355,25 @@ fn transfer_from() {
     let sys = System::new();
     let mtk = init(&sys);
 
-    mtk.send(
+    let res = mtk.send(
         USERS[1],
         MyMTKAction::Mint {
             amount: TOKEN_AMOUNT,
             token_metadata: None,
         },
     );
+
+    assert!(res.contains(&(
+        USERS[1],
+        MTKEvent::Transfer {
+            operator: USERS[1].into(),
+            from: ZERO_ID,
+            to: USERS[1].into(),
+            ids: vec![TOKEN_ID],
+            amounts: vec![TOKEN_AMOUNT],
+        }
+        .encode()
+    )));
 
     let from = USERS[1];
     let to = USERS[2];
@@ -368,15 +388,14 @@ fn transfer_from() {
         },
     );
 
-    let reply = TransferSingleReply {
+    let codec = MTKEvent::Transfer {
         operator: from.into(),
         from: from.into(),
         to: to.into(),
-        id: TOKEN_ID,
-        amount: 10,
-    };
-
-    let codec = MTKEvent::TransferSingle(reply).encode();
+        ids: vec![TOKEN_ID],
+        amounts: vec![10],
+    }
+    .encode();
     assert!(res.contains(&(from, codec)));
 }
 
@@ -385,13 +404,25 @@ fn transfer_from_failures() {
     let sys = System::new();
     let mtk = init(&sys);
 
-    mtk.send(
+    let res = mtk.send(
         USERS[1],
         MyMTKAction::Mint {
             amount: TOKEN_AMOUNT,
             token_metadata: None,
         },
     );
+
+    assert!(res.contains(&(
+        USERS[1],
+        MTKEvent::Transfer {
+            operator: USERS[1].into(),
+            from: ZERO_ID,
+            to: USERS[1].into(),
+            ids: vec![TOKEN_ID],
+            amounts: vec![TOKEN_AMOUNT],
+        }
+        .encode()
+    )));
 
     let from = USERS[1];
 
@@ -440,7 +471,7 @@ fn batch_transfer_from() {
     let to = USERS[1];
     let newuser = USERS[2];
 
-    mtk.send(
+    let res = mtk.send(
         to,
         MyMTKAction::MintBatch {
             ids: vec![1u128, 2u128],
@@ -448,6 +479,17 @@ fn batch_transfer_from() {
             tokens_metadata: vec![None, None],
         },
     );
+
+    let codec = MTKEvent::Transfer {
+        operator: USERS[1].into(),
+        from: ZERO_ID,
+        to: USERS[1].into(),
+        ids: vec![1u128, 2u128],
+        amounts: vec![TOKEN_AMOUNT, TOKEN_AMOUNT],
+    }
+    .encode();
+
+    assert!(res.contains(&(USERS[1], codec)));
 
     let ret = mtk.send(
         to,
@@ -459,12 +501,12 @@ fn batch_transfer_from() {
         },
     );
 
-    let codec = MTKEvent::TransferBatch {
+    let codec = MTKEvent::Transfer {
         operator: to.into(),
         from: to.into(),
         to: newuser.into(),
         ids: vec![1u128, 2u128],
-        values: vec![5u128, 10u128],
+        amounts: vec![5u128, 10u128],
     }
     .encode();
 

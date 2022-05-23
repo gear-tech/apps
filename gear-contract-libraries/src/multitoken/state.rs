@@ -7,8 +7,10 @@ pub struct MTKState {
     pub symbol: String,
     pub base_uri: String,
     pub balances: BTreeMap<TokenId, BTreeMap<ActorId, u128>>,
-    pub operator_approvals: BTreeMap<ActorId, BTreeMap<ActorId, bool>>,
+    pub approvals: BTreeMap<ActorId, BTreeMap<ActorId, bool>>,
     pub token_metadata: BTreeMap<TokenId, TokenMetadata>,
+    // owner for nft
+    pub owners: BTreeMap<TokenId, ActorId>,
 }
 
 pub trait StateKeeper {
@@ -16,7 +18,35 @@ pub trait StateKeeper {
     fn get_mut(&mut self) -> &mut MTKState;
 }
 
-pub trait BalanceTrait: StateKeeper {
+#[derive(Debug, Decode, Encode, TypeInfo)]
+pub enum MTKQuery {
+    Name,
+    Symbol,
+    Uri,
+    BalanceOf(ActorId, TokenId),
+    MetadataOf(TokenId),
+    URI(TokenId),
+    TokensForOwner(ActorId),
+    TokensIDsForOwner(ActorId),
+    Supply(TokenId),
+    OwnerOf(TokenId),
+}
+
+#[derive(Debug, Decode, Encode, TypeInfo)]
+pub enum MTKQueryReply {
+    Name(String),
+    Symbol(String),
+    Uri(String),
+    Balance(TokenId),
+    URI(String),
+    MetadataOf(TokenMetadata),
+    TokensForOwner(Vec<Token>),
+    TokensIDsForOwner(Vec<TokenId>),
+    Supply(u128),
+    OwnerOf(ActorId),
+}
+
+pub trait MTKTokenState: StateKeeper {
     fn get_balance(&self, account: &ActorId, id: &TokenId) -> u128 {
         *self
             .get()
@@ -34,35 +64,7 @@ pub trait BalanceTrait: StateKeeper {
             .or_default()
             .insert(*account, amount);
     }
-}
 
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum MTKQuery {
-    Name,
-    Symbol,
-    Uri,
-    BalanceOf(ActorId, TokenId),
-    MetadataOf(TokenId),
-    URI(TokenId),
-    TokensForOwner(ActorId),
-    TokensIDsForOwner(ActorId),
-    Supply(TokenId),
-}
-
-#[derive(Debug, Decode, Encode, TypeInfo)]
-pub enum MTKQueryReply {
-    Name(String),
-    Symbol(String),
-    Uri(String),
-    Balance(TokenId),
-    URI(String),
-    MetadataOf(TokenMetadata),
-    TokensForOwner(Vec<Token>),
-    TokensIDsForOwner(Vec<TokenId>),
-    Supply(u128),
-}
-
-pub trait MTKTokenState: StateKeeper + BalanceTrait {
     fn get_uri(&self, id: TokenId) -> String {
         self.get()
             .base_uri
@@ -77,8 +79,6 @@ pub trait MTKTokenState: StateKeeper + BalanceTrait {
             .cloned()
             .unwrap_or_default()
     }
-
-    // pub balances: BTreeMap<TokenId, BTreeMap<ActorId, u128>>,
 
     fn tokens_for_owner(&self, owner: &ActorId) -> Vec<Token> {
         let mut tokens: Vec<Token> = Vec::new();
@@ -122,6 +122,13 @@ pub trait MTKTokenState: StateKeeper + BalanceTrait {
             .sum()
     }
 
+    fn owner_of(&self, id: TokenId) -> ActorId {
+        *self.get()
+            .owners
+            .get(&id)
+            .expect("No owner for a token")
+    }
+
     fn proc_state(&mut self, query: MTKQuery) -> Option<Vec<u8>> {
         let state = match query {
             MTKQuery::Name => MTKQueryReply::Name(self.get().name.clone()),
@@ -139,6 +146,7 @@ pub trait MTKTokenState: StateKeeper + BalanceTrait {
                 MTKQueryReply::TokensForOwner(Self::tokens_for_owner(self, &owner))
             }
             MTKQuery::Supply(id) => MTKQueryReply::Supply(Self::supply(self, id)),
+            MTKQuery::OwnerOf(id) => MTKQueryReply::OwnerOf(Self::owner_of(self, id)),
         };
         Some(state.encode())
     }
