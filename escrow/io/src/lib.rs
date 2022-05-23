@@ -65,7 +65,7 @@ pub struct Wallet {
     pub amount: u128,
 }
 
-#[derive(Decode, Encode, TypeInfo, PartialEq, Clone, Copy)]
+#[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Copy)]
 pub enum WalletState {
     AwaitingDeposit,
     AwaitingConfirmation,
