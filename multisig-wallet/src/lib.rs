@@ -23,8 +23,8 @@ pub struct Transaction {
 #[derive(Default)]
 pub struct MultisigWallet {
     pub transactions: BTreeMap<U256, Transaction>,
-    pub confirmations: BTreeMap<U256, BTreeMap<ActorId, bool>>,
-    pub is_owner: BTreeMap<ActorId, bool>,
+    pub confirmations: BTreeMap<U256, BTreeSet<ActorId>>,
+    pub is_owner: BTreeSet<ActorId>,
     pub owners: Vec<ActorId>,
     pub required: u64,
     pub transaction_count: U256,
@@ -81,8 +81,7 @@ impl MultisigWallet {
         if !self
             .confirmations
             .get(transaction_id)
-            .and_then(|confirmations| confirmations.get(owner))
-            .copied()
+            .map(|confirmations| confirmations.contains(owner))
             .unwrap_or(false)
         {
             panic!("There is no confirmation of this owner")
@@ -93,8 +92,7 @@ impl MultisigWallet {
         if self
             .confirmations
             .get(transaction_id)
-            .and_then(|confirmations| confirmations.get(owner))
-            .copied()
+            .map(|confirmations| confirmations.contains(owner))
             .unwrap_or(false)
         {
             panic!("There is confirmation of this owner")
@@ -113,7 +111,7 @@ impl MultisigWallet {
     }
 
     fn has_owner(&self, owner: &ActorId) -> bool {
-        self.is_owner.get(owner) == Some(&true)
+        self.is_owner.contains(owner)
     }
 
     /// Allows to add a new owner. Transaction has to be sent by wallet.
@@ -123,7 +121,7 @@ impl MultisigWallet {
         self.validate_owner_doesnt_exist(owner);
         validate_requirement(self.owners.len() + 1, self.required);
 
-        *self.is_owner.entry(*owner).or_insert(true) = true;
+        self.is_owner.insert(*owner);
         self.owners.push(*owner);
 
         msg::reply(MWEvent::OwnerAddition { owner: *owner }, 0).unwrap();
@@ -140,7 +138,7 @@ impl MultisigWallet {
             min(next_owners_count as u64, self.required),
         );
 
-        *self.is_owner.get_mut(owner).unwrap() = false;
+        self.is_owner.remove(owner);
         self.owners.retain(|&x| x != *owner);
 
         if (self.owners.len() as u64) < self.required {
@@ -165,8 +163,8 @@ impl MultisigWallet {
             .expect("Can't find old owner");
         self.owners[old_owner_index] = *new_owner;
 
-        *self.is_owner.entry(*old_owner).or_default() = false;
-        *self.is_owner.entry(*new_owner).or_default() = true;
+        self.is_owner.insert(*new_owner);
+        self.is_owner.remove(old_owner);
 
         msg::reply(
             MWEvent::OwnerReplace {
@@ -210,14 +208,10 @@ impl MultisigWallet {
         self.validate_transaction_exists(transaction_id);
         self.validate_not_confirmed(transaction_id, &msg::source());
 
-        let confirmation = self
-            .confirmations
+        self.confirmations
             .entry(*transaction_id)
-            .or_insert(BTreeMap::new())
-            .entry(msg::source())
-            .or_insert(true);
-
-        *confirmation = true;
+            .or_insert(BTreeSet::new())
+            .insert(msg::source());
 
         self.execute_transaction(transaction_id, None::<fn()>);
     }
@@ -242,14 +236,10 @@ impl MultisigWallet {
         self.validate_confirmed(transaction_id, &msg::source());
         self.validate_not_executed(transaction_id);
 
-        let confirmation = self
-            .confirmations
+        self.confirmations
             .entry(*transaction_id)
-            .or_insert(BTreeMap::new())
-            .entry(msg::source())
-            .or_insert(false);
-
-        *confirmation = false;
+            .or_insert(BTreeSet::new())
+            .remove(&msg::source());
 
         msg::reply(
             MWEvent::Revocation {
@@ -341,16 +331,10 @@ impl MultisigWallet {
     /// `transaction_id` Transaction ID.
     /// Number of confirmations.
     fn get_confirmation_count(&self, transaction_id: &U256) -> u64 {
-        self.owners
-            .iter()
-            .map(|owner| {
-                self.confirmations
-                    .get(transaction_id)
-                    .and_then(|confirmations| confirmations.get(owner))
-                    .copied()
-                    .unwrap_or(false)
-            })
-            .filter(|confirm| *confirm)
+        self.confirmations
+            .get(transaction_id)
+            .expect("There is no such transaction or confirmations for it")
+            .intersection(&self.is_owner)
             .count() as _
     }
 
@@ -381,8 +365,7 @@ impl MultisigWallet {
             .get(transaction_id)
             .expect("There is no transaction with this ID")
             .iter()
-            .filter(|(_, confirmed)| **confirmed)
-            .map(|(actor, _)| *actor)
+            .copied()
             .collect()
     }
 
@@ -426,10 +409,10 @@ pub unsafe extern "C" fn init() {
     let mut wallet = MultisigWallet::default();
 
     for owner in &config.owners {
-        if wallet.is_owner.contains_key(owner) {
+        if wallet.is_owner.contains(owner) {
             panic!("The same owner contained twice")
         } else {
-            wallet.is_owner.insert(*owner, true);
+            wallet.is_owner.insert(*owner);
         }
     }
 
