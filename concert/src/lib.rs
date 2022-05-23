@@ -39,14 +39,14 @@ pub unsafe extern "C" fn init() {
 #[gstd::async_main]
 async unsafe fn main() {
     let action: ConcertAction = msg::load().expect("Could not load Action");
-    let concert: &mut Concert = unsafe { CONTRACT.get_or_insert(Concert::default()) };
+    let concert: &mut Concert = unsafe { CONTRACT.get_or_insert(Default::default()) };
     match action {
         ConcertAction::Create {
             creator,
             concert_id,
-            no_tickets,
+            number_of_tickets,
             date,
-        } => concert.create_concert(creator, concert_id, no_tickets, date),
+        } => concert.create_concert(creator, concert_id, number_of_tickets, date),
         ConcertAction::Hold { concert_id } => concert.hold_concert(concert_id).await,
         ConcertAction::BuyTickets {
             concert_id,
@@ -73,7 +73,7 @@ impl Concert {
             ConcertEvent::Creation {
                 creator,
                 concert_id,
-                no_tickets: number_of_tickets,
+                number_of_tickets: number_of_tickets,
                 date,
             },
             0,

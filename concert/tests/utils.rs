@@ -6,7 +6,7 @@ use gtest::{Program, System, WasmProgram};
 pub const USER: u64 = 193;
 pub const MTK_ID: u64 = 2;
 pub const CONCERT_ID: u128 = 1;
-pub const NO_TICKETS: u128 = 100;
+pub const NUMBER_OF_TICKETS: u128 = 100;
 pub const AMOUNT: u128 = 1;
 pub const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 pub const DATE: u128 = 100000;
@@ -96,7 +96,6 @@ pub fn init_system() -> System {
 
 pub fn init_concert(sys: &System) -> Program {
     let concert_program = Program::current(&sys);
-    // let ft = Program::mock(&sys, FungibleToken);
     let mtk_program = Program::mock_with_id(&sys, MTK_ID, MultiToken);
     let res = mtk_program.send_bytes(100001, "INIT");
     assert!(!res.log().is_empty());
@@ -118,7 +117,7 @@ pub fn create(
     concert_program: &Program,
     creator: ActorId,
     concert_id: u128,
-    no_tickets: u128,
+    number_of_tickets: u128,
     date: u128,
 ) {
     let res = concert_program.send(
@@ -126,7 +125,7 @@ pub fn create(
         ConcertAction::Create {
             creator,
             concert_id,
-            no_tickets,
+            number_of_tickets,
             date,
         },
     );
@@ -136,7 +135,7 @@ pub fn create(
         ConcertEvent::Creation {
             creator,
             concert_id,
-            no_tickets,
+            number_of_tickets,
             date,
         }
         .encode()

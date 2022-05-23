@@ -8,14 +8,26 @@ use utils::*;
 fn create_concert() {
     let system = init_system();
     let concert_program = init_concert(&system);
-    create(&concert_program, USER.into(), CONCERT_ID, NO_TICKETS, DATE);
+    create(
+        &concert_program,
+        USER.into(),
+        CONCERT_ID,
+        NUMBER_OF_TICKETS,
+        DATE,
+    );
 }
 
 #[test]
 fn buy_tickets() {
     let system = init_system();
     let concert_program = init_concert(&system);
-    create(&concert_program, USER.into(), CONCERT_ID, NO_TICKETS, DATE);
+    create(
+        &concert_program,
+        USER.into(),
+        CONCERT_ID,
+        NUMBER_OF_TICKETS,
+        DATE,
+    );
 
     let metadata = vec![Some(TokenMetadata {
         title: Some(String::from("SUM41_TORONTO")),
@@ -31,7 +43,13 @@ fn buy_tickets() {
 fn buy_tickets_failures() {
     let system = init_system();
     let concert_program = init_concert(&system);
-    create(&concert_program, USER.into(), CONCERT_ID, NO_TICKETS, DATE);
+    create(
+        &concert_program,
+        USER.into(),
+        CONCERT_ID,
+        NUMBER_OF_TICKETS,
+        DATE,
+    );
 
     // MUST FAIL since we're buying < 1 ticket
     buy(&concert_program, CONCERT_ID, 0, vec![None], true);
@@ -40,8 +58,8 @@ fn buy_tickets_failures() {
     buy(
         &concert_program,
         CONCERT_ID,
-        NO_TICKETS + 1,
-        vec![None; (NO_TICKETS + 1) as usize],
+        NUMBER_OF_TICKETS + 1,
+        vec![None; (NUMBER_OF_TICKETS + 1) as usize],
         true,
     );
 
@@ -60,7 +78,13 @@ fn hold_concert() {
     let system = init_system();
     let concert_program = init_concert(&system);
 
-    create(&concert_program, USER.into(), CONCERT_ID, NO_TICKETS, DATE);
+    create(
+        &concert_program,
+        USER.into(),
+        CONCERT_ID,
+        NUMBER_OF_TICKETS,
+        DATE,
+    );
 
     let metadata = vec![Some(TokenMetadata {
         title: Some(String::from("SUM41_TORONTO")),
