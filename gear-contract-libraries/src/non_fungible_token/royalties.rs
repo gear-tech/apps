@@ -11,19 +11,19 @@ pub struct Royalties {
 
 impl Royalties {
     pub fn validate(&self) {
-        // percent must be less then 100% (100 * 100)
+        // percent must be less than or equal to100% (100 * 100)
         if self.percent > 10_000u16 {
             panic!("royalty percent must be less than 100%");
         }
         let mut total_percents = 0;
         self.accounts.iter().for_each(|(_, percent)| {
-            if *percent > 10_000u128 {
-                panic!("account percent must be less than 100%");
+            if *percent as u16 > 10_000u16 {
+                panic!("account percent must be less than or equal to 100%");
             }
             total_percents += percent;
         });
-        if total_percents > 10_000u128 {
-            panic!("total percent of royalty be less than 100%");
+        if total_percents as u16 > 10_000u16 {
+            panic!("total percent of royalty be less than or equal to 100%");
         }
     }
 

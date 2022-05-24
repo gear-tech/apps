@@ -42,13 +42,14 @@ pub trait NFTCore: NFTStateKeeper {
     /// Arguments:
     /// * `token_id`: the ID of  NFT that will be burnt
     fn burn(&mut self, token_id: TokenId) {
-        self.assert_owner(token_id);
         let owner = *self
             .get()
             .owner_by_id
             .get(&token_id)
             .expect("NonFungibleToken: token does not exist");
+        self.assert_owner(&owner);
         self.get_mut().owner_by_id.remove(&token_id);
+        self.get_mut().token_metadata_by_id.remove(&token_id);
         self.get_mut()
             .tokens_for_owner
             .entry(owner)
@@ -112,13 +113,13 @@ pub trait NFTCore: NFTStateKeeper {
     }
 
     fn internal_transfer(&mut self, to: &ActorId, token_id: TokenId) -> ActorId {
-        self.assert_can_transfer(token_id);
-        self.assert_zero_address(to);
         let owner = *self
             .get()
             .owner_by_id
             .get(&token_id)
             .expect("NonFungibleToken: token does not exist");
+        self.assert_can_transfer(token_id, &owner);
+        self.assert_zero_address(to);
         // assign new owner
         self.get_mut()
             .owner_by_id
@@ -149,13 +150,13 @@ pub trait NFTCore: NFTStateKeeper {
     /// * `to`: An account that will be approved to manage the indicated NFT
     /// * `token_id`: the ID of the NFT
     fn approve(&mut self, to: &ActorId, token_id: TokenId) {
-        self.assert_owner(token_id);
-        self.assert_zero_address(to);
         let owner = *self
             .get()
             .owner_by_id
             .get(&token_id)
             .expect("NonFungibleToken: token does not exist");
+        self.assert_owner(&owner);
+        self.assert_zero_address(to);
         self.get_mut()
             .token_approvals
             .entry(token_id)
@@ -198,22 +199,17 @@ pub trait NFTCore: NFTStateKeeper {
     }
 
     /// Checks that `msg::source()` is allowed to manage the token with indicated `token_id`
-    fn assert_can_transfer(&self, token_id: TokenId) {
+    fn assert_can_transfer(&self, token_id: TokenId, owner: &ActorId) {
         if let Some(approved_accounts) = self.get().token_approvals.get(&token_id) {
             if approved_accounts.contains(&msg::source()) {
                 return;
             }
         }
-        self.assert_owner(token_id);
+        self.assert_owner(owner);
     }
 
     /// Checks that `msg::source()` is the owner of the token with indicated `token_id`
-    fn assert_owner(&self, token_id: TokenId) {
-        let owner = self
-            .get()
-            .owner_by_id
-            .get(&token_id)
-            .expect("NonFungibleToken: token does not exist");
+    fn assert_owner(&self, owner: &ActorId) {
         if !(owner == &msg::source() || owner == &exec::origin()) {
             panic!("Not allowed to transfer");
         }

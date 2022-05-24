@@ -696,7 +696,6 @@ name = "gear-contract-libraries"
 version = "0.1.0"
 dependencies = [
  "gstd",
- "hex",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
@@ -995,7 +994,7 @@ dependencies = [
 
 [[package]]
 name = "macros"
-version = "1.5.0"
+version = "0.1.0"
 
 [[package]]
 name = "market-io"

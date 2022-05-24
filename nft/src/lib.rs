@@ -19,18 +19,23 @@ static mut CONTRACT: Option<NFT> = None;
 #[no_mangle]
 pub unsafe extern "C" fn init() {
     let config: InitNFT = msg::load().expect("Unable to decode InitNFT");
-    let mut nft = NFT::default();
-    nft.token.name = config.name;
-    nft.token.symbol = config.symbol;
-    nft.token.base_uri = config.base_uri;
-    nft.owner = msg::source();
+    let nft = NFT {
+        token: NFTState {
+            name: config.name,
+            symbol: config.symbol,
+            base_uri: config.base_uri,
+            ..Default::default()
+        },
+        owner: msg::source(),
+        ..Default::default()
+    };
     CONTRACT = Some(nft);
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn handle() {
     let action: NFTAction = msg::load().expect("Could not load msg");
-    let nft = CONTRACT.get_or_insert(NFT::default());
+    let nft = CONTRACT.get_or_insert(Default::default());
     match action {
         NFTAction::Mint { token_metadata } => MyNFTCore::mint(nft, token_metadata),
         NFTAction::Burn { token_id } => NFTCore::burn(nft, token_id),
