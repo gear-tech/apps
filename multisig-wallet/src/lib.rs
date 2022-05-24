@@ -177,8 +177,9 @@ impl MultisigWallet {
 
     ///  Allows an owner to submit and confirm a transaction.
     ///  `destination` Transaction target address.
-    ///  `value` Transaction ether value.
+    ///  `value` Transaction value.
     ///  `data` Transaction data payload.
+    ///  `description` Transaction description.
     ///  Returns transaction ID.
     fn submit_transaction(
         &mut self,
@@ -310,8 +311,9 @@ impl MultisigWallet {
 
     /// Adds a new transaction to the transaction mapping, if transaction does not exist yet.
     /// `destination` Transaction target address.
-    /// `value` Transaction ether value.
+    /// `value` Transaction value.
     /// `data` Transaction data payload.
+    /// `description` Transaction description.
     /// Returns transaction ID.
     fn add_transaction(
         &mut self,
