@@ -30,6 +30,7 @@ fn common() {
             destination: 1.into(),
             data: MWAction::ChangeRequiredConfirmationsCount(1).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -55,6 +56,7 @@ fn common() {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
     );
 
@@ -80,6 +82,7 @@ fn make_greater() {
             destination: 1.into(),
             data: MWAction::ChangeRequiredConfirmationsCount(3).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -105,6 +108,7 @@ fn make_greater() {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
     );
 
@@ -158,6 +162,7 @@ fn required_greater_than_owners_count() {
             destination: 1.into(),
             data: MWAction::ChangeRequiredConfirmationsCount(4).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -176,6 +181,7 @@ fn zero_required_confirmations() {
             destination: 1.into(),
             data: MWAction::ChangeRequiredConfirmationsCount(0).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );

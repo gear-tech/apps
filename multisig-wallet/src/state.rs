@@ -1,3 +1,4 @@
+use alloc::string::String;
 use codec::{Decode, Encode};
 use gstd::{prelude::Vec, ActorId};
 use primitive_types::U256;
@@ -19,6 +20,7 @@ pub enum State {
         executed: bool,
     },
     IsConfirmed(U256),
+    Description(U256),
 }
 
 #[derive(Debug, Encode, TypeInfo)]
@@ -29,4 +31,5 @@ pub enum StateReply {
     Confirmations(Vec<ActorId>),
     TransactionIds(Vec<U256>),
     IsConfirmed(bool),
+    Description(Option<String>),
 }

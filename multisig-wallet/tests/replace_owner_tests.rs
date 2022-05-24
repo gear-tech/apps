@@ -35,6 +35,7 @@ fn common() {
             }
             .encode(),
             value: 0,
+            description: None,
         },
     );
 
@@ -51,6 +52,7 @@ fn common() {
             destination: USERS[3].into(),
             data: vec![],
             value: 0,
+            description: None,
         },
     );
 
@@ -95,6 +97,7 @@ fn new_owner_is_already_owner() {
             }
             .encode(),
             value: 0,
+            description: None,
         },
     );
 
@@ -116,6 +119,7 @@ fn old_owner_is_not_owner() {
             }
             .encode(),
             value: 0,
+            description: None,
         },
     );
 
@@ -137,6 +141,7 @@ fn replace_and_reverse() {
             }
             .encode(),
             value: 0,
+            description: None,
         },
     );
 
@@ -152,6 +157,7 @@ fn replace_and_reverse() {
             }
             .encode(),
             value: 0,
+            description: None,
         },
     );
 
@@ -163,6 +169,7 @@ fn replace_and_reverse() {
             destination: USERS[3].into(),
             data: vec![],
             value: 0,
+            description: None,
         },
     );
 
@@ -184,6 +191,7 @@ fn remove_owner_then_replace() {
             destination: 1.into(),
             data: MWAction::RemoveOwner(USERS[2].into()).encode(),
             value: 0,
+            description: None,
         },
     );
 
@@ -199,6 +207,7 @@ fn remove_owner_then_replace() {
             }
             .encode(),
             value: 0,
+            description: None,
         },
     );
 
@@ -210,6 +219,7 @@ fn remove_owner_then_replace() {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
     );
 
@@ -231,6 +241,7 @@ fn add_owner_then_replace() {
             destination: 1.into(),
             data: MWAction::AddOwner(USERS[2].into()).encode(),
             value: 0,
+            description: None,
         },
     );
 
@@ -251,6 +262,7 @@ fn add_owner_then_replace() {
             }
             .encode(),
             value: 0,
+            description: None,
         },
     );
 
@@ -267,6 +279,7 @@ fn add_owner_then_replace() {
             destination: USERS[2].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
     );
 

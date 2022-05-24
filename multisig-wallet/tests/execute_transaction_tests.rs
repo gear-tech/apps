@@ -23,6 +23,7 @@ fn common_init<'a>(sys: &'a System, users: &[u64]) -> Program<'a> {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
         1_000_000_000,
     );
@@ -39,6 +40,7 @@ fn common_init<'a>(sys: &'a System, users: &[u64]) -> Program<'a> {
             destination: 1.into(),
             data: MWAction::ChangeRequiredConfirmationsCount(1).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -130,6 +132,7 @@ fn not_confirmed() {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
         1_000_000_000,
     );

@@ -18,6 +18,7 @@ pub enum MWAction {
         destination: ActorId,
         data: Vec<u8>,
         value: u128,
+        description: Option<String>,
     },
     ConfirmTransaction(U256),
     RevokeConfirmation(U256),

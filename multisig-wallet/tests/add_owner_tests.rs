@@ -30,6 +30,7 @@ fn common() {
             destination: 1.into(),
             data: MWAction::AddOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -46,6 +47,7 @@ fn common() {
             destination: USERS[2].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
     );
 
@@ -81,6 +83,7 @@ fn try_to_add_existing_owner() {
             destination: 1.into(),
             data: MWAction::AddOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -99,6 +102,7 @@ fn try_to_add_the_same_owner_twice() {
             destination: 1.into(),
             data: MWAction::AddOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -115,6 +119,7 @@ fn try_to_add_the_same_owner_twice() {
             destination: 1.into(),
             data: MWAction::AddOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -134,6 +139,7 @@ fn try_to_add_to_max_owners() {
             destination: 1.into(),
             data: MWAction::AddOwner(53.into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -152,6 +158,7 @@ fn remove_than_add() {
             destination: 1.into(),
             data: MWAction::RemoveOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -168,6 +175,7 @@ fn remove_than_add() {
             destination: 1.into(),
             data: MWAction::AddOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -184,6 +192,7 @@ fn remove_than_add() {
             destination: USERS[2].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
     );
 

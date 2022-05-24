@@ -19,6 +19,7 @@ pub struct Transaction {
     destination: ActorId,
     payload: Vec<u8>,
     value: u128,
+    description: Option<String>,
     executed: bool,
 }
 
@@ -179,8 +180,14 @@ impl MultisigWallet {
     ///  `value` Transaction ether value.
     ///  `data` Transaction data payload.
     ///  Returns transaction ID.
-    fn submit_transaction(&mut self, destination: &ActorId, data: Vec<u8>, value: u128) {
-        let transaction_id = self.add_transaction(destination, data, value);
+    fn submit_transaction(
+        &mut self,
+        destination: &ActorId,
+        data: Vec<u8>,
+        value: u128,
+        description: Option<String>,
+    ) {
+        let transaction_id = self.add_transaction(destination, data, value, description);
         self.confirm_transaction(&transaction_id);
 
         msg::reply(MWEvent::Submission { transaction_id }, 0).unwrap();
@@ -253,6 +260,10 @@ impl MultisigWallet {
 
         let txn = self.transactions.get_mut(transaction_id).unwrap();
 
+        if exec::value_available() < txn.value {
+            panic!("Insufficient amount of money in your wallet")
+        }
+
         msg::send_bytes(txn.destination, txn.payload.clone(), txn.value)
             .expect("Sending message failed");
 
@@ -287,6 +298,16 @@ impl MultisigWallet {
         count >= self.required
     }
 
+    /// Returns the description of a transaction.
+    /// `transaction_id` Transaction ID.
+    fn transaction_description(&self, transaction_id: &TransactionId) -> Option<String> {
+        self.transactions
+            .get(transaction_id)
+            .expect("Transaction with this ID doesn't exists")
+            .description
+            .clone()
+    }
+
     /// Adds a new transaction to the transaction mapping, if transaction does not exist yet.
     /// `destination` Transaction target address.
     /// `value` Transaction ether value.
@@ -297,6 +318,7 @@ impl MultisigWallet {
         destination: &ActorId,
         data: Vec<u8>,
         value: u128,
+        description: Option<String>,
     ) -> TransactionId {
         validate_not_null_address(destination);
         let transaction_id = self.transaction_count;
@@ -304,6 +326,7 @@ impl MultisigWallet {
             destination: *destination,
             payload: data,
             value,
+            description,
             executed: false,
         };
 
@@ -434,8 +457,9 @@ async unsafe fn main() {
             destination,
             data,
             value,
+            description,
         } => {
-            wallet.submit_transaction(&destination, data, value);
+            wallet.submit_transaction(&destination, data, value, description);
         }
         MWAction::ConfirmTransaction(transaction_id) => {
             wallet.external_confirm_transaction(&transaction_id)
@@ -472,6 +496,9 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
         ),
         State::IsConfirmed(transaction_id) => {
             StateReply::IsConfirmed(wallet.is_confirmed(&transaction_id))
+        }
+        State::Description(transaction_id) => {
+            StateReply::Description(wallet.transaction_description(&transaction_id))
         }
     }
     .encode();

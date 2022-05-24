@@ -30,6 +30,7 @@ fn common() {
             destination: 1.into(),
             data: MWAction::RemoveOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -46,6 +47,7 @@ fn common() {
             destination: USERS[2].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
     );
 
@@ -77,6 +79,7 @@ fn try_to_remove_not_existing_owner() {
             destination: 1.into(),
             data: MWAction::RemoveOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -95,6 +98,7 @@ fn try_to_remove_last_owner() {
             destination: 1.into(),
             data: MWAction::RemoveOwner(USERS[0].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -113,6 +117,7 @@ fn try_to_remove_the_same_owner_twice() {
             destination: 1.into(),
             data: MWAction::RemoveOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -129,6 +134,7 @@ fn try_to_remove_the_same_owner_twice() {
             destination: 1.into(),
             data: MWAction::RemoveOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -147,6 +153,7 @@ fn change_requirement() {
             destination: 1.into(),
             data: MWAction::RemoveOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -172,6 +179,7 @@ fn change_requirement() {
             destination: 1.into(),
             data: MWAction::AddOwner(USERS[1].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -188,6 +196,7 @@ fn change_requirement() {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
         1_000_000_000,
     );
@@ -210,6 +219,7 @@ fn add_than_remove() {
             destination: 1.into(),
             data: MWAction::AddOwner(USERS[3].into()).encode(),
             value: 0,
+            description: None,
         },
         1_000_000_000,
     );
@@ -226,6 +236,7 @@ fn add_than_remove() {
             destination: 1.into(),
             data: MWAction::RemoveOwner(USERS[3].into()).encode(),
             value: 0,
+            description: None,
         },
     );
 
@@ -241,6 +252,7 @@ fn add_than_remove() {
             destination: USERS[2].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
     );
 

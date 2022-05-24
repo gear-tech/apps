@@ -22,6 +22,7 @@ fn common_init<'a>(sys: &'a System, users: &[u64], required: u64) -> Program<'a>
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
         1_000_000_000,
     );

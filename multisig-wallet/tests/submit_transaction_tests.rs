@@ -31,6 +31,7 @@ fn common() {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
+            description: Some("test".to_string()),
         },
     );
 
@@ -51,6 +52,7 @@ fn submit_several_transactions() {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
     );
 
@@ -66,6 +68,7 @@ fn submit_several_transactions() {
             destination: USERS[3].into(),
             data: vec![],
             value: 1000,
+            description: None,
         },
     );
 
@@ -86,6 +89,7 @@ fn submit_and_execute_automatically() {
             destination: USERS[3].into(),
             data: vec![],
             value: 10000,
+            description: None,
         },
         1_000_000_000,
     );
@@ -107,6 +111,7 @@ fn submit_transaction_with_zero_destination() {
             destination: ZERO_ID,
             data: vec![],
             value: 1000,
+            description: None,
         },
         10000,
     );
