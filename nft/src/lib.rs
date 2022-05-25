@@ -34,7 +34,7 @@ pub unsafe extern "C" fn init() {
 
 #[no_mangle]
 pub unsafe extern "C" fn handle() {
-    let action: NFTAction = msg::load().expect("Could not load msg");
+    let action: NFTAction = msg::load().expect("Could not load NFTAction");
     let nft = CONTRACT.get_or_insert(Default::default());
     match action {
         NFTAction::Mint { token_metadata } => MyNFTCore::mint(nft, token_metadata),
@@ -53,7 +53,7 @@ pub unsafe extern "C" fn handle() {
 pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let query: NFTQuery = msg::load().expect("failed to decode input argument");
     let nft = CONTRACT.get_or_insert(NFT::default());
-    let encoded = NFTMetaState::proc_state(nft, query).expect("error");
+    let encoded = NFTMetaState::proc_state(nft, query).expect("Error in reading NFT contract state");
     gstd::util::to_leak_ptr(encoded)
 }
 

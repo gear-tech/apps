@@ -4,9 +4,11 @@ const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 pub trait NFTCore: NFTStateKeeper {
     /// Mints a new token
+    ///
     /// Requirements:
     /// * `token_id` must be unique
     /// * `to` must be a non-zero account
+    ///
     /// Arguments:
     /// * `to`: An account to which minted NFT will be assigned
     /// * `token_id`: the ID of minted NFT
@@ -36,9 +38,11 @@ pub trait NFTCore: NFTStateKeeper {
     }
 
     /// Burns a token
+    ///
     /// Requirements:
     /// * Only NFT owner can call that action
     /// * `token_id` must be the ID of the existing NFT
+    ///
     /// Arguments:
     /// * `token_id`: the ID of  NFT that will be burnt
     fn burn(&mut self, token_id: TokenId) {
@@ -67,10 +71,12 @@ pub trait NFTCore: NFTStateKeeper {
     }
 
     /// Transfers a token to the new owner
+    ///
     /// Requirements:
     /// * Only the token owner or approved account can call that action
     /// * `to` must be a non-zero account
     /// * `token_id` must be the ID of the existing NFT
+    ///
     /// Arguments:
     /// * `to`: An account to which NFT will be transferred
     /// * `token_id`: the ID of transferred NFT
@@ -89,10 +95,12 @@ pub trait NFTCore: NFTStateKeeper {
     }
 
     /// Transfers a token to the new owner
+    ///
     /// Requirements:
     /// * Only the token owner or approved account can call that action
     /// * `to` must be a non-zero account
     /// * `token_id` must be the ID of the existing NFT
+    ///
     /// Arguments:
     /// * `to`: An account to which NFT will be transferred
     /// * `token_id`: the ID of transferred NFT
@@ -142,10 +150,12 @@ pub trait NFTCore: NFTStateKeeper {
     }
 
     /// Gives a right to another account to manage the token with indicated ID
+    ///
     /// Requirements:
     /// * Only the token owner can call that action
     /// * `to` must be a non-zero account
     /// * `token_id` must be the ID of the existing NFT
+    ///
     /// Arguments:
     /// * `to`: An account that will be approved to manage the indicated NFT
     /// * `token_id`: the ID of the NFT
