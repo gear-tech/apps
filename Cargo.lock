@@ -28,9 +28,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.56"
+version = "1.0.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4361135be9122e0870de935d7c439aef945b9f9ddd4199a553b5270b49c82a27"
+checksum = "08f9b8508dccb7687a1d6c4ce66b2b0ecef467c94667de27d8d7fe1f8d2a9cdc"
 
 [[package]]
 name = "arrayvec"
@@ -56,6 +56,16 @@ dependencies = [
  "hermit-abi",
  "libc",
  "winapi",
+]
+
+[[package]]
+name = "auction-io"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
 ]
 
 [[package]]
@@ -195,6 +205,27 @@ dependencies = [
  "atty",
  "lazy_static",
  "winapi",
+]
+
+[[package]]
+name = "concert"
+version = "0.1.0"
+dependencies = [
+ "concert-io",
+ "gear-wasm-builder",
+ "gstd",
+ "gtest",
+ "parity-scale-codec",
+ "scale-info",
+]
+
+[[package]]
+name = "concert-io"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "parity-scale-codec",
+ "scale-info",
 ]
 
 [[package]]
@@ -447,6 +478,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive_traits"
+version = "0.1.0"
+dependencies = [
+ "macros",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "digest"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -468,6 +509,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "dutch-auction"
+version = "0.1.0"
+dependencies = [
+ "auction-io",
+ "gear-wasm-builder",
+ "gstd",
+ "gtest",
+ "nft-example-io",
+ "non-fungible-token",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
 name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -484,18 +540,6 @@ dependencies = [
  "log",
  "regex",
  "termcolor",
-]
-
-[[package]]
-name = "erc1155"
-version = "0.1.0"
-dependencies = [
- "gear-wasm-builder",
- "gstd",
- "gtest",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
 ]
 
 [[package]]
@@ -529,6 +573,7 @@ dependencies = [
  "gstd",
  "gtest",
  "parity-scale-codec",
+ "primitive-types",
 ]
 
 [[package]]
@@ -537,6 +582,8 @@ version = "0.1.0"
 dependencies = [
  "gstd",
  "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
 ]
 
 [[package]]
@@ -647,7 +694,7 @@ dependencies = [
 [[package]]
 name = "galloc"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#5bf75749814f058bd4964d0e79495fd22c4f1869"
+source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
 dependencies = [
  "dlmalloc",
 ]
@@ -655,12 +702,12 @@ dependencies = [
 [[package]]
 name = "gcore"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#5bf75749814f058bd4964d0e79495fd22c4f1869"
+source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
 
 [[package]]
 name = "gear-backend-common"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#5bf75749814f058bd4964d0e79495fd22c4f1869"
+source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
 dependencies = [
  "gear-core",
  "log",
@@ -669,7 +716,7 @@ dependencies = [
 [[package]]
 name = "gear-backend-wasmtime"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#5bf75749814f058bd4964d0e79495fd22c4f1869"
+source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
 dependencies = [
  "gear-backend-common",
  "gear-core",
@@ -678,9 +725,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "gear-contract-libraries"
+version = "0.1.0"
+dependencies = [
+ "gstd",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
 name = "gear-core"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#5bf75749814f058bd4964d0e79495fd22c4f1869"
+source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
 dependencies = [
  "anyhow",
  "blake2-rfc",
@@ -697,7 +754,7 @@ dependencies = [
 [[package]]
 name = "gear-core-processor"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#5bf75749814f058bd4964d0e79495fd22c4f1869"
+source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
 dependencies = [
  "anyhow",
  "blake2-rfc",
@@ -721,7 +778,7 @@ dependencies = [
 [[package]]
 name = "gear-wasm-builder"
 version = "0.1.2"
-source = "git+https://github.com/gear-tech/gear.git#5bf75749814f058bd4964d0e79495fd22c4f1869"
+source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
 dependencies = [
  "anyhow",
  "cargo_metadata",
@@ -767,7 +824,7 @@ dependencies = [
 [[package]]
 name = "gstd"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#5bf75749814f058bd4964d0e79495fd22c4f1869"
+source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
 dependencies = [
  "bs58",
  "futures",
@@ -783,7 +840,7 @@ dependencies = [
 [[package]]
 name = "gstd-codegen"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#5bf75749814f058bd4964d0e79495fd22c4f1869"
+source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
 dependencies = [
  "quote",
  "syn",
@@ -792,7 +849,7 @@ dependencies = [
 [[package]]
 name = "gtest"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#5bf75749814f058bd4964d0e79495fd22c4f1869"
+source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
 dependencies = [
  "colored",
  "env_logger",
@@ -955,6 +1012,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "macros"
+version = "1.5.0"
+
+[[package]]
 name = "market-io"
 version = "0.1.0"
 dependencies = [
@@ -995,6 +1056,32 @@ name = "more-asserts"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7843ec2de400bcbc6a6328c958dc38e5359da6e93e72e37bc5246bf1ae776389"
+
+[[package]]
+name = "multitoken"
+version = "0.1.0"
+dependencies = [
+ "derive_traits",
+ "gear-contract-libraries",
+ "gear-wasm-builder",
+ "gstd",
+ "gtest",
+ "multitoken-io",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
+name = "multitoken-io"
+version = "0.1.0"
+dependencies = [
+ "gear-contract-libraries",
+ "gstd",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
 
 [[package]]
 name = "nft"
