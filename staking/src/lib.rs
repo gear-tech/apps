@@ -19,6 +19,7 @@ struct Staking {
 }
 
 static mut STAKING: Option<Staking> = None;
+const WEI_PER_TOKEN: u8 = 20;
 
 impl Staking {
     /// Transfers `amount` tokens from `sender` account to `recipient` account.
@@ -67,17 +68,21 @@ impl Staking {
             if self.total_staked > 0 {
                 self.tokens_per_stake = self
                     .tokens_per_stake
-                    .saturating_add(produced_new * (1 << 20) / self.total_staked);
+                    .saturating_add((produced_new << WEI_PER_TOKEN) / self.total_staked);
             }
 
             self.reward_produced = self.reward_produced.saturating_add(produced_new);
         }
     }
 
+    fn get_amount_per_token(&self, amount: u128) -> u128 {
+        (amount * self.tokens_per_stake) >> WEI_PER_TOKEN
+    }
+
     /// Calculates the reward of the staker that is currently avaiable
     fn calc_reward(&mut self) -> u128 {
         if let Some(staker) = self.stakers.get(&msg::source()) {
-            return (staker.balance * self.tokens_per_stake) / (1 << 20) + staker.reward_allowed
+            return self.get_amount_per_token(staker.balance) + staker.reward_allowed
                 - staker.reward_debt
                 - staker.distributed;
         }
@@ -86,20 +91,21 @@ impl Staking {
     }
 
     /// Stakes the tokens
+    /// Arguments:
+    /// `amount`: the number of tokens for the stake
     async fn stake(&mut self, amount: u128) {
         if amount > 0 {
             self.update_reward();
+            let amount_per_token = self.get_amount_per_token(amount);
 
             self.stakers
                 .entry(msg::source())
                 .and_modify(|stake| {
-                    stake.reward_debt = stake
-                        .reward_debt
-                        .saturating_add((amount * self.tokens_per_stake) / (1 << 20));
+                    stake.reward_debt = stake.reward_debt.saturating_add(amount_per_token);
                     stake.balance = stake.balance.saturating_add(amount);
                 })
                 .or_insert(Staker {
-                    reward_debt: (amount * self.tokens_per_stake) / (1 << 20),
+                    reward_debt: amount_per_token,
                     balance: amount,
                     ..Default::default()
                 });
@@ -129,8 +135,8 @@ impl Staking {
 
             let mut token_address = self.staking_token_address;
 
-            if self.reward_token_address.is_some() {
-                token_address = self.reward_token_address.unwrap();
+            if let Some(address) = self.reward_token_address {
+                token_address = address;
             }
 
             self.transfer_tokens(&token_address, &exec::program_id(), &msg::source(), reward)
@@ -140,19 +146,22 @@ impl Staking {
         msg::reply(StakingEvent::Reward(reward), 0).unwrap();
     }
 
+    /// Withdraws the staked the tokens
+    /// Arguments:
+    /// `amount`: the number of withdrawn tokens
     async fn withdraw(&mut self, amount: u128) {
         if amount == 0 {
             panic!("withdraw(): amount is null");
         }
+
+        let amount_per_token = self.get_amount_per_token(amount);
 
         if let Some(staker) = self.stakers.get_mut(&msg::source()) {
             if staker.balance < amount {
                 panic!("withdraw(): staker.balance < amount");
             }
 
-            staker.reward_allowed = staker
-                .reward_allowed
-                .saturating_add((amount * self.tokens_per_stake) / (1 << 20));
+            staker.reward_allowed = staker.reward_allowed.saturating_add(amount_per_token);
             staker.balance = staker.balance.saturating_sub(amount);
 
             self.update_reward();
