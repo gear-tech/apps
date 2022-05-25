@@ -2,7 +2,7 @@
 
 use codec::{Decode, Encode};
 use ft_io::*;
-use gstd::{debug, exec, msg, prelude::*, ActorId};
+use gstd::{exec, msg, prelude::*, ActorId};
 use scale_info::TypeInfo;
 use staking_io::*;
 
@@ -50,7 +50,6 @@ impl Staking {
 
     /// Calculates the reward produced so far
     fn produced(&mut self) -> u128 {
-        debug!("timestamp: {}", exec::block_timestamp());
         self.reward_produced
             + (exec::block_timestamp() - self.produced_time) as u128
                 / self.distribution_time as u128
@@ -59,8 +58,6 @@ impl Staking {
     /// Updates the reward produced so far and calculates tokens per stake
     fn update_reward(&mut self) {
         let reward_produced_at_now = self.produced();
-
-        debug!("reward_produced_at_now: {}", reward_produced_at_now);
 
         if reward_produced_at_now > self.reward_produced {
             let produced_new = reward_produced_at_now - self.reward_produced;
@@ -104,7 +101,7 @@ impl Staking {
                     stake.reward_debt = stake.reward_debt.saturating_add(amount_per_token);
                     stake.balance = stake.balance.saturating_add(amount);
                 })
-                .or_insert(Staker {
+                .or_insert_with(|| Staker {
                     reward_debt: amount_per_token,
                     balance: amount,
                     ..Default::default()
