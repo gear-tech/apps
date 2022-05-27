@@ -1,4 +1,3 @@
-use codec::Encode;
 use dao_light_io::*;
 use ft_io::*;
 use gtest::{Program, RunResult, System};

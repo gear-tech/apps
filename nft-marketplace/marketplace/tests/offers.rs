@@ -4,7 +4,7 @@ use gstd::ActorId;
 use gtest::{Program, System};
 use market_io::*;
 use nft_io::*;
-mod utils;
+pub mod utils;
 use utils::*;
 
 fn before_each_test(sys: &System) {

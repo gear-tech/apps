@@ -1,7 +1,6 @@
 use auction_io::*;
 use codec::Encode;
 use gtest::{Program, RunResult, System};
-use primitive_types::U256;
 
 const USERS: &'static [u64] = &[4, 5, 6];
 const DURATION: u32 = 7 * 24 * 60 * 60 * 1000;
@@ -207,6 +206,7 @@ fn create_and_stop() {
     )));
 }
 
+#[test]
 fn stop_from_other_user() {
     let sys = System::new();
     let auction = init(&sys);
