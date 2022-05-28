@@ -6,6 +6,7 @@ use nft_example_io::{Action as NFTAction, Event as NFTEvent};
 use primitive_types::U256;
 use supply_chain_io::*;
 
+#[derive(Default)]
 struct Item {
     info: ItemInfo,
     price: u128,
@@ -55,17 +56,17 @@ async fn receive(ft_program_id: ActorId, seller: ActorId, item: &Item) {
             // then all tokens refunded to a buyer...
             to = msg::source();
         } else {
-            // ...or a half of tokens refunded to a buyer and...
+            // ...or another half transferred to a seller
+            amount /= 2;
+
+            // ...and a half of tokens refunded to a buyer.
             transfer_tokens(
                 ft_program_id,
                 exec::program_id(),
                 msg::source(),
-                (item.price + 1) / 2,
+                item.price - amount,
             )
             .await;
-
-            // ...another half transferred to a seller.
-            amount /= 2;
         }
     }
 
@@ -133,13 +134,9 @@ impl SupplyChain {
                     name,
                     notes,
                     producer: msg::source(),
-                    distributor: ActorId::default(),
-                    retailer: ActorId::default(),
-                    state: ItemState::Produced,
+                    ..Default::default()
                 },
-                price: 0,
-                delivery_time: 0,
-                shipping_time: 0,
+                ..Default::default()
             },
         );
 
@@ -181,7 +178,7 @@ impl SupplyChain {
     ///
     /// Arguments:
     /// * `item_id`: an item's ID.
-    /// * `delivery_time`: a time in seconds for which a producer must deliver an item.
+    /// * `delivery_time`: a time in milliseconds for which a producer must deliver an item.
     /// A countdown starts after the `ship_by_producer` function is executed.
     async fn purchase_by_distributor(&mut self, item_id: U256, delivery_time: u64) {
         self.check_distributor();
@@ -339,7 +336,7 @@ impl SupplyChain {
     ///
     /// Arguments:
     /// * `item_id`: an item's ID.
-    /// * `delivery_time`: a time in seconds for which a distributor must deliver an item.
+    /// * `delivery_time`: a time in milliseconds for which a distributor must deliver an item.
     /// A countdown starts after the `ship_by_distributor` function is executed.
     async fn purchase_by_retailer(&mut self, item_id: U256, delivery_time: u64) {
         self.check_retailer();

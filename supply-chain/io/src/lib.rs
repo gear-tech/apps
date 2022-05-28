@@ -76,7 +76,7 @@ pub enum SupplyChainEvent {
     },
 }
 
-#[derive(Encode, Decode, Clone, TypeInfo)]
+#[derive(Encode, Decode, Clone, TypeInfo, Default)]
 pub struct ItemInfo {
     pub name: String,
     pub notes: String,
@@ -101,4 +101,10 @@ pub enum ItemState {
     ReceivedByRetailer,
     ForSaleByRetailer,
     PurchasedByConsumer,
+}
+
+impl Default for ItemState {
+    fn default() -> Self {
+        Self::Produced
+    }
 }

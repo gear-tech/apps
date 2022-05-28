@@ -126,7 +126,7 @@ fn delivery_with_delay() {
     check_balance(
         &ft_program,
         DISTRIBUTOR[0],
-        (ITEM_PRICE_BY_PRODUCER[0] + 1) / 2,
+        ITEM_PRICE_BY_PRODUCER[0] - ITEM_PRICE_BY_PRODUCER[0] / 2,
     );
 
     check::process_by_distributor(&supply_chain_program, DISTRIBUTOR[0], ITEM_ID[0]);
@@ -165,7 +165,7 @@ fn delivery_with_delay() {
     check_balance(
         &ft_program,
         RETAILER[0],
-        (ITEM_PRICE_BY_DISTRIBUTOR[0] + 1) / 2,
+        ITEM_PRICE_BY_DISTRIBUTOR[0] - ITEM_PRICE_BY_DISTRIBUTOR[0] / 2,
     );
 }
 
