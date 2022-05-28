@@ -2,7 +2,7 @@ use auction_io::*;
 use codec::Encode;
 use gtest::{Program, RunResult, System};
 
-const USERS: &'static [u64] = &[4, 5, 6];
+const USERS: &[u64] = &[4, 5, 6];
 const DURATION: u32 = 7 * 24 * 60 * 60 * 1000;
 
 fn init(sys: &System) -> Program {
@@ -10,7 +10,7 @@ fn init(sys: &System) -> Program {
 
     sys.init_logger();
 
-    let auction_program = Program::current(&sys);
+    let auction_program = Program::current(sys);
 
     auction_program.send(owner_user, InitConfig {});
 
@@ -32,7 +32,7 @@ fn init(sys: &System) -> Program {
 
 fn init_nft(sys: &System, owner: u64) {
     let nft_program = Program::from_file(
-        &sys,
+        sys,
         "../target/wasm32-unknown-unknown/release/nft_example.wasm",
     );
 

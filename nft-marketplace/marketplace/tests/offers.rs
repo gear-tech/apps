@@ -8,9 +8,9 @@ pub mod utils;
 use utils::*;
 
 fn before_each_test(sys: &System) {
-    init_ft(&sys);
-    init_nft(&sys);
-    init_market(&sys);
+    init_ft(sys);
+    init_nft(sys);
+    init_market(sys);
     let nft = sys.get_program(2);
     let res = nft.send(
         USERS[0],
@@ -61,7 +61,7 @@ fn add_offer() {
     let mut offers = vec![];
     for i in 0..9 {
         offer(&market, USERS[1], None, 1000 * (i + 1));
-        let hash = get_hash(&(2 as u64).into(), None, 1_000 * (i + 1));
+        let hash = get_hash(&2_u64.into(), None, 1_000 * (i + 1));
         offers.push(Offer {
             hash,
             id: USERS[1].into(),
