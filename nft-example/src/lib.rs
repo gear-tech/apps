@@ -144,11 +144,10 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let encoded = match query {
         State::BalanceOfUser(input) => {
             StateReply::BalanceOfUser(*CONTRACT.token.balances.get(&input).unwrap_or(&U256::zero()))
-                .encode()
         }
         State::TokenOwner(input) => {
             let user = CONTRACT.token.owner_by_id.get(&input).unwrap_or(&ZERO_ID);
-            StateReply::TokenOwner(*user).encode()
+            StateReply::TokenOwner(*user)
         }
         State::IsTokenOwner { account, token_id } => {
             let user = CONTRACT
@@ -156,7 +155,7 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
                 .owner_by_id
                 .get(&token_id)
                 .unwrap_or(&ZERO_ID);
-            StateReply::IsTokenOwner(user == &account).encode()
+            StateReply::IsTokenOwner(user == &account)
         }
         State::GetApproved(input) => {
             let approved_address = CONTRACT
@@ -164,12 +163,10 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
                 .token_approvals
                 .get(&input)
                 .unwrap_or(&ZERO_ID);
-            StateReply::GetApproved(*approved_address).encode()
+            StateReply::GetApproved(*approved_address)
         }
-    };
-    let result = gstd::macros::util::to_wasm_ptr(&(encoded[..]));
+    }
+    .encode();
 
-    core::mem::forget(encoded);
-
-    result
+    gstd::util::to_leak_ptr(encoded)
 }
