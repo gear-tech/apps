@@ -18,11 +18,10 @@ pub struct Child {
     pub status: ChildStatus,
 }
 
-#[derive(Debug, Clone, Encode, Decode, TypeInfo, Copy)]
+#[derive(Debug, Clone, Encode, Decode, TypeInfo, Copy, PartialEq)]
 pub enum ChildStatus {
     Pending,
     Accepted,
-    Unknown,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]
@@ -39,6 +38,10 @@ pub enum RMRKAction {
     Burn {
         token_id: TokenId,
     },
+    BurnFromParent {
+        child_token_ids: Vec<TokenId>,
+        root_owner: ActorId,
+    },
     BurnChild {
         parent_token_id: TokenId,
         child_token_id: TokenId,
@@ -52,12 +55,31 @@ pub enum RMRKAction {
         token_id: TokenId,
         destination_id: TokenId,
     },
+    TransferChild {
+        from: TokenId,
+        to: TokenId,
+        child_token_id: TokenId,
+    },
     Approve {
         to: ActorId,
         token_id: TokenId,
     },
     AddChild {
         parent_token_id: TokenId,
+        child_token_id: TokenId,
+    },
+    AddAcceptedChild {
+        parent_token_id: TokenId,
+        child_token_id: TokenId,
+    },
+    RejectChild {
+        parent_token_id: TokenId,
+        child_contract_id: ActorId,
+        child_token_id: TokenId,
+    },
+    RemoveChild {
+        parent_token_id: TokenId,
+        child_contract_id: ActorId,
         child_token_id: TokenId,
     },
     AcceptChild {
@@ -72,6 +94,12 @@ pub enum RMRKAction {
         token_id: TokenId,
     },
     Owner {
+        token_id: TokenId,
+    },
+    PendingChildren {
+        token_id: TokenId,
+    },
+    AcceptedChildren {
         token_id: TokenId,
     },
 }
@@ -103,6 +131,16 @@ pub enum RMRKEvent {
         child_token_id: TokenId,
         parent_token_id: TokenId,
     },
+    RejectedChild {
+        child_token_address: ActorId,
+        child_token_id: TokenId,
+        parent_token_id: TokenId,
+    },
+    RemovedChild {
+        child_token_address: ActorId,
+        child_token_id: TokenId,
+        parent_token_id: TokenId,
+    },
     ChildAdded {
         parent_token_id: TokenId,
         child_token_id: TokenId,
@@ -111,6 +149,15 @@ pub enum RMRKEvent {
     ChildBurnt {
         parent_token_id: TokenId,
         child_token_id: TokenId,
+    },
+    ChildTransferred {
+        from: TokenId,
+        to: TokenId,
+        child_contract_id: ActorId,
+        child_token_id: TokenId,
+    },
+    TokensBurnt {
+        token_ids: Vec<TokenId>,
     },
     NFTParent {
         parent: ActorId,
@@ -125,5 +172,11 @@ pub enum RMRKEvent {
     Owner {
         token_id: Option<TokenId>,
         owner_id: ActorId,
+    },
+    PendingChildren {
+        children: BTreeMap<ActorId, Vec<TokenId>>,
+    },
+    AcceptedChildren {
+        children: BTreeMap<ActorId, Vec<TokenId>>,
     },
 }

@@ -1,7 +1,8 @@
 #![no_std]
 
 use codec::Encode;
-use gstd::{debug, msg, prelude::*, ActorId};
+use gstd::{debug, exec, msg, prelude::*, ActorId};
+use primitive_types::U256;
 use rmrk_io::*;
 pub mod burn;
 pub mod checks;
@@ -23,7 +24,8 @@ pub struct RMRKToken {
     pub symbol: String,
     pub token_approvals: BTreeMap<TokenId, Vec<ActorId>>,
     pub rmrk_owners: BTreeMap<TokenId, RMRKOwner>,
-    pub parent_to_children: BTreeMap<TokenId, Vec<Vec<u8>>>,
+    pub pending_children: BTreeMap<TokenId, BTreeSet<Vec<u8>>>,
+    pub accepted_children: BTreeMap<TokenId, BTreeSet<Vec<u8>>>,
     pub children_status: BTreeMap<Vec<u8>, ChildStatus>,
     pub balances: BTreeMap<ActorId, u128>,
 }
@@ -46,7 +48,14 @@ impl RMRKToken {
         .unwrap();
     }
 
+    // reply about root_owner
     async fn root_owner(&self, token_id: TokenId) {
+        let root_owner = self.find_root_owner(token_id).await;
+        msg::reply(RMRKEvent::RootOwner { root_owner }, 0).unwrap();
+    }
+
+    // internal search for root owner
+    async fn find_root_owner(&self, token_id: TokenId) -> ActorId {
         let rmrk_owner = self
             .rmrk_owners
             .get(&token_id)
@@ -56,7 +65,37 @@ impl RMRKToken {
         } else {
             rmrk_owner.owner_id
         };
-        msg::reply(RMRKEvent::RootOwner { root_owner }, 0).unwrap();
+        root_owner
+    }
+
+    fn get_pending_children(&self, token_id: TokenId) -> BTreeMap<ActorId, Vec<TokenId>> {
+        let mut pending_children: BTreeMap<ActorId, Vec<TokenId>> = BTreeMap::new();
+        if let Some(children) = self.pending_children.get(&token_id) {
+            for child_vec in children.iter() {
+                let child_contract_id = ActorId::new(child_vec[0..32].try_into().unwrap());
+                let child_token_id = U256::from(&child_vec[32..64]);
+                pending_children
+                    .entry(child_contract_id)
+                    .and_modify(|c| c.push(child_token_id))
+                    .or_insert_with(|| vec![child_token_id]);
+            }
+        }
+        pending_children
+    }
+
+    fn get_accepted_children(&self, token_id: TokenId) -> BTreeMap<ActorId, Vec<TokenId>> {
+        let mut accepted_children: BTreeMap<ActorId, Vec<TokenId>> = BTreeMap::new();
+        if let Some(children) = self.accepted_children.get(&token_id) {
+            for child_vec in children.iter() {
+                let child_contract_id = ActorId::new(child_vec[0..32].try_into().unwrap());
+                let child_token_id = U256::from(&child_vec[32..64]);
+                accepted_children
+                    .entry(child_contract_id)
+                    .and_modify(|c| c.push(child_token_id))
+                    .or_insert_with(|| vec![child_token_id]);
+            }
+        }
+        accepted_children
     }
 }
 
@@ -101,11 +140,42 @@ async unsafe fn main() {
             rmrk.accept_child(parent_token_id, &child_contract_id, child_token_id)
                 .await
         }
-        // my implementation
+        RMRKAction::AddAcceptedChild {
+            parent_token_id,
+            child_token_id,
+        } => {
+            rmrk.add_accepted_child(parent_token_id, child_token_id)
+                .await
+        }
+        RMRKAction::TransferChild {
+            from,
+            to,
+            child_token_id,
+        } => rmrk.transfer_child(from, to, child_token_id).await,
+        RMRKAction::RejectChild {
+            parent_token_id,
+            child_contract_id,
+            child_token_id,
+        } => {
+            rmrk.reject_child(parent_token_id, &child_contract_id, child_token_id)
+                .await
+        }
+        RMRKAction::RemoveChild {
+            parent_token_id,
+            child_contract_id,
+            child_token_id,
+        } => {
+            rmrk.remove_child(parent_token_id, &child_contract_id, child_token_id)
+                .await
+        }
         RMRKAction::BurnChild {
             parent_token_id,
             child_token_id,
         } => rmrk.burn_child(parent_token_id, child_token_id),
+        RMRKAction::BurnFromParent {
+            child_token_ids,
+            root_owner,
+        } => rmrk.burn_from_parent(child_token_ids, &root_owner).await,
         RMRKAction::Burn { token_id } => rmrk.burn(token_id).await,
         RMRKAction::NFTParent { token_id } => rmrk.nft_parent(token_id),
         RMRKAction::RootOwner { token_id } => rmrk.root_owner(token_id).await,
@@ -122,6 +192,14 @@ async unsafe fn main() {
                 0,
             )
             .unwrap();
+        }
+        RMRKAction::PendingChildren { token_id } => {
+            let children = rmrk.get_pending_children(token_id);
+            msg::reply(RMRKEvent::PendingChildren { children }, 0).unwrap();
+        }
+        RMRKAction::AcceptedChildren { token_id } => {
+            let children = rmrk.get_accepted_children(token_id);
+            msg::reply(RMRKEvent::AcceptedChildren { children }, 0).unwrap();
         }
     }
 }

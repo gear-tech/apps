@@ -34,16 +34,26 @@ pub async fn add_child(
     if let RMRKEvent::PendingChild { root_owner, .. } = response {
         return root_owner;
     } else {
-        panic!("");
+        panic!("Wrong received message");
     }
 }
 
-pub async fn burn_from_parent(child_contract_id: &ActorId, token_id: TokenId) {
-    let _response: RMRKEvent =
-        msg::send_and_wait_for_reply(*child_contract_id, RMRKAction::Burn { token_id }, 0)
-            .unwrap()
-            .await
-            .expect("Error in message to burning RMRK token");
+pub async fn burn_from_parent(
+    child_contract_id: &ActorId,
+    child_token_ids: Vec<TokenId>,
+    root_owner: &ActorId,
+) {
+    let _response: RMRKEvent = msg::send_and_wait_for_reply(
+        *child_contract_id,
+        RMRKAction::BurnFromParent {
+            child_token_ids,
+            root_owner: *root_owner,
+        },
+        0,
+    )
+    .unwrap()
+    .await
+    .expect("Error in message to burning RMRK token");
 }
 
 pub async fn burn_child(
@@ -54,6 +64,44 @@ pub async fn burn_child(
     let _response: RMRKEvent = msg::send_and_wait_for_reply(
         *parent_contract_id,
         RMRKAction::BurnChild {
+            parent_token_id,
+            child_token_id,
+        },
+        0,
+    )
+    .unwrap()
+    .await
+    .expect("Error in burning RMRK token child");
+}
+
+pub async fn transfer_child(
+    parent_contract_id: &ActorId,
+    from: TokenId,
+    to: TokenId,
+    child_token_id: TokenId,
+) {
+    let _response: RMRKEvent = msg::send_and_wait_for_reply(
+        *parent_contract_id,
+        RMRKAction::TransferChild {
+            from,
+            to,
+            child_token_id,
+        },
+        0,
+    )
+    .unwrap()
+    .await
+    .expect("Error in burning RMRK token child");
+}
+
+pub async fn add_accepted_child(
+    parent_contract_id: &ActorId,
+    parent_token_id: TokenId,
+    child_token_id: TokenId,
+) {
+    let _response: RMRKEvent = msg::send_and_wait_for_reply(
+        *parent_contract_id,
+        RMRKAction::AddAcceptedChild {
             parent_token_id,
             child_token_id,
         },
