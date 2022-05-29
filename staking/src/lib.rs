@@ -19,7 +19,7 @@ struct Staking {
 }
 
 static mut STAKING: Option<Staking> = None;
-const WEI_PER_TOKEN: u8 = 20;
+const DECIMALS_COUNT: u8 = 20;
 
 impl Staking {
     /// Transfers `amount` tokens from `sender` account to `recipient` account.
@@ -34,7 +34,7 @@ impl Staking {
         to: &ActorId,
         amount_tokens: u128,
     ) {
-        let _transfer_response: FTEvent = msg::send_and_wait_for_reply(
+        msg::send_and_wait_for_reply::<FTEvent, _>(
             *token_address,
             FTAction::Transfer {
                 from: *from,
@@ -65,15 +65,18 @@ impl Staking {
             if self.total_staked > 0 {
                 self.tokens_per_stake = self
                     .tokens_per_stake
-                    .saturating_add((produced_new << WEI_PER_TOKEN) / self.total_staked);
+                    .saturating_add((produced_new << DECIMALS_COUNT) / self.total_staked);
             }
 
             self.reward_produced = self.reward_produced.saturating_add(produced_new);
         }
     }
 
+    /// Calculates the maximum possible reward
+    /// Arguments:
+    /// `amount`: the number of tokens
     fn get_amount_per_token(&self, amount: u128) -> u128 {
-        (amount * self.tokens_per_stake) >> WEI_PER_TOKEN
+        (amount * self.tokens_per_stake) >> DECIMALS_COUNT
     }
 
     /// Calculates the reward of the staker that is currently avaiable
