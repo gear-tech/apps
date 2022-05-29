@@ -6,12 +6,12 @@ use market_io::*;
 use nft_io::*;
 use primitive_types::H256;
 
-pub const USERS: &'static [u64] = &[4, 5, 6, 7];
+pub const USERS: &[u64] = &[4, 5, 6, 7];
 pub const TREASURY_ID: u64 = 8;
 
 pub fn init_ft(sys: &System) {
     let ft = Program::from_file(
-        &sys,
+        sys,
         "../../target/wasm32-unknown-unknown/release/fungible_token.wasm",
     );
 
@@ -28,7 +28,7 @@ pub fn init_ft(sys: &System) {
 
 pub fn init_nft(sys: &System) {
     sys.init_logger();
-    let nft = Program::from_file(&sys, "../../target/wasm32-unknown-unknown/release/nft.wasm");
+    let nft = Program::from_file(sys, "../../target/wasm32-unknown-unknown/release/nft.wasm");
 
     let res = nft.send(
         USERS[0],
@@ -45,7 +45,7 @@ pub fn init_nft(sys: &System) {
 
 pub fn init_market(sys: &System) {
     sys.init_logger();
-    let market = Program::current(&sys);
+    let market = Program::current(sys);
     let res = market.send(
         USERS[0],
         InitMarket {

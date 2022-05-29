@@ -18,20 +18,16 @@ impl WasmProgram for FungibleToken {
                 from: _,
                 to: _,
                 amount: _,
-            } => {
-                return Ok(Some(
-                    FTEvent::Transfer {
-                        from: 3.into(),
-                        to: 3.into(),
-                        amount: 10000,
-                    }
-                    .encode(),
-                ));
-            }
-            FTAction::BalanceOf(_) => {
-                return Ok(Some(FTEvent::Balance(10000).encode()));
-            }
-            _ => return Ok(None),
+            } => Ok(Some(
+                FTEvent::Transfer {
+                    from: 3.into(),
+                    to: 3.into(),
+                    amount: 10000,
+                }
+                .encode(),
+            )),
+            FTAction::BalanceOf(_) => Ok(Some(FTEvent::Balance(10000).encode())),
+            _ => Ok(None),
         }
     }
 
@@ -42,7 +38,7 @@ impl WasmProgram for FungibleToken {
 
 fn init_dao(sys: &System) {
     sys.init_logger();
-    let dao = Program::current(&sys);
+    let dao = Program::current(sys);
     let res = dao.send(
         100001,
         InitDao {
@@ -75,9 +71,9 @@ fn add_member(
         3,
         DaoAction::SubmitMembershipProposal {
             applicant: applicant.into(),
-            token_tribute: token_tribute,
-            shares_requested: shares_requested,
-            quorum: quorum,
+            token_tribute,
+            shares_requested,
+            quorum,
             details: "".to_string(),
         },
     );
@@ -86,7 +82,7 @@ fn add_member(
     let res = dao.send(
         3,
         DaoAction::SubmitVote {
-            proposal_id: proposal_id.clone(),
+            proposal_id,
             vote: Vote::Yes,
         },
     );
@@ -94,7 +90,7 @@ fn add_member(
 
     sys.spend_blocks(1000000001);
 
-    let res = dao.send(3, DaoAction::ProcessProposal(proposal_id.clone()));
+    let res = dao.send(3, DaoAction::ProcessProposal(proposal_id));
     assert!(!res.main_failed());
 }
 
@@ -127,9 +123,9 @@ fn proposal_passed() {
     );
     assert!(!res.main_failed());
 
-    for i in 0..7 {
+    for user in users.iter().take(7) {
         let res = dao.send(
-            users[i],
+            *user,
             DaoAction::SubmitVote {
                 proposal_id: 10,
                 vote: Vote::Yes,
@@ -137,9 +133,9 @@ fn proposal_passed() {
         );
         assert!(!res.main_failed());
     }
-    for i in 8..10 {
+    for user in users.iter().take(10).skip(8) {
         let res = dao.send(
-            users[i],
+            *user,
             DaoAction::SubmitVote {
                 proposal_id: 10,
                 vote: Vote::No,
@@ -190,10 +186,10 @@ fn proposal_did_not_pass() {
     );
     assert!(!res.main_failed());
 
-    for i in 0..7 {
-        println!("id {:?}", i);
+    for (id, user) in users.iter().enumerate().take(7) {
+        println!("id {:?}", id);
         let res = dao.send(
-            users[i],
+            *user,
             DaoAction::SubmitVote {
                 proposal_id: 10,
                 vote: Vote::No,
@@ -201,9 +197,9 @@ fn proposal_did_not_pass() {
         );
         assert!(!res.main_failed());
     }
-    for i in 8..10 {
+    for user in users.iter().take(10).skip(8) {
         let res = dao.send(
-            users[i],
+            *user,
             DaoAction::SubmitVote {
                 proposal_id: 10,
                 vote: Vote::Yes,
@@ -255,10 +251,10 @@ fn quorum_is_not_reached() {
     );
     assert!(!res.main_failed());
 
-    for i in 0..7 {
-        println!("id {:?}", i);
+    for (id, user) in users.iter().enumerate().take(7) {
+        println!("id {:?}", id);
         let res = dao.send(
-            users[i],
+            *user,
             DaoAction::SubmitVote {
                 proposal_id: 10,
                 vote: Vote::Yes,
@@ -266,9 +262,9 @@ fn quorum_is_not_reached() {
         );
         assert!(!res.main_failed());
     }
-    for i in 8..10 {
+    for user in users.iter().take(10).skip(8) {
         let res = dao.send(
-            users[i],
+            *user,
             DaoAction::SubmitVote {
                 proposal_id: 10,
                 vote: Vote::No,
@@ -320,9 +316,9 @@ fn ragequit() {
     );
     assert!(!res.main_failed());
 
-    for i in 9..10 {
+    for user in users.iter().take(10).skip(9) {
         let res = dao.send(
-            users[i],
+            *user,
             DaoAction::SubmitVote {
                 proposal_id: 10,
                 vote: Vote::Yes,
@@ -331,9 +327,9 @@ fn ragequit() {
         assert!(!res.main_failed());
     }
     sys.spend_blocks(1000000001);
-    for i in 1..8 {
-        println!("id {:?}", i);
-        let res = dao.send(users[i], DaoAction::RageQuit(1000));
+    for (id, user) in users.iter().enumerate().take(8).skip(1) {
+        println!("id {:?}", id);
+        let res = dao.send(*user, DaoAction::RageQuit(1000));
         assert!(!res.main_failed());
     }
 

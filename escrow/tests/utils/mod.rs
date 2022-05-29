@@ -22,7 +22,7 @@ pub fn init_system() -> System {
 
 pub fn init_ft(sys: &System) -> Program {
     let ft_program = Program::from_file(
-        &sys,
+        sys,
         "../target/wasm32-unknown-unknown/release/fungible_token.wasm",
     );
 
@@ -41,7 +41,7 @@ pub fn init_ft(sys: &System) -> Program {
 }
 
 pub fn init_escrow(sys: &System) -> Program {
-    let escrow_program = Program::current(&sys);
+    let escrow_program = Program::current(sys);
 
     assert!(escrow_program
         .send(

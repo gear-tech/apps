@@ -4,13 +4,13 @@ use gstd::ActorId;
 use gtest::{Program, RunResult, System};
 use market_io::*;
 use nft_io::*;
-mod utils;
+pub mod utils;
 use utils::*;
 
 fn before_each_test(sys: &System) {
-    init_ft(&sys);
-    init_nft(&sys);
-    init_market(&sys);
+    init_ft(sys);
+    init_nft(sys);
+    init_market(sys);
     let nft = sys.get_program(2);
     let market = sys.get_program(3);
     let res = market.send(USERS[0], MarketAction::AddFTContract(1.into()));
