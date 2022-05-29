@@ -82,7 +82,7 @@ impl Staking {
     /// Calculates the reward of the staker that is currently avaiable
     fn calc_reward(&mut self) -> u128 {
         if let Some(staker) = self.stakers.get(&msg::source()) {
-            return self.get_amount_per_token(staker.balance) + staker.reward_allowed
+            return self.get_max_reward(staker.balance) + staker.reward_allowed
                 - staker.reward_debt
                 - staker.distributed;
         }
@@ -96,7 +96,7 @@ impl Staking {
     async fn stake(&mut self, amount: u128) {
         if amount > 0 {
             self.update_reward();
-            let amount_per_token = self.get_amount_per_token(amount);
+            let amount_per_token = self.get_max_reward(amount);
 
             self.stakers
                 .entry(msg::source())
@@ -154,7 +154,7 @@ impl Staking {
             panic!("withdraw(): amount is null");
         }
 
-        let amount_per_token = self.get_amount_per_token(amount);
+        let amount_per_token = self.get_max_reward(amount);
 
         if let Some(staker) = self.stakers.get_mut(&msg::source()) {
             if staker.balance < amount {
