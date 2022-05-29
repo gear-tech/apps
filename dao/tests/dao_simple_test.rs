@@ -6,7 +6,7 @@ use gtest::{Program, System};
 fn init_fungible_token(sys: &System) {
     sys.init_logger();
     let ft = Program::from_file(
-        &sys,
+        sys,
         "../target/wasm32-unknown-unknown/release/fungible_token.wasm",
     );
 
@@ -34,7 +34,7 @@ fn init_fungible_token(sys: &System) {
 
 fn init_dao(sys: &System) {
     sys.init_logger();
-    let dao = Program::current(&sys);
+    let dao = Program::current(sys);
 
     let res = dao.send(
         100001,
@@ -71,7 +71,7 @@ fn create_membership_proposal(dao: &Program, proposal_id: u128) {
         DaoEvent::SubmitMembershipProposal {
             proposer: 3.into(),
             applicant: 4.into(),
-            proposal_id: proposal_id.clone(),
+            proposal_id,
             token_tribute: 1000
         }
         .encode()
@@ -82,7 +82,7 @@ fn vote(dao: &Program, proposal_id: u128, vote: Vote) {
     let res = dao.send(
         3,
         DaoAction::SubmitVote {
-            proposal_id: proposal_id.clone(),
+            proposal_id,
             vote: vote.clone(),
         },
     );
@@ -90,8 +90,8 @@ fn vote(dao: &Program, proposal_id: u128, vote: Vote) {
         3,
         DaoEvent::SubmitVote {
             account: 3.into(),
-            proposal_id: proposal_id.clone(),
-            vote: vote.clone(),
+            proposal_id,
+            vote,
         }
         .encode()
     )));

@@ -4,7 +4,7 @@ use gstd::{ActorId, String};
 use gtest::{Program, System};
 use multitoken_io::*;
 
-const USERS: &'static [u64] = &[3, 4, 5, 0];
+const USERS: &[u64] = &[3, 4, 5, 0];
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 const TOKEN_AMOUNT: u128 = 100;
 const TOKENS_TO_BURN: u128 = 50;
@@ -13,7 +13,7 @@ const TOKEN_ID: u128 = 0;
 fn init(sys: &System) -> Program {
     sys.init_logger();
 
-    let mtk = Program::current(&sys);
+    let mtk = Program::current(sys);
     let res = mtk.send(
         USERS[0],
         InitMTK {
@@ -24,12 +24,12 @@ fn init(sys: &System) -> Program {
     );
 
     assert!(res.log().is_empty());
-    return mtk;
+    mtk
 }
 
 fn init_with_mint(sys: &System) {
     sys.init_logger();
-    let mtk = Program::current(&sys);
+    let mtk = Program::current(sys);
     let res = mtk.send(
         USERS[0],
         InitMTK {
@@ -94,7 +94,7 @@ fn mint_failures() {
         0,
         MyMTKAction::Mint {
             amount: TOKEN_AMOUNT,
-            token_metadata: Some(meta.clone()),
+            token_metadata: Some(meta),
         },
     );
     assert!(res.main_failed());
@@ -326,7 +326,7 @@ fn balance_of_batch() {
     let res = mtk.send(
         USERS[0],
         MyMTKAction::BalanceOfBatch {
-            accounts: accounts,
+            accounts,
             ids: vec![1u128, 2u128],
         },
     );
@@ -430,7 +430,7 @@ fn transfer_from_failures() {
         from,
         MyMTKAction::TransferFrom {
             from: from.into(),
-            to: ZERO_ID.into(),
+            to: ZERO_ID,
             id: TOKEN_ID,
             amount: 10,
         },
@@ -442,7 +442,7 @@ fn transfer_from_failures() {
         from,
         MyMTKAction::TransferFrom {
             from: from.into(),
-            to: ZERO_ID.into(),
+            to: ZERO_ID,
             id: TOKEN_ID,
             amount: TOKEN_AMOUNT + 100,
         },

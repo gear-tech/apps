@@ -27,47 +27,41 @@ impl WasmProgram for MultiToken {
                 id,
                 amount,
                 meta: _,
-            } => {
-                return Ok(Some(
-                    MTKEvent::TransferSingle(TransferSingleReply {
-                        operator: 1.into(),
-                        from: ZERO_ID,
-                        to: account,
-                        id,
-                        amount,
-                    })
-                    .encode(),
-                ));
-            }
+            } => Ok(Some(
+                MTKEvent::TransferSingle(TransferSingleReply {
+                    operator: 1.into(),
+                    from: ZERO_ID,
+                    to: account,
+                    id,
+                    amount,
+                })
+                .encode(),
+            )),
             MTKAction::MintBatch {
                 account,
                 ids,
                 amounts,
                 meta: _,
-            } => {
-                return Ok(Some(
-                    MTKEvent::TransferBatch {
-                        operator: 1.into(),
-                        from: ZERO_ID,
-                        to: account,
-                        ids: ids.to_vec(),
-                        values: amounts.to_vec(),
-                    }
-                    .encode(),
-                ));
-            }
-            MTKAction::Burn { id, amount } => {
-                return Ok(Some(
-                    MTKEvent::TransferSingle(TransferSingleReply {
-                        operator: 1.into(),
-                        from: 1.into(),
-                        to: ZERO_ID,
-                        id,
-                        amount,
-                    })
-                    .encode(),
-                ));
-            }
+            } => Ok(Some(
+                MTKEvent::TransferBatch {
+                    operator: 1.into(),
+                    from: ZERO_ID,
+                    to: account,
+                    ids: ids.to_vec(),
+                    values: amounts.to_vec(),
+                }
+                .encode(),
+            )),
+            MTKAction::Burn { id, amount } => Ok(Some(
+                MTKEvent::TransferSingle(TransferSingleReply {
+                    operator: 1.into(),
+                    from: 1.into(),
+                    to: ZERO_ID,
+                    id,
+                    amount,
+                })
+                .encode(),
+            )),
             MTKAction::BalanceOfBatch {
                 accounts: _,
                 ids: _,
@@ -77,7 +71,7 @@ impl WasmProgram for MultiToken {
                     id: CONCERT_ID,
                     amount: AMOUNT,
                 }];
-                return Ok(Some(MTKEvent::BalanceOfBatch(res).encode()));
+                Ok(Some(MTKEvent::BalanceOfBatch(res).encode()))
             } // _ => return Ok(None),
         }
     }
@@ -95,8 +89,8 @@ pub fn init_system() -> System {
 }
 
 pub fn init_concert(sys: &System) -> Program {
-    let concert_program = Program::current(&sys);
-    let mtk_program = Program::mock_with_id(&sys, MTK_ID, MultiToken);
+    let concert_program = Program::current(sys);
+    let mtk_program = Program::mock_with_id(sys, MTK_ID, MultiToken);
     let res = mtk_program.send_bytes(100001, "INIT");
     assert!(!res.log().is_empty());
     assert!(concert_program
