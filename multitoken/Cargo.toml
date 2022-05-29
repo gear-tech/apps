@@ -1,18 +1,20 @@
 [package]
-name = "gear-contract-libraries"
+name = "multitoken"
 version = "0.1.0"
-edition = "2021"
-license = "GPL-3.0"
 authors = ["Gear Technologies"]
+edition = "2021"
 
 [dependencies]
-<<<<<<< HEAD
 gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
-codec = { package = "parity-scale-codec", version = "3.1.2", default-features = false, features = ["derive"] }
 primitive-types = { version = "0.11.1", default-features = false, features = ["scale-info"]}
-=======
 codec = { package = "parity-scale-codec", version = "3.1.2", default-features = false, features = ["derive"] }
-gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
-primitive-types = { version = "0.11.1", default-features = false, features = ["scale-info"] }
->>>>>>> master
 scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
+gear-contract-libraries = { path = "../gear-contract-libraries" }
+multitoken-io = { path = "io" }
+derive_traits = { path = "../gear-contract-libraries/src/utils/derive_traits" }
+
+[dev-dependencies]
+gtest = { git = "https://github.com/gear-tech/gear.git"}
+
+[build-dependencies]
+gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }

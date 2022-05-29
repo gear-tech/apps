@@ -1,18 +1,19 @@
 [package]
-name = "erc1155"
+name = "dutch-auction"
 version = "0.1.0"
 edition = "2021"
-license = "GPL-3.0"
-authors = ["Gear Technologies"]
-
-[build-dependencies]
-gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.1.2", default-features = false, features = ["derive"] }
 gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
-primitive-types = { version = "0.11.1", default-features = false, features = ["scale-info"] }
+non-fungible-token = { path = "../non-fungible-token" }
 scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
+auction-io = { path = "io" }
+primitive-types = { version = "0.11.1", default-features = false, features = ["scale-info"] }
+nft-example-io = { path = "../nft-example/io" }
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git" }
+
+[build-dependencies]
+gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git" }

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
+<<<<<<< HEAD
 syn = "1"
 quote = "1.0"
 proc-macro2 = "1"
@@ -12,3 +13,14 @@ macros = { path = "../macros/" }
 [lib]
 proc-macro = true
 
+=======
+syn = "1.0"
+quote = "1.0"
+proc-macro2 = "1.0"
+macros = { path = "../macros/" }
+
+[lib]
+name = "derive_traits"
+path = "src/lib.rs"
+proc-macro = true
+>>>>>>> master
