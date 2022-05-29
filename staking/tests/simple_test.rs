@@ -11,6 +11,7 @@ use gtest::{Program, System};
 use staking_io::*;
 
 const USERS: &[u64] = &[1, 2, 3, 4, 5, 6, 7, 8];
+const DECIMALS_COUNT: u8 = 20;
 
 #[derive(Debug, Default, Encode)]
 struct Staking {
@@ -131,6 +132,13 @@ fn produced(staking: &mut Staking, time: u64) -> u128 {
         + (time - staking.produced_time) as u128 / staking.distribution_time as u128
 }
 
+/// Calculates the maximum possible reward
+/// Arguments:
+/// `amount`: the number of tokens
+fn get_max_reward(staking: &Staking, amount: u128) -> u128 {
+    (amount * staking.tokens_per_stake) >> DECIMALS_COUNT
+}
+
 /// Updates the reward produced so far and calculates tokens per stake
 fn update_reward(staking: &mut Staking, time: u64) {
     let reward_produced_at_now = produced(staking, time);
@@ -141,7 +149,7 @@ fn update_reward(staking: &mut Staking, time: u64) {
         if staking.total_staked > 0 {
             staking.tokens_per_stake = staking
                 .tokens_per_stake
-                .saturating_add(produced_new * (1 << 20) / staking.total_staked);
+                .saturating_add((produced_new << DECIMALS_COUNT) / staking.total_staked);
         }
 
         staking.reward_produced = staking.reward_produced.saturating_add(produced_new);
@@ -149,9 +157,9 @@ fn update_reward(staking: &mut Staking, time: u64) {
 }
 
 /// Calculates the reward of the staker that is currently avaiable
-fn calc_reward(staking: &Staking, source: &ActorId) -> u128 {
+fn calc_reward(staking: &mut Staking, source: &ActorId) -> u128 {
     if let Some(staker) = staking.stakers.get(source) {
-        return (staker.balance * staking.tokens_per_stake) / (1 << 20) + staker.reward_allowed
+        return get_max_reward(staking, staker.balance) + staker.reward_allowed
             - staker.reward_debt
             - staker.distributed;
     }
@@ -203,7 +211,7 @@ fn send_reward() {
     staking.stakers.insert(
         USERS[4].into(),
         Staker {
-            reward_debt: (1500 * staking.tokens_per_stake) / (1 << 20),
+            reward_debt: get_max_reward(&staking, 1500),
             balance: 1500,
             ..Default::default()
         },
@@ -220,7 +228,7 @@ fn send_reward() {
     staking.stakers.insert(
         USERS[5].into(),
         Staker {
-            reward_debt: (2000 * staking.tokens_per_stake) / (1 << 20),
+            reward_debt: get_max_reward(&staking, 2000),
             balance: 2000,
             ..Default::default()
         },
@@ -231,7 +239,7 @@ fn send_reward() {
     sys.spend_blocks(500000);
 
     update_reward(&mut staking, time + 500000 * 2);
-    let reward = calc_reward(&staking, &USERS[4].into());
+    let reward = calc_reward(&mut staking, &USERS[4].into());
 
     staking
         .stakers
@@ -250,7 +258,7 @@ fn send_reward() {
     sys.spend_blocks(500000);
 
     update_reward(&mut staking, time + 500000 * 3);
-    let reward = calc_reward(&staking, &USERS[5].into());
+    let reward = calc_reward(&mut staking, &USERS[5].into());
 
     staking
         .stakers
@@ -295,7 +303,7 @@ fn withdraw() {
     staking.stakers.insert(
         USERS[4].into(),
         Staker {
-            reward_debt: (1500 * staking.tokens_per_stake) / (1 << 20),
+            reward_debt: get_max_reward(&staking, 1500),
             balance: 1500,
             ..Default::default()
         },
@@ -312,7 +320,7 @@ fn withdraw() {
     staking.stakers.insert(
         USERS[5].into(),
         Staker {
-            reward_debt: (2000 * staking.tokens_per_stake) / (1 << 20),
+            reward_debt: get_max_reward(&staking, 2000),
             balance: 2000,
             ..Default::default()
         },
@@ -328,7 +336,7 @@ fn withdraw() {
     if let Some(staker) = staking.stakers.get_mut(&USERS[4].into()) {
         staker.reward_allowed = staker
             .reward_allowed
-            .saturating_add((500 * staking.tokens_per_stake) / (1 << 20));
+            .saturating_add((500 * staking.tokens_per_stake) >> DECIMALS_COUNT);
         staker.balance = staker.balance.saturating_sub(500);
 
         update_reward(&mut staking, time + 500000 * 2);
@@ -339,7 +347,7 @@ fn withdraw() {
     sys.spend_blocks(500000);
 
     update_reward(&mut staking, time + 500000 * 3);
-    let reward = calc_reward(&staking, &USERS[4].into());
+    let reward = calc_reward(&mut staking, &USERS[4].into());
 
     staking
         .stakers
@@ -353,7 +361,7 @@ fn withdraw() {
     sys.spend_blocks(500000);
 
     update_reward(&mut staking, time + 500000 * 4);
-    let reward = calc_reward(&staking, &USERS[5].into());
+    let reward = calc_reward(&mut staking, &USERS[5].into());
 
     staking
         .stakers
