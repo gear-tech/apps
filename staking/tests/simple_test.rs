@@ -10,7 +10,7 @@ use gstd::{ActorId, BTreeMap};
 use gtest::{Program, System};
 use staking_io::*;
 
-const USERS: &'static [u64] = &[1, 2, 3, 4, 5, 6, 7, 8];
+const USERS: &[u64] = &[1, 2, 3, 4, 5, 6, 7, 8];
 
 #[derive(Debug, Default, Encode)]
 struct Staking {
@@ -23,7 +23,7 @@ struct Staking {
 }
 
 fn init_staking(sys: &System) {
-    let staking = Program::current(&sys);
+    let staking = Program::current(sys);
 
     let res = staking.send(
         USERS[3],
@@ -39,7 +39,7 @@ fn init_staking(sys: &System) {
 
 fn init_staking_token(sys: &System) {
     let st_token = Program::from_file(
-        &sys,
+        sys,
         "../target/wasm32-unknown-unknown/release/fungible_token.wasm",
     );
 
@@ -95,7 +95,7 @@ fn init_staking_token(sys: &System) {
 
 fn init_reward_token(sys: &System) {
     let rw_token = Program::from_file(
-        &sys,
+        sys,
         "../target/wasm32-unknown-unknown/release/fungible_token.wasm",
     );
 

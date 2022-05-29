@@ -94,33 +94,33 @@ impl Staking {
     /// Arguments:
     /// `amount`: the number of tokens for the stake
     async fn stake(&mut self, amount: u128) {
-        if amount > 0 {
-            self.update_reward();
-            let amount_per_token = self.get_max_reward(amount);
-
-            self.stakers
-                .entry(msg::source())
-                .and_modify(|stake| {
-                    stake.reward_debt = stake.reward_debt.saturating_add(amount_per_token);
-                    stake.balance = stake.balance.saturating_add(amount);
-                })
-                .or_insert_with(|| Staker {
-                    reward_debt: amount_per_token,
-                    balance: amount,
-                    ..Default::default()
-                });
-
-            self.total_staked = self.total_staked.saturating_add(amount);
-
-            let token_address = self.staking_token_address;
-
-            self.transfer_tokens(&token_address, &msg::source(), &exec::program_id(), amount)
-                .await;
-
-            msg::reply(StakingEvent::StakeAccepted(amount), 0).unwrap();
-        } else {
-            panic!("enter(): amount: {}", amount);
+        if amount == 0 {
+            panic!("enter(): amount is null");
         }
+
+        self.update_reward();
+        let amount_per_token = self.get_max_reward(amount);
+
+        self.stakers
+            .entry(msg::source())
+            .and_modify(|stake| {
+                stake.reward_debt = stake.reward_debt.saturating_add(amount_per_token);
+                stake.balance = stake.balance.saturating_add(amount);
+            })
+            .or_insert_with(|| Staker {
+                reward_debt: amount_per_token,
+                balance: amount,
+                ..Default::default()
+            });
+
+        self.total_staked = self.total_staked.saturating_add(amount);
+
+        let token_address = self.staking_token_address;
+
+        self.transfer_tokens(&token_address, &msg::source(), &exec::program_id(), amount)
+            .await;
+
+        msg::reply(StakingEvent::StakeAccepted(amount), 0).unwrap();
     }
 
     ///Sends reward to the staker
