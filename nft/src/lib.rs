@@ -19,11 +19,15 @@ static mut CONTRACT: Option<NFT> = None;
 #[no_mangle]
 pub unsafe extern "C" fn init() {
     let config: InitNFT = msg::load().expect("Unable to decode InitNFT");
+    if config.royalties.is_some() {
+        config.royalties.as_ref().unwrap().validate();
+    }
     let nft = NFT {
         token: NFTState {
             name: config.name,
             symbol: config.symbol,
             base_uri: config.base_uri,
+            royalties: config.royalties,
             ..Default::default()
         },
         owner: msg::source(),
@@ -53,7 +57,8 @@ pub unsafe extern "C" fn handle() {
 pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let query: NFTQuery = msg::load().expect("failed to decode input argument");
     let nft = CONTRACT.get_or_insert(NFT::default());
-    let encoded = NFTMetaState::proc_state(nft, query).expect("Error in reading NFT contract state");
+    let encoded =
+        NFTMetaState::proc_state(nft, query).expect("Error in reading NFT contract state");
     gstd::util::to_leak_ptr(encoded)
 }
 

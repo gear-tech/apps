@@ -6,11 +6,11 @@ edition = "2021"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.1.2", default-features = false, features = ["derive"] }
 gstd = { git = "https://github.com/gear-tech/gear.git", features = ["debug"] }
-non-fungible-token = { path = "../non-fungible-token" }
 scale-info = { version = "2.0.1", default-features = false, features = ["derive"] }
 auction-io = { path = "io" }
 primitive-types = { version = "0.11.1", default-features = false, features = ["scale-info"] }
-nft-example-io = { path = "../nft-example/io" }
+nft-io = { path = "../nft/io" }
+gear-contract-libraries = { path = "../gear-contract-libraries" }
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git" }

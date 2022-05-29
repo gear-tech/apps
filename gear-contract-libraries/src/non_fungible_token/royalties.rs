@@ -11,7 +11,7 @@ pub struct Royalties {
 
 impl Royalties {
     pub fn validate(&self) {
-        // percent must be less than or equal to100% (100 * 100)
+        // percent must be less than or equal to 100% (100 * 100)
         if self.percent > 10_000u16 {
             panic!("royalty percent must be less than 100%");
         }

@@ -513,11 +513,11 @@ name = "dutch-auction"
 version = "0.1.0"
 dependencies = [
  "auction-io",
+ "gear-contract-libraries",
  "gear-wasm-builder",
  "gstd",
  "gtest",
- "nft-example-io",
- "non-fungible-token",
+ "nft-io",
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
@@ -694,11 +694,7 @@ dependencies = [
 [[package]]
 name = "galloc"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "git+https://github.com/gear-tech/gear.git#f48450dd9bad2efb9cb3fb13353464ca73e7b7f9"
-=======
 source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
->>>>>>> master
 dependencies = [
  "dlmalloc",
 ]
@@ -706,40 +702,24 @@ dependencies = [
 [[package]]
 name = "gcore"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "git+https://github.com/gear-tech/gear.git#f48450dd9bad2efb9cb3fb13353464ca73e7b7f9"
-=======
 source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
->>>>>>> master
 
 [[package]]
 name = "gear-backend-common"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "git+https://github.com/gear-tech/gear.git#f48450dd9bad2efb9cb3fb13353464ca73e7b7f9"
-=======
 source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
->>>>>>> master
 dependencies = [
- "derive_more",
  "gear-core",
- "gear-core-errors",
  "log",
 ]
 
 [[package]]
 name = "gear-backend-wasmtime"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "git+https://github.com/gear-tech/gear.git#f48450dd9bad2efb9cb3fb13353464ca73e7b7f9"
-=======
 source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
->>>>>>> master
 dependencies = [
- "derive_more",
  "gear-backend-common",
  "gear-core",
- "gear-core-errors",
  "log",
  "wasmtime",
 ]
@@ -757,15 +737,11 @@ dependencies = [
 [[package]]
 name = "gear-core"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "git+https://github.com/gear-tech/gear.git#f48450dd9bad2efb9cb3fb13353464ca73e7b7f9"
-=======
 source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
->>>>>>> master
 dependencies = [
+ "anyhow",
  "blake2-rfc",
  "derive_more",
- "gear-core-errors",
  "hex",
  "log",
  "parity-scale-codec",
@@ -776,30 +752,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "gear-core-errors"
-version = "0.1.0"
-source = "git+https://github.com/gear-tech/gear.git#f48450dd9bad2efb9cb3fb13353464ca73e7b7f9"
-dependencies = [
- "derive_more",
- "parity-scale-codec",
- "scale-info",
-]
-
-[[package]]
 name = "gear-core-processor"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "git+https://github.com/gear-tech/gear.git#f48450dd9bad2efb9cb3fb13353464ca73e7b7f9"
-=======
 source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
->>>>>>> master
 dependencies = [
  "anyhow",
  "blake2-rfc",
- "derive_more",
  "gear-backend-common",
  "gear-core",
- "gear-core-errors",
  "log",
  "parity-scale-codec",
 ]
@@ -818,21 +778,15 @@ dependencies = [
 [[package]]
 name = "gear-wasm-builder"
 version = "0.1.2"
-<<<<<<< HEAD
-source = "git+https://github.com/gear-tech/gear.git#f48450dd9bad2efb9cb3fb13353464ca73e7b7f9"
-=======
 source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
->>>>>>> master
 dependencies = [
  "anyhow",
  "cargo_metadata",
- "colored",
  "log",
  "pathdiff",
  "pwasm-utils",
  "thiserror",
  "toml",
- "which",
 ]
 
 [[package]]
@@ -870,11 +824,7 @@ dependencies = [
 [[package]]
 name = "gstd"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "git+https://github.com/gear-tech/gear.git#f48450dd9bad2efb9cb3fb13353464ca73e7b7f9"
-=======
 source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
->>>>>>> master
 dependencies = [
  "bs58",
  "futures",
@@ -890,11 +840,7 @@ dependencies = [
 [[package]]
 name = "gstd-codegen"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "git+https://github.com/gear-tech/gear.git#f48450dd9bad2efb9cb3fb13353464ca73e7b7f9"
-=======
 source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
->>>>>>> master
 dependencies = [
  "quote",
  "syn",
@@ -903,11 +849,7 @@ dependencies = [
 [[package]]
 name = "gtest"
 version = "0.1.0"
-<<<<<<< HEAD
-source = "git+https://github.com/gear-tech/gear.git#f48450dd9bad2efb9cb3fb13353464ca73e7b7f9"
-=======
 source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
->>>>>>> master
 dependencies = [
  "colored",
  "env_logger",
@@ -1071,11 +1013,7 @@ dependencies = [
 
 [[package]]
 name = "macros"
-<<<<<<< HEAD
 version = "0.1.0"
-=======
-version = "1.5.0"
->>>>>>> master
 
 [[package]]
 name = "market-io"
@@ -1154,7 +1092,6 @@ dependencies = [
  "gear-wasm-builder",
  "gstd",
  "gtest",
- "hex",
  "nft-io",
  "parity-scale-codec",
  "primitive-types",
@@ -1915,17 +1852,6 @@ dependencies = [
  "serde",
  "thiserror",
  "wasmparser",
-]
-
-[[package]]
-name = "which"
-version = "4.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c4fb54e6113b6a8772ee41c3404fb0301ac79604489467e0a9ce1f3e97c24ae"
-dependencies = [
- "either",
- "lazy_static",
- "libc",
 ]
 
 [[package]]
