@@ -75,7 +75,7 @@ impl Staking {
     /// Calculates the maximum possible reward
     /// Arguments:
     /// `amount`: the number of tokens
-    fn get_amount_per_token(&self, amount: u128) -> u128 {
+    fn get_max_reward(&self, amount: u128) -> u128 {
         (amount * self.tokens_per_stake) >> DECIMALS_COUNT
     }
 
