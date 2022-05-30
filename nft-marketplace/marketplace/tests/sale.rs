@@ -1,17 +1,16 @@
 use codec::Encode;
 use ft_io::*;
-use gstd::ActorId;
 use market_io::*;
 use nft_io::*;
 
-use gtest::{Program, System};
-mod utils;
+use gtest::System;
+pub mod utils;
 use utils::*;
 
 fn before_each_test(sys: &System) {
-    init_ft(&sys);
-    init_nft(&sys);
-    init_market(&sys);
+    init_ft(sys);
+    init_nft(sys);
+    init_market(sys);
     let market = sys.get_program(3);
     let res = market.send(USERS[0], MarketAction::AddFTContract(1.into()));
     assert!(res.log().is_empty());
