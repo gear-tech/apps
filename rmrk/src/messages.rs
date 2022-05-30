@@ -91,7 +91,7 @@ pub async fn transfer_child(
     )
     .unwrap()
     .await
-    .expect("Error in burning RMRK token child");
+    .expect("Error in transferring RMRK token child");
 }
 
 pub async fn add_accepted_child(

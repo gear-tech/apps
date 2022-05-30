@@ -5,7 +5,7 @@ use primitive_types::U256;
 impl RMRKToken {
     /// Burns RMRK token. It must be called from the root owner
     /// It recursively burns tokens starting from the contract it is called within
-    /// then it looks if the token has children and call `burn_from_parent` function on this children
+    /// then it looks if the token has children and call `burn_from_parent` function on these children
     /// Requirements:
     /// * The `msg::source()` must be owner of the token
     /// Arguments:
@@ -45,12 +45,11 @@ impl RMRKToken {
     /// * `token_id`: is the tokenId of the burnt token
     pub async fn burn_from_parent(&mut self, token_ids: Vec<TokenId>, root_owner: &ActorId) {
         for token_id in &token_ids {
-            debug!("BURN FROM PARENT");
             let rmrk_owner = self
                 .rmrk_owners
                 .get(&token_id)
                 .expect("Token does not exist");
-            if msg::source() != rmrk_owner.owner_id || rmrk_owner.token_id.is_none() {
+            if msg::source() != rmrk_owner.owner_id {
                 panic!("Caller must be parent RMRK contract")
             }
             self.token_approvals.remove(&token_id);
@@ -65,15 +64,12 @@ impl RMRKToken {
     }
 
     async fn internal_burn_children(&mut self, token_id: TokenId, root_owner: &ActorId) {
-        debug!("INTERNAL BURN {:?}", exec::program_id());
         let pending_children = self.get_pending_children(token_id);
         for (child_contract_id, children) in &pending_children {
-            debug!("PENDING BURN");
             burn_from_parent(&child_contract_id, children.clone(), &root_owner).await;
         }
         let accepted_children = self.get_accepted_children(token_id);
         for (child_contract_id, children) in &accepted_children {
-            debug!("ACCEPTED BURN");
             burn_from_parent(&child_contract_id, children.clone(), &root_owner).await;
         }
     }

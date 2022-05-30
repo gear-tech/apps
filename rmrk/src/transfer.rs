@@ -46,7 +46,6 @@ impl RMRKToken {
     }
 
     /// Transfers RMRK token to another RMRK contract
-    /// If the previous owner is another RMRK contract, it burns the RMRK child token from the RMRK parent contract
     /// Requirements:
     /// * The ``token_id` should exist
     /// * The `msg::source()` must be approved or owner of the token
@@ -70,19 +69,18 @@ impl RMRKToken {
             .expect("Token does not exist");
 
         let new_root_owner = get_root_owner(to, destination_id).await;
-        // if the RMRK owner is another RMRK contract
-        if rmrk_owner.token_id.is_some() {
-            // if root owner of new RMRK contract is the same
-            if root_owner == new_root_owner {
-                if to == &rmrk_owner.owner_id {
-                    transfer_child(&to, rmrk_owner.token_id.unwrap(), destination_id, token_id)
-                        .await;
-                } else {
-                    burn_child(&rmrk_owner.owner_id, rmrk_owner.token_id.unwrap(), token_id).await;
-                    add_accepted_child(&to, destination_id, token_id).await;
-                }
-            } else {
+
+        // if root owner transfers child RMRK token between RMRK tokens inside the same RMRK contract
+        if &rmrk_owner.owner_id == to {
+            transfer_child(&to, rmrk_owner.token_id.unwrap(), destination_id, token_id).await;
+        } else {
+            if rmrk_owner.token_id.is_some() {
                 burn_child(&rmrk_owner.owner_id, rmrk_owner.token_id.unwrap(), token_id).await;
+            }
+
+            if root_owner == new_root_owner {
+                add_accepted_child(&to, destination_id, token_id).await;
+            } else {
                 add_child(&to, destination_id, token_id).await;
                 self.balances
                     .entry(root_owner)
@@ -92,40 +90,20 @@ impl RMRKToken {
                     .and_modify(|balance| *balance += 1)
                     .or_insert(1);
             }
-        } else {
-            add_child(&to, destination_id, token_id).await;
+            rmrk_owner.owner_id = *to;
         }
-        rmrk_owner.owner_id = *to;
+
         rmrk_owner.token_id = Some(destination_id);
 
-        // if that NFT has parent NFT contract
-        let previous_root_owner = if rmrk_owner.token_id.is_some() {
-            // burn that child from previous parent NFT contract
-            burn_child(&rmrk_owner.owner_id, rmrk_owner.token_id.unwrap(), token_id).await;
-            get_root_owner(&rmrk_owner.owner_id, rmrk_owner.token_id.unwrap()).await
-        } else {
-            rmrk_owner.owner_id
-        };
-
-        let root_owner = add_child(to, destination_id, token_id).await;
-        // if new root owner differs from the previous one
-        if root_owner != previous_root_owner {
-            self.balances
-                .entry(root_owner)
-                .and_modify(|balance| *balance += 1)
-                .or_insert(1);
-            self.balances
-                .entry(previous_root_owner)
-                .and_modify(|balance| *balance -= 1);
-        }
-        self.rmrk_owners.insert(
-            token_id,
-            RMRKOwner {
-                token_id: Some(destination_id),
-                owner_id: *to,
+        msg::reply(
+            RMRKEvent::TransferToNft {
+                to: *to,
+                token_id,
+                destination_id,
             },
-        );
-        msg::reply(RMRKEvent::Transfer { to: *to, token_id }, 0).unwrap();
+            0,
+        )
+        .unwrap();
     }
 
     pub async fn approve(&mut self, to: &ActorId, token_id: TokenId) {

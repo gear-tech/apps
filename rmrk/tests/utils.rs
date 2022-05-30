@@ -142,19 +142,19 @@ pub fn transfer(rmrk: &Program, from: u64, to: u64, token_id: TokenId) -> RunRes
     )
 }
 
-pub fn transfer_to_nft_utils(
+pub fn transfer_to_nft(
     rmrk: &Program,
     from: u64,
     to: u64,
-    token_id: TokenId,
-    destination_id: TokenId,
+    token_id: u64,
+    destination_id: u64,
 ) -> RunResult {
     rmrk.send(
         from,
         RMRKAction::TransferToNft {
             to: to.into(),
-            token_id,
-            destination_id,
+            token_id: token_id.into(),
+            destination_id: destination_id.into(),
         },
     )
 }

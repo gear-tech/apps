@@ -79,8 +79,10 @@ impl RMRKToken {
     pub async fn transfer_child(&mut self, from: TokenId, to: TokenId, child_token_id: TokenId) {
         // checks that `msg::source()` is a deployed program
 
+        self.assert_token_does_not_exist(to);
         // get the vector of `child_nft_contract` + `child_token_id`
         let child_vec = get_child_vec(&msg::source(), child_token_id);
+
         // check the status of the child
         let child_status = self
             .children_status
@@ -90,7 +92,6 @@ impl RMRKToken {
         let from_root_owner = self.find_root_owner(from).await;
         let to_root_owner = self.find_root_owner(to).await;
         self.assert_exec_origin(&from_root_owner);
-        self.assert_exec_origin(&to_root_owner);
 
         match child_status {
             ChildStatus::Pending => {
@@ -112,16 +113,29 @@ impl RMRKToken {
                 self.accepted_children.entry(from).and_modify(|c| {
                     c.remove(&child_vec);
                 });
-                self.accepted_children
-                    .entry(to)
-                    .and_modify(|c| {
-                        c.insert(child_vec.clone());
-                    })
-                    .or_insert_with(|| {
-                        let mut c = BTreeSet::new();
-                        c.insert(child_vec);
-                        c
-                    });
+                if from_root_owner == to_root_owner {
+                    self.accepted_children
+                        .entry(to)
+                        .and_modify(|c| {
+                            c.insert(child_vec.clone());
+                        })
+                        .or_insert_with(|| {
+                            let mut c = BTreeSet::new();
+                            c.insert(child_vec);
+                            c
+                        });
+                } else {
+                    self.pending_children
+                        .entry(to)
+                        .and_modify(|c| {
+                            c.insert(child_vec.clone());
+                        })
+                        .or_insert_with(|| {
+                            let mut c = BTreeSet::new();
+                            c.insert(child_vec);
+                            c
+                        });
+                }
             }
         }
         msg::reply(
@@ -150,6 +164,7 @@ impl RMRKToken {
     pub async fn add_accepted_child(&mut self, parent_token_id: TokenId, child_token_id: TokenId) {
         // checks that `msg::source()` is a deployed program
 
+        self.assert_token_does_not_exist(parent_token_id);
         // get the vector of `child_nft_contract` + `child_token_id`
         let child_vec = get_child_vec(&msg::source(), child_token_id);
         let root_owner = self.find_root_owner(parent_token_id).await;

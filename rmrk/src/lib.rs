@@ -34,19 +34,6 @@ static mut RMRK: Option<RMRKToken> = None;
 pub const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 impl RMRKToken {
-    fn nft_parent(&self, token_id: TokenId) {
-        let rmrk_owner = self
-            .rmrk_owners
-            .get(&token_id)
-            .expect("Token does not exist");
-        msg::reply(
-            RMRKEvent::NFTParent {
-                parent: rmrk_owner.owner_id,
-            },
-            0,
-        )
-        .unwrap();
-    }
 
     // reply about root_owner
     async fn root_owner(&self, token_id: TokenId) {
@@ -177,7 +164,6 @@ async unsafe fn main() {
             root_owner,
         } => rmrk.burn_from_parent(child_token_ids, &root_owner).await,
         RMRKAction::Burn { token_id } => rmrk.burn(token_id).await,
-        RMRKAction::NFTParent { token_id } => rmrk.nft_parent(token_id),
         RMRKAction::RootOwner { token_id } => rmrk.root_owner(token_id).await,
         RMRKAction::Owner { token_id } => {
             let rmrk_owner = rmrk

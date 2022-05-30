@@ -87,9 +87,6 @@ pub enum RMRKAction {
         child_contract_id: ActorId,
         child_token_id: TokenId,
     },
-    NFTParent {
-        token_id: TokenId,
-    },
     RootOwner {
         token_id: TokenId,
     },
@@ -165,9 +162,15 @@ pub enum RMRKEvent {
     RootOwner {
         root_owner: ActorId,
     },
+
     Transfer {
         to: ActorId,
         token_id: TokenId,
+    },
+    TransferToNft {
+        to: ActorId,
+        token_id: TokenId,
+        destination_id: TokenId,
     },
     Owner {
         token_id: Option<TokenId>,

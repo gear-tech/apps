@@ -8,25 +8,17 @@ impl RMRKToken {
         }
     }
 
-    pub async fn assert_parent(&self, token_id: TokenId) {
-        let response: RMRKEvent =
-            msg::send_and_wait_for_reply(msg::source(), RMRKAction::NFTParent { token_id }, 0)
-                .unwrap()
-                .await
-                .expect("Error in NFTParent message");
-        if let RMRKEvent::NFTParent { parent } = response {
-            if parent != exec::program_id() {
-                panic!("RMRCore:: Wrong parent address");
-            }
-        } else {
-            panic!("Wrong received message");
-        }
-    }
-
     /// Checks that NFT with indicated ID already exists
     pub fn assert_token_exists(&self, token_id: TokenId) {
         if self.rmrk_owners.contains_key(&token_id) {
             panic!("RMRK: Token already exists");
+        }
+    }
+
+    /// Checks that NFT with indicated ID already does not exist
+    pub fn assert_token_does_not_exist(&self, token_id: TokenId) {
+        if !self.rmrk_owners.contains_key(&token_id) {
+            panic!("RMRK: Token does not exist");
         }
     }
 
