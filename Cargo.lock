@@ -1119,6 +1119,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "on-chain-nft"
+version = "0.1.0"
+dependencies = [
+ "derive_traits",
+ "gear-contract-libraries",
+ "gear-wasm-builder",
+ "gstd",
+ "gtest",
+ "hex",
+ "on-chain-nft-io",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
+name = "on-chain-nft-io"
+version = "0.1.0"
+dependencies = [
+ "gear-contract-libraries",
+ "gstd",
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

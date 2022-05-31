@@ -53,7 +53,8 @@ pub unsafe extern "C" fn handle() {
 pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
     let query: NFTQuery = msg::load().expect("failed to decode input argument");
     let nft = CONTRACT.get_or_insert(NFT::default());
-    let encoded = NFTMetaState::proc_state(nft, query).expect("Error in reading NFT contract state");
+    let encoded =
+        NFTMetaState::proc_state(nft, query).expect("Error in reading NFT contract state");
     gstd::util::to_leak_ptr(encoded)
 }
 

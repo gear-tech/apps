@@ -2,7 +2,7 @@
 
 use derive_traits::{NFTCore, NFTMetaState, NFTStateKeeper};
 use gear_contract_libraries::non_fungible_token::{nft_core::*, state::*, token::*};
-use gstd::{msg, prelude::*, ActorId};
+use gstd::{msg,debug, prelude::*, ActorId};
 use on_chain_nft_io::*;
 use primitive_types::U256;
 
@@ -23,6 +23,7 @@ static mut CONTRACT: Option<OnChainNFT> = None;
 #[no_mangle]
 pub unsafe extern "C" fn init() {
     let config: InitOnChainNFT = msg::load().expect("Unable to decode InitNFT");
+    debug!("Got config");
     let mut _layers: BTreeMap<LayerId, BTreeMap<LayerItemId, Vec<u8>>> = BTreeMap::new();
     for (layer_id, layer) in config.layers.iter() {
         let mut layer_map: BTreeMap<LayerItemId, Vec<u8>> = BTreeMap::new();
@@ -40,10 +41,11 @@ pub unsafe extern "C" fn init() {
         },
         owner: msg::source(),
         base_image: config.base_image.into_bytes(),
-        layers: _layers,
+        layers: _layers.clone(),
         ..Default::default()
     };
     CONTRACT = Some(nft);
+    debug!("Done!");
 }
 
 #[no_mangle]
@@ -82,6 +84,7 @@ pub trait OnChainNFTCore: NFTCore {
 impl OnChainNFTCore for OnChainNFT {
     fn mint(&mut self, description: BTreeMap<LayerId, LayerItemId>, metadata: TokenMetadata) {
         NFTCore::mint(self, &msg::source(), self.token_id, Some(metadata));
+        debug!("NFT: {:?}", description);
         self.nfts.insert(self.token_id, description);
         self.token_id = self.token_id.saturating_add(U256::one());
     }
@@ -99,12 +102,15 @@ impl OnChainNFTCore for OnChainNFT {
         // construct media
         let mut content: Vec<String> = Vec::new();
         // check if exists
-        let nft = self.nfts.get(&token_id).expect("Not suc nft");
+        let nft = self.nfts.get(&token_id).expect("No such nft");
+        debug!("NFT: {:?}", nft);
+        debug!("LAYERS: {:?}", self.layers);
         for (layer_id, layer_item_id) in nft {
             let layer_content = self.layers.get(layer_id).expect("No such layer").get(layer_item_id).expect("No such layer item");
             let cc = String::from_utf8((*layer_content).clone()).expect("Found invalid UTF-8");
             content.push(cc);
         }
+        debug!("CONTENT: {:?}", content);
         msg::reply(
             TokenURI {
                 metadata,
