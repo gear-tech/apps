@@ -5,7 +5,7 @@ use gtest::{Program, System};
 use gstd::{String, Encode};
 use ico_io::*;
 
-use ico_contract::constants::*;
+// use ico_contract::constants::*;
 
 mod init_ico;
 use init_ico::*;

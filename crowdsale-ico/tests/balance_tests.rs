@@ -2,8 +2,6 @@ use gtest::System;
 use gstd::Encode;
 use ico_io::*;
 
-use ico_contract::constants::*;
-
 mod init_ico;
 use init_ico::*;
 
@@ -28,6 +26,29 @@ fn balance_after_two_purchases() {
     buy_tokens(&ico, amount, amount * (START_PRICE + PRICE_INCREASE_STEP));
 
     balance_of(&ico, amount * 2);
+}
+
+#[test]
+fn owner_balance() {
+    let sys = System::new();
+    init(&sys);
+
+    let ico = sys.get_program(2);
+    
+    start_sale(&ico, 1);
+
+    let amount = 5;
+    buy_tokens(&ico, amount, amount * START_PRICE);
+
+    sys.spend_blocks(1001);
+
+    let res = ico.send(OWNER_ID, IcoAction::BalanceOf(OWNER_ID.into()));
+    assert!(res.contains(&(OWNER_ID, (IcoEvent::BalanceOf { address: OWNER_ID.into() , balance: 0 }).encode())));
+
+    end_sale(&ico);
+
+    let res = ico.send(OWNER_ID, IcoAction::BalanceOf(OWNER_ID.into()));
+    assert!(res.contains(&(OWNER_ID, (IcoEvent::BalanceOf { address: OWNER_ID.into() , balance: TOKENS_CNT - amount }).encode())));
 }
 
 #[test]

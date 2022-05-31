@@ -2,8 +2,6 @@ use gtest::System;
 use gstd::Encode;
 use ico_io::*;
 
-use ico_contract::constants::*;
-
 mod init_ico;
 use init_ico::*;
 

@@ -1,5 +1,7 @@
 use gtest::System;
-use ico_contract::constants::*;
+use gstd::Encode;
+
+use ico_io::{IcoAction, IcoEvent};
 
 mod init_ico;
 use init_ico::*;
@@ -15,6 +17,21 @@ fn common_buy_tokens() {
 
     let amount: u128 = 5;
     buy_tokens(&ico, amount, amount * START_PRICE);
+}
+
+#[test]
+fn buy_tokens_with_change() {
+    let sys = System::new();
+    init(&sys);
+
+    let ico = sys.get_program(2);
+
+    start_sale(&ico, 2);
+
+    let amount: u128 = 5;
+    let change = 600;
+    let res = ico.send_with_value(USER_ID, IcoAction::Buy(amount), amount * START_PRICE + change);
+    assert!(res.contains(&(USER_ID, (IcoEvent::Bought { buyer: USER_ID.into(), amount, change }).encode())));
 }
 
 #[test]
@@ -134,7 +151,7 @@ fn buy_after_end_sale() {
 
 #[test]
 #[should_panic]
-fn buy_too_many_tokens() {
+fn buy_more_than_goal_tokens() {
     let sys = System::new();
     init(&sys);
 
@@ -143,6 +160,23 @@ fn buy_too_many_tokens() {
     start_sale(&ico, 2);
 
     let amount: u128 = TOKENS_CNT + 1;
+    buy_tokens(&ico, amount, amount * START_PRICE);
+}
+
+#[test]
+#[should_panic]
+fn buy_too_many_tokens() {
+    let sys = System::new();
+    init(&sys);
+
+    let ico = sys.get_program(2);
+
+    start_sale(&ico, 2);
+
+    let amount: u128 = 5;
+    buy_tokens(&ico, amount, amount * START_PRICE);
+
+    let amount: u128 = TOKENS_CNT - 4;
     buy_tokens(&ico, amount, amount * START_PRICE);
 }
 

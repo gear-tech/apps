@@ -28,6 +28,7 @@ pub enum IcoEvent {
     Bought {
         buyer: ActorId,
         amount: u128,
+        change: u128,
     },
     SaleEnded,
     BalanceOf {

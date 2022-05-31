@@ -5,12 +5,26 @@ use gtest::{Program, System};
 use gstd::{String, Encode};
 use ico_io::*;
 
-use ico_contract::constants::*;
+use gstd::ActorId;
+
+pub const TOKEN_ID: u64 = 1;
+pub const ICO_CONTRACT_ID: u64 = 2;
+pub const OWNER_ID: u64 = 100001;
+pub const USER_ID: u64 = 12345;
+
+pub const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
+
+pub const TOKENS_CNT: u128 = 100;
+pub const START_PRICE: u128 = 1000;
+pub const PRICE_INCREASE_STEP: u128 = 100;
+pub const TIME_INCREASE_STEP: u128 = 1000;
+
+
 
 fn init_fungible_token(sys: &System) {
     let ft = Program::from_file(
         &sys,
-        "fungible-token/target/wasm32-unknown-unknown/release/fungible_token.wasm",
+        "../target/wasm32-unknown-unknown/release/fungible_token.wasm",
     );
 
     let res = ft.send(
@@ -27,17 +41,17 @@ fn init_fungible_token(sys: &System) {
 }
 
 fn mint_tokens(ft: &Program<'_>) {
-    let res = ft.send(OWNER_ID, Action::Mint(TOKENS_CNT));
+    let res = ft.send(OWNER_ID, FTAction::Mint(TOKENS_CNT));
     assert!(!res.main_failed());
 
-    let res = ft.send(
-        OWNER_ID,
-        Action::Approve {
-            to: ICO_CONTRACT_ID.into(),
-            amount: TOKENS_CNT,
-        },  
-    );
-    assert!(!res.main_failed());
+    // let res = ft.send(
+    //     OWNER_ID,
+    //     Action::Approve {
+    //         to: ICO_CONTRACT_ID.into(),
+    //         amount: TOKENS_CNT,
+    //     },  
+    // );
+    // assert!(!res.main_failed());
 }
 
 fn init_ico(sys: &System) {
@@ -78,7 +92,7 @@ pub fn end_sale(ico: &Program) {
 
 pub fn buy_tokens(ico: &Program, amount: u128, price: u128) {
     let res = ico.send_with_value(USER_ID, IcoAction::Buy(amount), price);
-    assert!(res.contains(&(USER_ID, (IcoEvent::Bought { buyer: USER_ID.into(), amount }).encode())));
+    assert!(res.contains(&(USER_ID, (IcoEvent::Bought { buyer: USER_ID.into(), amount, change: 0 }).encode())));
 }
 
 pub fn balance_of(ico: &Program, amount: u128) {

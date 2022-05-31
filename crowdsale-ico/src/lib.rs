@@ -3,8 +3,10 @@
 pub mod messages;
 pub use messages::*;
 
-pub mod constants;
-use constants::ZERO_ID;
+pub mod asserts;
+pub use asserts::*;
+
+pub const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 
 use ico_io::*;
 
@@ -16,7 +18,6 @@ use gstd::{prelude::*, exec, msg, ActorId, debug};
 struct IcoContract {
     ico_state: IcoState,
     start_price: u128,
-    current_price: u128, 
     price_increase_step: u128,
     time_increase_step: u128,
     tokens_sold: u128,
@@ -37,51 +38,51 @@ impl IcoContract {
         }
 
         transfer_tokens(&self.token_id, &self.owner, &exec::program_id(), self.tokens_goal).await;
-        approve(&self.token_id, &exec::program_id(), self.tokens_goal).await;
     }
 
     async fn start_ico(&mut self, duration: u64) {
-        if msg::source() == self.owner && !self.ico_state.ico_started {
-            self.get_tokens().await;
+        assert_not_zero(duration.into(), "Can't start ico with zero duration");
+        assert_owner_message(&self.owner, "Not owner start ICO");
+        // assert!(duration != 0, "Can't start ico with zero duration");
+        if self.ico_state.ico_started { panic!("Second ICO start"); }
+        
+        self.get_tokens().await;
 
-            self.ico_state.ico_started = true;
-            self.ico_state.duration = duration;
-            self.ico_state.start_time = exec::block_timestamp();
+        self.ico_state.ico_started = true;
+        self.ico_state.duration = duration;
+        self.ico_state.start_time = exec::block_timestamp();
 
-            msg::reply(IcoEvent::SaleStarted(self.ico_state.duration), 0).unwrap();
-        }
-        else {
-            panic!(
-                "start_contract(): ICO contract's already been started: {}  Owner message: {}",
-                self.ico_state.ico_started,
-                msg::source() == self.owner
-            );
-        }
+        msg::reply(IcoEvent::SaleStarted(self.ico_state.duration), 0).unwrap();
     }
 
     pub fn buy_tokens(&mut self, tokens_cnt: u128)  {
         let time_now: u64 = exec::block_timestamp();
 
+        assert_not_zero(tokens_cnt, "Can't buy zero tokens");
+
         self.in_process(time_now, true);
 
-        self.update_price(time_now);
+        let current_price = self.get_current_price(time_now);
+        let cost = tokens_cnt.checked_mul(current_price)
+            .unwrap_or_else(|| panic!("Overflowing multiplication: {} * {}", tokens_cnt, current_price));
 
-        let (cost, overflow) = tokens_cnt.overflowing_mul(self.current_price);
-        if overflow {
-            panic!("Overflowing multiplication: {} * {}", tokens_cnt, self.current_price)
+
+        let mut change = 0;
+        let amount_sent = msg::value();
+        if amount_sent < cost { 
+            panic!("Wrong amount sent, expect {} get {}", cost, amount_sent)
         }
 
-        if msg::value() != cost {
-            panic!("Wrong amount sent, expect {} get {}", cost, msg::value())
-        }
-
-        let (tokens_sum, overflow) = self.tokens_sold.overflowing_add(tokens_cnt);
-        if overflow {
-            panic!("Overflowing addition: {} + {}", self.tokens_sold, tokens_cnt)
-        }
-
-        if tokens_sum > self.tokens_goal {
+        if tokens_cnt > self.get_balance() {  
             panic!("Not enough tokens to sell")
+        }
+
+        let tokens_sum = self.tokens_sold.checked_add(tokens_cnt)
+            .unwrap_or_else(|| panic!("Overflowing addition: {} + {}", self.tokens_sold, tokens_cnt));
+
+        if amount_sent > cost {
+            change = amount_sent - cost;
+            msg::send(msg::source(), "", change).unwrap();
         }
 
         self.token_holders
@@ -91,22 +92,20 @@ impl IcoContract {
 
         self.tokens_sold += tokens_cnt;
         
-        msg::reply(IcoEvent::Bought { buyer: msg::source(), amount: tokens_cnt }, 0).unwrap();
+        msg::reply(IcoEvent::Bought { buyer: msg::source(), amount: tokens_cnt, change }, 0).unwrap();
     }
 
     async fn end_sale(&mut self) {
         let time_now: u64 = exec::block_timestamp();
 
-        if msg::source() != self.owner {
-            panic!("end_sale(): Not owner message");
-        }
+        assert_owner_message(&self.owner, "end_sale()");
 
         if self.ico_state.ico_ended {
             panic!("You can end sale only once")
         }
 
         if !self.ico_state.ico_started {
-            panic!("end_sale(): Ico wan't started")
+            panic!("end_sale(): Ico wasn't started")
         }
 
         if !self.in_process(time_now, false){
@@ -128,17 +127,28 @@ impl IcoContract {
         else {
             panic!("Can't end sale, ico is in process")
         }
+
+        let rest_balance = self.get_balance();
+        if rest_balance > 0 { 
+            transfer_tokens(
+                &self.token_id,
+                &exec::program_id(),
+                &self.owner,
+                rest_balance,
+            )
+            .await;
+
+            self.token_holders
+                .entry(self.owner)
+                .and_modify(|balance| *balance += rest_balance)
+                .or_insert(rest_balance);
+        }
     }
 
-    fn update_price(&mut self, time_now: u64) {
-        let step = self.time_increase_step;
+    fn get_current_price(&self, time_now: u64) -> u128 {
         let amount: u128 = (time_now - self.ico_state.start_time).into();
 
-        if step > amount {
-            return
-        }
-
-        self.current_price = self.start_price + self.price_increase_step * (amount / step);
+        self.start_price + self.price_increase_step * (amount / self.time_increase_step)
     }
     
     fn get_balance(&self) -> u128 {
@@ -173,7 +183,6 @@ impl IcoContract {
     }
 }
 
-
 #[gstd::async_main]
 async unsafe fn main() {
     if msg::source() == ZERO_ID {
@@ -185,28 +194,16 @@ async unsafe fn main() {
 
     match action {
         IcoAction::StartSale(duration) => {
-            if duration == 0 {
-                panic!("Can't start ico with duration = {}", duration)
-            }
-            else {
-                ico.start_ico(duration).await
-            }
+            ico.start_ico(duration).await
         }
         IcoAction::Buy(value) => {
-            if value == 0 {
-                panic!("Can't buy {} tokens", value)
-            }
-            else {
-                ico.buy_tokens(value)
-            }
+            ico.buy_tokens(value)
         }
         IcoAction::EndSale => {
             ico.end_sale().await
         }
         IcoAction::BalanceOf(address) => {
-            if msg::source() != ico.owner {
-                panic!("BalanceOf(): Not owner message");
-            }
+            assert_owner_message(&ico.owner, "BalanceOf()");
 
             if let Some(val) = ico.token_holders.get(&address) {
                 msg::reply(IcoEvent::BalanceOf { address: address, balance: *val }, 0).unwrap();
@@ -248,7 +245,6 @@ pub unsafe extern "C" fn init() {
         token_id: config.token_id,
         owner: config.owner,
         start_price: config.start_price,
-        current_price: config.start_price,
         price_increase_step: config.price_increase_step,
         time_increase_step: config.time_increase_step,
         ..IcoContract::default()
@@ -258,7 +254,7 @@ pub unsafe extern "C" fn init() {
 }
 
 gstd::metadata! {
-    title: "ICO_contract",
+    title: "crowdsale_ico",
     init:
         input: IcoInit,
     handle:
@@ -278,8 +274,7 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
 
     let encoded = match state {
         State::CurrentPrice => {
-            ico.update_price(time_now);
-            StateReply::CurrentPrice(ico.current_price).encode()
+            StateReply::CurrentPrice(ico.get_current_price(time_now)).encode()
         } 
         State::TokensLeft => {
             StateReply::TokensLeft(ico.get_balance()).encode()
@@ -294,7 +289,5 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
         }
     };
 
-    let result = gstd::macros::util::to_wasm_ptr(&(encoded[..]));
-    core::mem::forget(encoded);
-    result
+    gstd::util::to_leak_ptr(encoded)
 }

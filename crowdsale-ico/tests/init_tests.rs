@@ -1,8 +1,6 @@
 use gtest::{Program, System};
 use ico_io::*;
 
-use ico_contract::constants::*;
-
 mod init_ico;
 use init_ico::*;
 
