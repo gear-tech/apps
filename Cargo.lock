@@ -59,16 +59,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "auction-io"
-version = "0.1.0"
-dependencies = [
- "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -124,15 +114,6 @@ checksum = "5d6d530bdd2d52966a6d03b7a964add7ae1a288d25214066fd4b600f0f796400"
 dependencies = [
  "arrayvec 0.4.12",
  "constant_time_eq",
-]
-
-[[package]]
-name = "block-buffer"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4152116fd6e9dadb291ae18fc1ec3575ed6d84c29642d97890f4b4a3417297e4"
-dependencies = [
- "generic-array",
 ]
 
 [[package]]
@@ -208,27 +189,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "concert"
-version = "0.1.0"
-dependencies = [
- "concert-io",
- "gear-wasm-builder",
- "gstd",
- "gtest",
- "parity-scale-codec",
- "scale-info",
-]
-
-[[package]]
-name = "concert-io"
-version = "0.1.0"
-dependencies = [
- "gstd",
- "parity-scale-codec",
- "scale-info",
-]
-
-[[package]]
 name = "constant_time_eq"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -247,15 +207,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eeaa953eaad386a53111e47172c2fedba671e5684c8dd601a5f474f4f118710f"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "cpufeatures"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59a6001667ab124aebae2a495118e11d30984c3a653e99d86d58971708cf5e4b"
-dependencies = [
- "libc",
 ]
 
 [[package]]
@@ -408,63 +359,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
 
 [[package]]
-name = "dao"
-version = "0.1.0"
-dependencies = [
- "dao-io",
- "ft-io",
- "gear-wasm-builder",
- "gstd",
- "gtest",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
-name = "dao-io"
-version = "0.1.0"
-dependencies = [
- "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
-name = "dao-light"
-version = "0.1.0"
-dependencies = [
- "dao-light-io",
- "ft-io",
- "gear-wasm-builder",
- "gstd",
- "gtest",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
-name = "dao-light-io"
-version = "0.1.0"
-dependencies = [
- "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
-name = "demo-ping"
-version = "0.1.0"
-dependencies = [
- "gear-wasm-builder",
- "gstd",
- "gtest",
-]
-
-[[package]]
 name = "derive_more"
 version = "0.99.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -478,25 +372,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "derive_traits"
-version = "0.1.0"
-dependencies = [
- "macros",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "digest"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3dd60d1080a57a05ab032377049e0591415d2b31afd7028356dbf3cc6dcb066"
-dependencies = [
- "generic-array",
-]
-
-[[package]]
 name = "dlmalloc"
 version = "0.1.4"
 source = "git+https://github.com/gear-tech/dlmalloc-rust.git?rev=e76ae98#e76ae9869ea4d386e758d7ed5d983ba2a25d7629"
@@ -506,21 +381,6 @@ dependencies = [
  "page_size",
  "static_assertions",
  "str-buf",
-]
-
-[[package]]
-name = "dutch-auction"
-version = "0.1.0"
-dependencies = [
- "auction-io",
- "gear-wasm-builder",
- "gstd",
- "gtest",
- "nft-example-io",
- "non-fungible-token",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
 ]
 
 [[package]]
@@ -561,29 +421,6 @@ checksum = "aa68f1b12764fab894d2755d2518754e71b4fd80ecfb822714a1206c2aab39bf"
 dependencies = [
  "cc",
  "libc",
-]
-
-[[package]]
-name = "escrow"
-version = "0.1.0"
-dependencies = [
- "escrow-io",
- "ft-io",
- "gear-wasm-builder",
- "gstd",
- "gtest",
- "parity-scale-codec",
- "primitive-types",
-]
-
-[[package]]
-name = "escrow-io"
-version = "0.1.0"
-dependencies = [
- "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
 ]
 
 [[package]]
@@ -725,16 +562,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gear-contract-libraries"
-version = "0.1.0"
-dependencies = [
- "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
 name = "gear-core"
 version = "0.1.0"
 source = "git+https://github.com/gear-tech/gear.git#d6e4dccb924dbe7e15a380d17e89bc0d6e422575"
@@ -787,16 +614,6 @@ dependencies = [
  "pwasm-utils",
  "thiserror",
  "toml",
-]
-
-[[package]]
-name = "generic-array"
-version = "0.14.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd48d33ec7f05fbfa152300fdad764757cbded343c1aa1cff2fbaf4134851803"
-dependencies = [
- "typenum",
- "version_check",
 ]
 
 [[package]]
@@ -978,53 +795,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "lottery"
-version = "0.1.0"
-dependencies = [
- "ft-io",
- "gear-wasm-builder",
- "gstd",
- "gtest",
- "lt-io",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
- "sp-core-hashing",
-]
-
-[[package]]
-name = "lt-io"
-version = "0.1.0"
-dependencies = [
- "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
 name = "mach"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b823e83b2affd8f40a9ee8c29dbc56404c1e34cd2710921f2801e2cf29527afa"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "macros"
-version = "1.5.0"
-
-[[package]]
-name = "market-io"
-version = "0.1.0"
-dependencies = [
- "gstd",
- "nft-io",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
- "sp-core-hashing",
 ]
 
 [[package]]
@@ -1056,100 +832,6 @@ name = "more-asserts"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7843ec2de400bcbc6a6328c958dc38e5359da6e93e72e37bc5246bf1ae776389"
-
-[[package]]
-name = "multitoken"
-version = "0.1.0"
-dependencies = [
- "derive_traits",
- "gear-contract-libraries",
- "gear-wasm-builder",
- "gstd",
- "gtest",
- "multitoken-io",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
-name = "multitoken-io"
-version = "0.1.0"
-dependencies = [
- "gear-contract-libraries",
- "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
-name = "nft"
-version = "0.1.0"
-dependencies = [
- "ft-io",
- "gear-wasm-builder",
- "gstd",
- "gtest",
- "market-io",
- "nft-io",
- "non-fungible-token",
- "parity-scale-codec",
- "primitive-types",
- "royalties",
- "scale-info",
-]
-
-[[package]]
-name = "nft-example"
-version = "0.1.0"
-dependencies = [
- "gear-wasm-builder",
- "gstd",
- "gtest",
- "nft-example-io",
- "non-fungible-token",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
-name = "nft-example-io"
-version = "0.1.0"
-dependencies = [
- "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
-name = "nft-io"
-version = "0.1.0"
-dependencies = [
- "gstd",
- "parity-scale-codec",
- "primitive-types",
- "royalties",
- "scale-info",
-]
-
-[[package]]
-name = "nft-marketplace"
-version = "0.1.0"
-dependencies = [
- "ft-io",
- "gear-wasm-builder",
- "gstd",
- "gtest",
- "market-io",
- "nft-io",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
- "sp-core-hashing",
-]
 
 [[package]]
 name = "nodrop"
@@ -1203,12 +885,6 @@ name = "once_cell"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "87f3e037eac156d1775da914196f0f37741a274155e34a0b7e427c35d2a2ecb9"
-
-[[package]]
-name = "opaque-debug"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
 name = "page_size"
@@ -1449,16 +1125,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "royalties"
-version = "0.1.0"
-dependencies = [
- "gstd",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
-]
-
-[[package]]
 name = "rustc-demangle"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1570,43 +1236,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "sha2"
-version = "0.9.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d58a1e1bf39749807d89cf2d98ac2dfa0ff1cb3faa38fbb64dd88ac8013d800"
-dependencies = [
- "block-buffer",
- "cfg-if",
- "cpufeatures",
- "digest",
- "opaque-debug",
-]
-
-[[package]]
 name = "smallvec"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2dd574626839106c320a323308629dcb1acfc96e32a8cba364ddc61ac23ee83"
-
-[[package]]
-name = "sp-core-hashing"
-version = "4.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec864a6a67249f0c8dd3d5acab43623a61677e85ff4f2f9b04b802d2fe780e83"
-dependencies = [
- "blake2-rfc",
- "byteorder",
- "sha2",
- "sp-std",
- "tiny-keccak",
- "twox-hash",
-]
-
-[[package]]
-name = "sp-std"
-version = "4.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14804d6069ee7a388240b665f17908d98386ffb0b5d39f89a4099fc7a2a4c03f"
 
 [[package]]
 name = "stable_deref_trait"
@@ -1703,15 +1336,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tiny-keccak"
-version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c9d3793400a45f954c52e73d068316d76b6f4e36977e3fcebb13a2721e80237"
-dependencies = [
- "crunchy",
-]
-
-[[package]]
 name = "toml"
 version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1719,22 +1343,6 @@ checksum = "8d82e1a7758622a465f8cee077614c73484dac5b836c02ff6a40d5d1010324d7"
 dependencies = [
  "serde",
 ]
-
-[[package]]
-name = "twox-hash"
-version = "1.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
-dependencies = [
- "cfg-if",
- "static_assertions",
-]
-
-[[package]]
-name = "typenum"
-version = "1.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcf81ac59edc17cc8697ff311e8f5ef2d99fcbd9817b34cec66f90b6c3dfd987"
 
 [[package]]
 name = "uint"
@@ -1753,12 +1361,6 @@ name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
-
-[[package]]
-name = "version_check"
-version = "0.9.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "wasi"

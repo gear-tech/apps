@@ -2,19 +2,8 @@
 resolver = "2"
 
 members = [
-    "concert",
-    "dao",
-    "dao-light",
-    "dutch-auction",
     "fungible-token",
     "gear-feeds-router",
-    "lottery",
-    "nft-example",
-    "nft-marketplace/marketplace",
-    "nft-marketplace/nft",
     "non-fungible-token",
-    "ping",
-    "escrow",
     "supply-chain",
-    "multitoken",
 ]
