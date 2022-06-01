@@ -1,4 +1,5 @@
 use gtest::{Program, System};
+
 use ico_io::*;
 
 mod init_ico;

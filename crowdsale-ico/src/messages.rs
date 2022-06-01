@@ -26,6 +26,6 @@ pub async fn balance(token_id: &ActorId, account: &ActorId) -> u128 {
     if let FTEvent::Balance(balance_response) = balance_response {
         balance_response
     } else {
-        0
+        0 // change
     }
 }

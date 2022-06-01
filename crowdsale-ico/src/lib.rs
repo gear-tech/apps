@@ -6,11 +6,7 @@ pub use messages::*;
 pub mod asserts;
 pub use asserts::*;
 
-pub const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
-
 use ico_io::*;
-
-use core::{panic};
 
 use gstd::{prelude::*, exec, msg, ActorId, debug}; 
 
@@ -32,19 +28,15 @@ static mut ICO_CONTRACT: Option<IcoContract> = None;
 impl IcoContract {
     async fn get_tokens(&self) {
         let balance = balance(&self.token_id, &self.owner).await;
-
-        if balance < self.tokens_goal {
-            panic!("Need to mint at least {} (= tokens goal) tokens", self.tokens_goal)
-        }
+        assert!(balance >= self.tokens_goal, "Need to mint at least {} (= tokens goal) tokens", self.tokens_goal);
 
         transfer_tokens(&self.token_id, &self.owner, &exec::program_id(), self.tokens_goal).await;
     }
 
     async fn start_ico(&mut self, duration: u64) {
-        assert_not_zero(duration.into(), "Can't start ico with zero duration");
-        assert_owner_message(&self.owner, "Not owner start ICO");
-        // assert!(duration != 0, "Can't start ico with zero duration");
-        if self.ico_state.ico_started { panic!("Second ICO start"); }
+        assert!(duration != 0, "start_ico(): Can't start ICO with zero duration");
+        assert_owner_message(&self.owner, "start_ico(): Not owner start ICO");
+        if self.ico_state.ico_started { panic!("start_ico(): Second ICO start"); }
         
         self.get_tokens().await;
 
@@ -58,27 +50,23 @@ impl IcoContract {
     pub fn buy_tokens(&mut self, tokens_cnt: u128)  {
         let time_now: u64 = exec::block_timestamp();
 
-        assert_not_zero(tokens_cnt, "Can't buy zero tokens");
-
-        self.in_process(time_now, true);
+        assert!(tokens_cnt != 0, "buy_tokens(): Can't buy zero tokens");
+        assert!(self.ico_state.start_time + self.ico_state.duration >= time_now, "buy_tokens(): Duration of the ICO has ended");
+        assert!(self.get_balance() != 0, "buy_tokens(): All tokens have been sold");
+        self.in_process("buy_tokens()");
 
         let current_price = self.get_current_price(time_now);
         let cost = tokens_cnt.checked_mul(current_price)
-            .unwrap_or_else(|| panic!("Overflowing multiplication: {} * {}", tokens_cnt, current_price));
-
+            .unwrap_or_else(|| panic!("buy_tokens(): Overflowing multiplication: {} * {}", tokens_cnt, current_price));
 
         let mut change = 0;
         let amount_sent = msg::value();
-        if amount_sent < cost { 
-            panic!("Wrong amount sent, expect {} get {}", cost, amount_sent)
-        }
 
-        if tokens_cnt > self.get_balance() {  
-            panic!("Not enough tokens to sell")
-        }
+        assert!(amount_sent >= cost, "buy_tokens(): Wrong amount sent, expect {} get {}", cost, amount_sent);
+        assert!(tokens_cnt <= self.get_balance(), "buy_tokens(): Not enough tokens to sell");
 
-        let tokens_sum = self.tokens_sold.checked_add(tokens_cnt)
-            .unwrap_or_else(|| panic!("Overflowing addition: {} + {}", self.tokens_sold, tokens_cnt));
+        self.tokens_sold.checked_add(tokens_cnt)
+            .unwrap_or_else(|| panic!("buy_tokens(): Overflowing addition: {} + {}", self.tokens_sold, tokens_cnt));
 
         if amount_sent > cost {
             change = amount_sent - cost;
@@ -99,17 +87,11 @@ impl IcoContract {
         let time_now: u64 = exec::block_timestamp();
 
         assert_owner_message(&self.owner, "end_sale()");
+        self.in_process("end_sale()");
 
-        if self.ico_state.ico_ended {
-            panic!("You can end sale only once")
-        }
-
-        if !self.ico_state.ico_started {
-            panic!("end_sale(): Ico wasn't started")
-        }
-
-        if !self.in_process(time_now, false){
-
+        if self.ico_state.start_time + self.ico_state.duration < time_now || 
+            self.get_balance() == 0 
+        {
             for (id, val) in &self.token_holders {
                 transfer_tokens(
                     &self.token_id,
@@ -119,13 +101,6 @@ impl IcoContract {
                 )
                 .await;
             }
-
-            self.ico_state.ico_ended = true;
-
-            msg::reply(IcoEvent::SaleEnded, 0).unwrap();
-        }
-        else {
-            panic!("Can't end sale, ico is in process")
         }
 
         let rest_balance = self.get_balance();
@@ -143,6 +118,9 @@ impl IcoContract {
                 .and_modify(|balance| *balance += rest_balance)
                 .or_insert(rest_balance);
         }
+
+        self.ico_state.ico_ended = true;
+        msg::reply(IcoEvent::SaleEnded, 0).unwrap();
     }
 
     fn get_current_price(&self, time_now: u64) -> u128 {
@@ -155,39 +133,15 @@ impl IcoContract {
         self.tokens_goal - self.tokens_sold
     }
 
-    fn in_process(&self, time_now: u64, panic: bool) -> bool { 
-        if !panic {
-            return self.ico_state.ico_started &&
-                    self.ico_state.start_time + self.ico_state.duration >= time_now &&
-                    self.get_balance() > 0 &&
-                    !self.ico_state.ico_ended
-        }
-
-        if !self.ico_state.ico_started {
-            panic!("Ico wasn't started")
-        }
-
-        if self.ico_state.start_time + self.ico_state.duration < time_now {
-            panic!("Duration of the contract has ended")
-        }
-
-        if self.get_balance() == 0 {
-            panic!("All tokens have been sold")
-        }
-
-        if self.ico_state.ico_ended {
-            panic!("Ico was ended")
-        }
-
-        return true
+    fn in_process(&self, message: &str) { 
+        assert!(self.ico_state.ico_started, "{}: ICO wasn't started", message);
+        assert!(!self.ico_state.ico_ended, "{}: ICO was ended", message);
     }
 }
 
 #[gstd::async_main]
 async unsafe fn main() {
-    if msg::source() == ZERO_ID {
-        panic!("Message from zero address");
-    }
+    assert_not_zero_address(&msg::source(), "Main message source");
 
     let action: IcoAction = msg::load().expect("Unable to decode SaleAction");
     let ico: &mut IcoContract = unsafe { ICO_CONTRACT.get_or_insert(IcoContract::default()) };
@@ -216,21 +170,10 @@ async unsafe fn main() {
 }
 
 fn check_input(config: &IcoInit) {
-    if config.tokens_goal == 0 {
-        panic!("Tokens goal is zero: {:?}", config.tokens_goal)
-    }
-
-    if config.token_id == ZERO_ID {
-        panic!("Token address is zero: {:?}", config.token_id)
-    }
-
-    if config.owner == ZERO_ID {
-        panic!("Owner address is zero: {:?}", config.owner)
-    }
-
-    if config.start_price == 0 {
-        panic!("Start price is zero: {}", config.start_price)
-    }
+    assert!(config.tokens_goal != 0, "Init tokens goal is zero");
+    assert_not_zero_address(&config.token_id, "Init token address");
+    assert_not_zero_address(&config.owner, "Init owner");
+    assert!(config.start_price != 0, "Init start");
 }
 
 

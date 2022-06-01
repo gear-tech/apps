@@ -1,8 +1,9 @@
 use core::time::Duration;
 
-use ft_io::*;
 use gtest::{Program, System};
 use gstd::{String, Encode};
+
+use ft_io::*;
 use ico_io::*;
 
 use gstd::ActorId;
@@ -18,7 +19,6 @@ pub const TOKENS_CNT: u128 = 100;
 pub const START_PRICE: u128 = 1000;
 pub const PRICE_INCREASE_STEP: u128 = 100;
 pub const TIME_INCREASE_STEP: u128 = 1000;
-
 
 
 fn init_fungible_token(sys: &System) {

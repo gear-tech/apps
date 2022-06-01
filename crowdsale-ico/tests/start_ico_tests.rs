@@ -1,11 +1,10 @@
 use core::time::Duration;
 
-use ft_io::*;
 use gtest::{Program, System};
 use gstd::{String, Encode};
-use ico_io::*;
 
-// use ico_contract::constants::*;
+use ft_io::*;
+use ico_io::*;
 
 mod init_ico;
 use init_ico::*;
