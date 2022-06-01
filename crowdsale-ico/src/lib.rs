@@ -172,8 +172,8 @@ async unsafe fn main() {
 fn check_input(config: &IcoInit) {
     assert!(config.tokens_goal != 0, "Init tokens goal is zero");
     assert_not_zero_address(&config.token_id, "Init token address");
-    assert_not_zero_address(&config.owner, "Init owner");
-    assert!(config.start_price != 0, "Init start");
+    assert_not_zero_address(&config.owner, "Init owner address");
+    assert!(config.start_price != 0, "Init start price is zero");
 }
 
 
