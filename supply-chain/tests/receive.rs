@@ -30,17 +30,11 @@ fn delivery_wo_delay() {
         DISTRIBUTOR[0],
         ITEM_ID[0],
         DELIVERY_TIME[0],
-        PRODUCER[0],
-        ITEM_PRICE_BY_PRODUCER[0],
     );
+    check::approve_by_producer(&supply_chain_program, PRODUCER[0], ITEM_ID[0], true);
     check::ship_by_producer(&supply_chain_program, PRODUCER[0], ITEM_ID[0]);
-    system.spend_blocks(DELIVERY_TIME[0]);
-    check::receive_by_distributor(
-        &supply_chain_program,
-        DISTRIBUTOR[0],
-        ITEM_ID[0],
-        PRODUCER[0],
-    );
+    system.spend_blocks(DELIVERY_TIME[0].try_into().unwrap());
+    check::receive_by_distributor(&supply_chain_program, DISTRIBUTOR[0], ITEM_ID[0]);
 
     // Since the delivery is completed on time,
     // all tokens are transferred to the producer (seller).
@@ -60,17 +54,11 @@ fn delivery_wo_delay() {
         RETAILER[0],
         ITEM_ID[0],
         DELIVERY_TIME[1],
-        DISTRIBUTOR[0],
-        ITEM_PRICE_BY_DISTRIBUTOR[0],
     );
+    check::approve_by_distributor(&supply_chain_program, DISTRIBUTOR[0], ITEM_ID[0], true);
     check::ship_by_distributor(&supply_chain_program, DISTRIBUTOR[0], ITEM_ID[0]);
-    system.spend_blocks(DELIVERY_TIME[1]);
-    check::receive_by_retailer(
-        &supply_chain_program,
-        RETAILER[0],
-        ITEM_ID[0],
-        DISTRIBUTOR[0],
-    );
+    system.spend_blocks(DELIVERY_TIME[1].try_into().unwrap());
+    check::receive_by_retailer(&supply_chain_program, RETAILER[0], ITEM_ID[0]);
 
     // Since the delivery is completed on time,
     // all tokens are transferred to the distributor (seller).
@@ -107,16 +95,14 @@ fn delivery_with_delay() {
         DISTRIBUTOR[0],
         ITEM_ID[0],
         DELIVERY_TIME[0],
-        PRODUCER[0],
-        ITEM_PRICE_BY_PRODUCER[0],
     );
+    check::approve_by_producer(&supply_chain_program, PRODUCER[0], ITEM_ID[0], true);
     check::ship_by_producer(&supply_chain_program, PRODUCER[0], ITEM_ID[0]);
-    system.spend_blocks(DELIVERY_TIME[0] * 2 - 1);
+    system.spend_blocks((DELIVERY_TIME[0] * 2 - 1).try_into().unwrap());
     check::receive_by_distributor(
         &supply_chain_program,
         DISTRIBUTOR[0],
         ITEM_ID[0],
-        PRODUCER[0],
     );
 
     // Since the delivery is completed with the delay,
@@ -142,16 +128,14 @@ fn delivery_with_delay() {
         RETAILER[0],
         ITEM_ID[0],
         DELIVERY_TIME[1],
-        DISTRIBUTOR[0],
-        ITEM_PRICE_BY_DISTRIBUTOR[0],
     );
+    check::approve_by_distributor(&supply_chain_program, DISTRIBUTOR[0], ITEM_ID[0], true);
     check::ship_by_distributor(&supply_chain_program, DISTRIBUTOR[0], ITEM_ID[0]);
-    system.spend_blocks(DELIVERY_TIME[1] * 2 - 1);
+    system.spend_blocks((DELIVERY_TIME[1] * 2 - 1).try_into().unwrap());
     check::receive_by_retailer(
         &supply_chain_program,
         RETAILER[0],
         ITEM_ID[0],
-        DISTRIBUTOR[0],
     );
 
     // Since the delivery is completed with the delay,
@@ -198,16 +182,14 @@ fn delivery_with_big_delay() {
         DISTRIBUTOR[0],
         ITEM_ID[0],
         DELIVERY_TIME[0],
-        PRODUCER[0],
-        ITEM_PRICE_BY_PRODUCER[0],
     );
+    check::approve_by_producer(&supply_chain_program, PRODUCER[0], ITEM_ID[0], true);
     check::ship_by_producer(&supply_chain_program, PRODUCER[0], ITEM_ID[0]);
-    system.spend_blocks(DELIVERY_TIME[0] * 2);
+    system.spend_blocks((DELIVERY_TIME[0] * 2).try_into().unwrap());
     check::receive_by_distributor(
         &supply_chain_program,
         DISTRIBUTOR[0],
         ITEM_ID[0],
-        PRODUCER[0],
     );
 
     // Since the delivery is completed with the big delay,
@@ -228,16 +210,14 @@ fn delivery_with_big_delay() {
         RETAILER[0],
         ITEM_ID[0],
         DELIVERY_TIME[1],
-        DISTRIBUTOR[0],
-        ITEM_PRICE_BY_DISTRIBUTOR[0],
     );
+    check::approve_by_distributor(&supply_chain_program, DISTRIBUTOR[0], ITEM_ID[0], true);
     check::ship_by_distributor(&supply_chain_program, DISTRIBUTOR[0], ITEM_ID[0]);
-    system.spend_blocks(DELIVERY_TIME[1] * 2);
+    system.spend_blocks((DELIVERY_TIME[1] * 2).try_into().unwrap());
     check::receive_by_retailer(
         &supply_chain_program,
         RETAILER[0],
         ITEM_ID[0],
-        DISTRIBUTOR[0],
     );
 
     // Since the delivery is completed with the big delay,

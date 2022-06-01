@@ -21,7 +21,7 @@ pub const ITEM_NOTES: [&str; 2] = ["Watermelon", "Fresh"];
 pub const ITEM_PRICE_BY_PRODUCER: [u128; 2] = [1234, 4321];
 pub const ITEM_PRICE_BY_DISTRIBUTOR: [u128; 2] = [12345, 54321];
 pub const ITEM_PRICE_BY_RETAILER: [u128; 2] = [123456, 654321];
-pub const DELIVERY_TIME: [u32; 2] = [604800000, 1209600000];
+pub const DELIVERY_TIME: [u64; 2] = [604800000, 1209600000];
 
 pub fn init_system() -> System {
     let system = System::new();
@@ -32,7 +32,7 @@ pub fn init_system() -> System {
 
 pub fn init_ft_program(system: &System) -> Program {
     let ft_program = Program::from_file(
-        &system,
+        system,
         "../target/wasm32-unknown-unknown/release/fungible_token.wasm",
     );
 
@@ -52,7 +52,7 @@ pub fn init_ft_program(system: &System) -> Program {
 
 pub fn init_nft_program(system: &System) -> Program {
     let nft_program = Program::from_file(
-        &system,
+        system,
         "../target/wasm32-unknown-unknown/release/nft_example.wasm",
     );
 

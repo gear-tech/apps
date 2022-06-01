@@ -36,6 +36,18 @@ pub fn purchare_by_distributor(supply_chain_program: &Program, user: u64, item_i
         .main_failed());
 }
 
+pub fn approve_by_producer(supply_chain_program: &Program, user: u64, item_id: u128) {
+    assert!(supply_chain_program
+        .send(
+            user,
+            SupplyChainAction::ApproveByProducer {
+                item_id: item_id.into(),
+                approve: false,
+            },
+        )
+        .main_failed());
+}
+
 pub fn ship_by_producer(supply_chain_program: &Program, user: u64, item_id: u128) {
     assert!(supply_chain_program
         .send(user, SupplyChainAction::ShipByProducer(item_id.into()))
@@ -76,7 +88,7 @@ pub fn put_up_for_sale_by_distributor(supply_chain_program: &Program, user: u64,
             SupplyChainAction::PutUpForSaleByDistributor {
                 item_id: item_id.into(),
                 price: 0,
-            }
+            },
         )
         .main_failed());
 }
@@ -88,7 +100,19 @@ pub fn purchare_by_retailer(supply_chain_program: &Program, user: u64, item_id: 
             SupplyChainAction::PurchaseByRetailer {
                 item_id: item_id.into(),
                 delivery_time: 0,
-            }
+            },
+        )
+        .main_failed());
+}
+
+pub fn approve_by_distributor(supply_chain_program: &Program, user: u64, item_id: u128) {
+    assert!(supply_chain_program
+        .send(
+            user,
+            SupplyChainAction::ApproveByDistributor {
+                item_id: item_id.into(),
+                approve: false,
+            },
         )
         .main_failed());
 }
@@ -112,7 +136,7 @@ pub fn put_up_for_sale_by_retailer(supply_chain_program: &Program, user: u64, it
             SupplyChainAction::PutUpForSaleByRetailer {
                 item_id: item_id.into(),
                 price: 0,
-            }
+            },
         )
         .main_failed());
 }
