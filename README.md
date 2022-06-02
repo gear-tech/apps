@@ -9,6 +9,20 @@
 [lic_badge]: https://img.shields.io/badge/License-GPL%203.0-success
 [lic_href]: https://github.com/gear-tech/apps/blob/master/LICENSE
 
+⚠️ **Obsolescence Notice:** Refer to [Gear Academy](https://github.com/gear-academy) for actual versions of applications.
+
+- Concert: https://github.com/gear-academy/concert
+- DAO: https://github.com/gear-academy/dao
+- DAO light: https://github.com/gear-academy/dao-light
+- Dutch auction: https://github.com/gear-academy/dutch-auction
+- Escrow: https://github.com/gear-academy/escrow
+- Feeds: https://github.com/gear-academy/feeds
+- Fungible token: https://github.com/gear-academy/fungible-token
+- Lottery: https://github.com/gear-academy/lottery
+- Multitoken: https://github.com/gear-academy/multitoken
+- Non fungible token (NFT): https://github.com/gear-academy/non-fungible-token
+- Ping: https://github.com/gear-academy/ping
+
 ## Prebuilt Binaries
 
 Raw, optimized, and meta WASM binaries can be found in the [Releases section](https://github.com/gear-tech/apps/releases/tag/build).
