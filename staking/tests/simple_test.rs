@@ -11,7 +11,7 @@ use gtest::{Program, System};
 use staking_io::*;
 
 const USERS: &[u64] = &[1, 2, 3, 4, 5, 6, 7, 8];
-const DECIMALS_COUNT: u8 = 20;
+const DECIMALS_COUNT: u128 = u128::pow(10, 20);
 
 #[derive(Debug, Default, Encode)]
 struct Staking {
@@ -19,6 +19,8 @@ struct Staking {
     total_staked: u128,
     distribution_time: u64,
     produced_time: u64,
+    reward_total: u128,
+    all_produced: u128,
     reward_produced: u128,
     stakers: BTreeMap<ActorId, Staker>,
 }
@@ -32,6 +34,7 @@ fn init_staking(sys: &System) {
             staking_token_address: USERS[1].into(),
             reward_token_address: USERS[2].into(),
             distribution_time: 10000,
+            reward_total: 1000,
         },
     );
 
@@ -126,17 +129,32 @@ fn init_reward_token(sys: &System) {
     assert!(res.contains(&(USERS[3], FTEvent::Balance(100000).encode())));
 }
 
+/// Sets the reward to be distributed within distribution time
+/// param 'reward' The value of the distributed reward
+fn set_reward_total(staking: &mut Staking, reward: u128, time: u64) {
+    if reward == 0 {
+        panic!("set_reward_total(): reward is null");
+    }
+
+    update_reward(staking, time);
+    staking.all_produced = staking.reward_produced;
+    staking.produced_time = time;
+    staking.reward_total = reward;
+}
+
 /// Calculates the reward produced so far
 fn produced(staking: &mut Staking, time: u64) -> u128 {
-    staking.reward_produced
+    staking.all_produced
+        + staking.reward_total
         + (time - staking.produced_time) as u128 / staking.distribution_time as u128
 }
 
 /// Calculates the maximum possible reward
+/// The reward that the depositor would have received if he had initially paid this amount
 /// Arguments:
 /// `amount`: the number of tokens
 fn get_max_reward(staking: &Staking, amount: u128) -> u128 {
-    (amount * staking.tokens_per_stake) >> DECIMALS_COUNT
+    (amount * staking.tokens_per_stake) / DECIMALS_COUNT
 }
 
 /// Updates the reward produced so far and calculates tokens per stake
@@ -149,7 +167,7 @@ fn update_reward(staking: &mut Staking, time: u64) {
         if staking.total_staked > 0 {
             staking.tokens_per_stake = staking
                 .tokens_per_stake
-                .saturating_add((produced_new << DECIMALS_COUNT) / staking.total_staked);
+                .saturating_add((produced_new * DECIMALS_COUNT) / staking.total_staked);
         }
 
         staking.reward_produced = staking.reward_produced.saturating_add(produced_new);
@@ -184,6 +202,19 @@ fn stake() {
 }
 
 #[test]
+fn set_reward_total_test() {
+    let sys = System::new();
+    init_staking(&sys);
+    init_staking_token(&sys);
+    init_reward_token(&sys);
+    sys.init_logger();
+    let staking = sys.get_program(1);
+
+    let res = staking.send(USERS[4], StakingAction::SetRewardTotal(1000));
+    assert!(res.contains(&(USERS[4], StakingEvent::RewardTotal(1000).encode())));
+}
+
+#[test]
 fn send_reward() {
     let sys = System::new();
 
@@ -200,9 +231,10 @@ fn send_reward() {
 
     let mut staking = Staking {
         distribution_time: 10000,
-        produced_time: time,
         ..Default::default()
     };
+
+    set_reward_total(&mut staking, 1000, time);
 
     let res = st.send(USERS[4], StakingAction::Stake(1500));
     assert!(res.contains(&(USERS[4], StakingEvent::StakeAccepted(1500).encode())));
@@ -292,9 +324,10 @@ fn withdraw() {
 
     let mut staking = Staking {
         distribution_time: 10000,
-        produced_time: time,
         ..Default::default()
     };
+
+    set_reward_total(&mut staking, 1000, time);
 
     let res = st.send(USERS[4], StakingAction::Stake(1500));
     assert!(res.contains(&(USERS[4], StakingEvent::StakeAccepted(1500).encode())));
@@ -336,7 +369,7 @@ fn withdraw() {
     if let Some(staker) = staking.stakers.get_mut(&USERS[4].into()) {
         staker.reward_allowed = staker
             .reward_allowed
-            .saturating_add((500 * staking.tokens_per_stake) >> DECIMALS_COUNT);
+            .saturating_add((500 * staking.tokens_per_stake) / DECIMALS_COUNT);
         staker.balance = staker.balance.saturating_sub(500);
 
         update_reward(&mut staking, time + 500000 * 2);

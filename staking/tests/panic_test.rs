@@ -3,21 +3,10 @@ extern crate std;
 
 use codec::Encode;
 use ft_io::*;
-use gstd::{ActorId, BTreeMap};
 use gtest::{Program, System};
 use staking_io::*;
 
 const USERS: &[u64] = &[1, 2, 3, 4, 5, 6, 7, 8];
-
-#[derive(Debug, Default, Encode)]
-struct Staking {
-    tokens_per_stake: u128,
-    total_staked: u128,
-    distribution_time: u64,
-    produced_time: u64,
-    reward_produced: u128,
-    stakers: BTreeMap<ActorId, Staker>,
-}
 
 fn init_staking(sys: &System) {
     let staking = Program::current(sys);
@@ -28,6 +17,7 @@ fn init_staking(sys: &System) {
             staking_token_address: USERS[1].into(),
             reward_token_address: USERS[2].into(),
             distribution_time: 10000,
+            reward_total: 1000,
         },
     );
 
@@ -129,8 +119,18 @@ fn stake() {
     sys.init_logger();
     let staking = sys.get_program(1);
 
-    //Zero stake
     let res = staking.send(USERS[4], StakingAction::Stake(0));
+    assert!(res.main_failed());
+}
+
+#[test]
+fn set_reward_total() {
+    let sys = System::new();
+    init_staking(&sys);
+    sys.init_logger();
+    let staking = sys.get_program(1);
+
+    let res = staking.send(USERS[4], StakingAction::SetRewardTotal(0));
     assert!(res.main_failed());
 }
 
