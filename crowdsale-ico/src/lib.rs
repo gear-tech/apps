@@ -26,19 +26,12 @@ struct IcoContract {
 static mut ICO_CONTRACT: Option<IcoContract> = None;
 
 impl IcoContract {
-    async fn get_tokens(&self) {
-        let balance = balance(&self.token_id, &self.owner).await;
-        assert!(balance >= self.tokens_goal, "Need to mint at least {} (= tokens goal) tokens", self.tokens_goal);
-
-        transfer_tokens(&self.token_id, &self.owner, &exec::program_id(), self.tokens_goal).await;
-    }
-
     async fn start_ico(&mut self, duration: u64) {
         assert!(duration != 0, "start_ico(): Can't start ICO with zero duration");
         assert_owner_message(&self.owner, "start_ico(): Not owner start ICO");
         if self.ico_state.ico_started { panic!("start_ico(): Second ICO start"); }
         
-        self.get_tokens().await;
+        transfer_tokens(&self.token_id, &self.owner, &exec::program_id(), self.tokens_goal).await;
 
         self.ico_state.ico_started = true;
         self.ico_state.duration = duration;
