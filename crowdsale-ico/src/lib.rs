@@ -26,6 +26,18 @@ struct IcoContract {
 static mut ICO_CONTRACT: Option<IcoContract> = None;
 
 impl IcoContract {
+
+    /// Starts ICO contract
+    /// 
+    /// Requirements:
+    /// * Only owner can start ICO
+    /// * At least `tokens_goal` tokens need to be minted
+    /// * ICO can be started only once
+    /// * Duration must be greater than zero
+    /// 
+    /// Arguments:
+    /// * `duration`: Time in milliseconds
+    /// 
     async fn start_ico(&mut self, duration: u64) {
         assert!(duration != 0, "start_ico(): Can't start ICO with zero duration");
         assert_owner_message(&self.owner, "start_ico(): Not owner start ICO");
@@ -40,6 +52,17 @@ impl IcoContract {
         msg::reply(IcoEvent::SaleStarted(self.ico_state.duration), 0).unwrap();
     }
 
+    /// Purchase of tokens
+    /// 
+    /// Requirements:
+    /// * `tokens_cnt` must be greater than zero
+    /// * ICO must be in progress (already started and not finished yet)
+    /// * `msg::value` must be greater than or equal to `price * tokens_cnt`
+    /// * At least `tokens_cnt` tokens available for sale
+    /// 
+    /// Arguments:
+    /// * `tokens_cnt`: amount of tokens to purchase
+    /// 
     pub fn buy_tokens(&mut self, tokens_cnt: u128)  {
         let time_now: u64 = exec::block_timestamp();
 
@@ -76,6 +99,13 @@ impl IcoContract {
         msg::reply(IcoEvent::Bought { buyer: msg::source(), amount: tokens_cnt, change }, 0).unwrap();
     }
 
+    /// Ends ICO contract
+    /// 
+    /// Requirements:
+    /// * Only owner can end ICO
+    /// * ICO can be ended more only once
+    /// * All tokens must be sold or the ICO duration must end
+    /// 
     async fn end_sale(&mut self) {
         let time_now: u64 = exec::block_timestamp();
 
