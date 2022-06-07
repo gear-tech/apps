@@ -124,13 +124,32 @@ fn stake() {
 }
 
 #[test]
-fn set_reward_total() {
+fn update_staking() {
     let sys = System::new();
     init_staking(&sys);
     sys.init_logger();
     let staking = sys.get_program(1);
 
-    let res = staking.send(USERS[4], StakingAction::SetRewardTotal(0));
+    let res = staking.send(
+        USERS[4],
+        StakingAction::UpdateStaking(InitStaking {
+            staking_token_address: USERS[1].into(),
+            reward_token_address: USERS[2].into(),
+            distribution_time: 10000,
+            reward_total: 0,
+        }),
+    );
+    assert!(res.main_failed());
+
+    let res = staking.send(
+        USERS[4],
+        StakingAction::UpdateStaking(InitStaking {
+            staking_token_address: USERS[1].into(),
+            reward_token_address: USERS[2].into(),
+            distribution_time: 0,
+            reward_total: 1000,
+        }),
+    );
     assert!(res.main_failed());
 }
 

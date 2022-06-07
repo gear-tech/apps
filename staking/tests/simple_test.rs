@@ -131,9 +131,9 @@ fn init_reward_token(sys: &System) {
 
 /// Sets the reward to be distributed within distribution time
 /// param 'reward' The value of the distributed reward
-fn set_reward_total(staking: &mut Staking, reward: u128, time: u64) {
+fn update_staking(staking: &mut Staking, reward: u128, time: u64) {
     if reward == 0 {
-        panic!("set_reward_total(): reward is null");
+        panic!("update_staking(): reward is null");
     }
 
     update_reward(staking, time);
@@ -202,7 +202,7 @@ fn stake() {
 }
 
 #[test]
-fn set_reward_total_test() {
+fn update_staking_test() {
     let sys = System::new();
     init_staking(&sys);
     init_staking_token(&sys);
@@ -210,8 +210,16 @@ fn set_reward_total_test() {
     sys.init_logger();
     let staking = sys.get_program(1);
 
-    let res = staking.send(USERS[4], StakingAction::SetRewardTotal(1000));
-    assert!(res.contains(&(USERS[4], StakingEvent::RewardTotal(1000).encode())));
+    let res = staking.send(
+        USERS[4],
+        StakingAction::UpdateStaking(InitStaking {
+            staking_token_address: USERS[1].into(),
+            reward_token_address: USERS[2].into(),
+            distribution_time: 10000,
+            reward_total: 1000,
+        }),
+    );
+    assert!(res.contains(&(USERS[4], StakingEvent::Updated.encode())));
 }
 
 #[test]
@@ -234,7 +242,7 @@ fn send_reward() {
         ..Default::default()
     };
 
-    set_reward_total(&mut staking, 1000, time);
+    update_staking(&mut staking, 1000, time);
 
     let res = st.send(USERS[4], StakingAction::Stake(1500));
     assert!(res.contains(&(USERS[4], StakingEvent::StakeAccepted(1500).encode())));
@@ -327,7 +335,7 @@ fn withdraw() {
         ..Default::default()
     };
 
-    set_reward_total(&mut staking, 1000, time);
+    update_staking(&mut staking, 1000, time);
 
     let res = st.send(USERS[4], StakingAction::Stake(1500));
     assert!(res.contains(&(USERS[4], StakingEvent::StakeAccepted(1500).encode())));
