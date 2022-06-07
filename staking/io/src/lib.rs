@@ -11,7 +11,7 @@ pub struct InitStaking {
     pub reward_total: u128,
 }
 
-#[derive(Debug, Default, Encode, Decode, TypeInfo, Clone, Copy)]
+#[derive(Debug, Default, Encode, Decode, TypeInfo, Clone)]
 pub struct Staker {
     pub balance: u128,
     pub reward_allowed: u128,

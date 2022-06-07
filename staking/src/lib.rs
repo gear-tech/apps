@@ -139,7 +139,7 @@ impl Staking {
                 stake.reward_debt = stake.reward_debt.saturating_add(amount_per_token);
                 stake.balance = stake.balance.saturating_add(amount);
             })
-            .or_insert_with(|| Staker {
+            .or_insert(Staker {
                 reward_debt: amount_per_token,
                 balance: amount,
                 ..Default::default()
@@ -253,7 +253,7 @@ pub unsafe extern "C" fn meta_state() -> *mut [i32; 2] {
 
         StakingState::GetStaker(address) => {
             if let Some(staker) = staking.stakers.get(&address) {
-                StakingStateReply::Staker(*staker).encode()
+                StakingStateReply::Staker(staker.clone()).encode()
             } else {
                 panic!("meta_state(): Staker {:?} not found", address);
             }
