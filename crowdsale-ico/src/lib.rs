@@ -39,7 +39,7 @@ impl IcoContract {
     /// * `duration`: Time in milliseconds
     /// 
     async fn start_ico(&mut self, duration: u64) {
-        assert!(duration != 0, "start_ico(): Can't start ICO with zero duration");
+        assert_ne!(duration, 0, "start_ico(): Can't start ICO with zero duration");
         assert_owner_message(&self.owner, "start_ico(): Not owner start ICO");
         if self.ico_state.ico_started { panic!("start_ico(): Second ICO start"); }
         
@@ -78,11 +78,8 @@ impl IcoContract {
         let mut change = 0;
         let amount_sent = msg::value();
 
-        assert!(amount_sent >= cost, "buy_tokens(): Wrong amount sent, expect {} get {}", cost, amount_sent);
         assert!(tokens_cnt <= self.get_balance(), "buy_tokens(): Not enough tokens to sell");
-
-        self.tokens_sold.checked_add(tokens_cnt)
-            .unwrap_or_else(|| panic!("buy_tokens(): Overflowing addition: {} + {}", self.tokens_sold, tokens_cnt));
+        assert!(amount_sent >= cost, "buy_tokens(): Wrong amount sent, expect {} get {}", cost, amount_sent);
 
         if amount_sent > cost {
             change = amount_sent - cost;
@@ -94,7 +91,7 @@ impl IcoContract {
             .and_modify(|balance| *balance += tokens_cnt)
             .or_insert(tokens_cnt);
 
-        self.tokens_sold += tokens_cnt;
+        self.tokens_sold += tokens_cnt; 
         
         msg::reply(IcoEvent::Bought { buyer: msg::source(), amount: tokens_cnt, change }, 0).unwrap();
     }
