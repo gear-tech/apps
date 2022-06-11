@@ -109,18 +109,24 @@ impl IcoContract {
         assert_owner_message(&self.owner, "end_sale()");
         self.in_process("end_sale()");
 
-        if self.ico_state.start_time + self.ico_state.duration < time_now || 
-            self.get_balance() == 0 
+        if self.ico_state.start_time + self.ico_state.duration >= time_now && 
+            self.get_balance() != 0 
         {
-            for (id, val) in &self.token_holders {
-                transfer_tokens(
-                    &self.token_id,
-                    &exec::program_id(),
-                    id,
-                    *val,
-                )
-                .await;
-            }
+            panic!("Can't end ICO: tokens left = {}, duration ended = {}", 
+                self.get_balance(),
+                self.ico_state.start_time + self.ico_state.duration < time_now,
+            ) 
+        }
+
+        
+        for (id, val) in &self.token_holders {
+            transfer_tokens(
+                &self.token_id,
+                &exec::program_id(),
+                id,
+                *val,
+            )
+            .await;
         }
 
         let rest_balance = self.get_balance();

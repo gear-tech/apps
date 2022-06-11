@@ -37,6 +37,22 @@ fn end_sale_zero_tokens() {
 
 #[test]
 #[should_panic]
+fn end_sale_time_and_tokens_left() {
+    let sys = System::new();
+    init(&sys);
+
+    let ico = sys.get_program(2);
+
+    start_sale(&ico, 1);
+
+    let amount: u128 = TOKENS_CNT - 5;
+    buy_tokens(&ico, amount, amount * START_PRICE);
+
+    end_sale(&ico);
+}
+
+#[test]
+#[should_panic]
 fn not_owner_end_sale() {
     let sys = System::new();
     init(&sys);
