@@ -84,6 +84,8 @@ impl IcoContract {
         assert!(self.get_balance() != 0, "buy_tokens(): All tokens have been sold");
         self.in_process("buy_tokens()");
 
+        assert!(tokens_cnt <= self.get_balance(), "buy_tokens(): Not enough tokens to sell");
+
         let current_price = self.get_current_price(time_now);
         let cost = tokens_cnt.checked_mul(current_price)
             .unwrap_or_else(|| panic!("buy_tokens(): Overflowing multiplication: {} * {}", tokens_cnt, current_price));
@@ -91,7 +93,6 @@ impl IcoContract {
         let mut change = 0;
         let amount_sent = msg::value();
 
-        assert!(tokens_cnt <= self.get_balance(), "buy_tokens(): Not enough tokens to sell");
         assert!(amount_sent >= cost, "buy_tokens(): Wrong amount sent, expect {} get {}", cost, amount_sent);
 
         if amount_sent > cost {
