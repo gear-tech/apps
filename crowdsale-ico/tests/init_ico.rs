@@ -43,15 +43,6 @@ fn init_fungible_token(sys: &System) {
 fn mint_tokens(ft: &Program<'_>) {
     let res = ft.send(OWNER_ID, FTAction::Mint(TOKENS_CNT));
     assert!(!res.main_failed());
-
-    // let res = ft.send(
-    //     OWNER_ID,
-    //     FTAction::Approve {
-    //         to: ICO_CONTRACT_ID.into(),
-    //         amount: TOKENS_CNT,
-    //     },  
-    // );
-    // assert!(!res.main_failed());
 }
 
 fn init_ico(sys: &System) {
@@ -60,12 +51,8 @@ fn init_ico(sys: &System) {
     let res = ico.send(
         OWNER_ID,
         IcoInit { 
-            tokens_goal: TOKENS_CNT, 
             token_id: TOKEN_ID.into(), 
             owner: OWNER_ID.into(), 
-            start_price: START_PRICE, 
-            price_increase_step: PRICE_INCREASE_STEP, 
-            time_increase_step: TIME_INCREASE_STEP, 
         },
     );
     assert!(res.log().is_empty());
@@ -80,9 +67,21 @@ pub fn init(sys: &System) {
 
 pub fn start_sale(ico: &Program, ico_duration: u64) {
     let duration = Duration::from_secs(ico_duration).as_millis() as u64;
-    let res = ico.send(OWNER_ID, IcoAction::StartSale(duration));
+    let res = ico.send(OWNER_ID, IcoAction::StartSale { 
+        duration, 
+        start_price: START_PRICE, 
+        tokens_goal: TOKENS_CNT, 
+        price_increase_step: PRICE_INCREASE_STEP, 
+        time_increase_step: TIME_INCREASE_STEP, 
+    });
 
-    assert!(res.contains(&(OWNER_ID, IcoEvent::SaleStarted(duration).encode())));
+    assert!(res.contains(&(OWNER_ID, IcoEvent::SaleStarted { 
+        duration, 
+        start_price: START_PRICE, 
+        tokens_goal: TOKENS_CNT, 
+        price_increase_step: PRICE_INCREASE_STEP, 
+        time_increase_step: TIME_INCREASE_STEP, 
+    }.encode())));
 }
 
 pub fn end_sale(ico: &Program) {

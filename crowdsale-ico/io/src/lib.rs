@@ -16,7 +16,13 @@ pub struct IcoState {
 
 #[derive(Debug, Decode, Encode, Clone, TypeInfo)]
 pub enum IcoAction {
-    StartSale(u64),
+    StartSale {
+        duration: u64,
+        start_price: u128,
+        tokens_goal: u128,
+        price_increase_step: u128,
+        time_increase_step: u128,
+    },
     Buy(u128),
     EndSale,
     BalanceOf(ActorId),
@@ -24,7 +30,13 @@ pub enum IcoAction {
 
 #[derive(Debug, Decode, Encode, Clone, TypeInfo)]
 pub enum IcoEvent {
-    SaleStarted(u64),
+    SaleStarted {
+        duration: u64,
+        start_price: u128,
+        tokens_goal: u128,
+        price_increase_step: u128,
+        time_increase_step: u128,
+    },
     Bought {
         buyer: ActorId,
         amount: u128,
@@ -39,12 +51,8 @@ pub enum IcoEvent {
 
 #[derive(Debug, Decode, Encode, Clone, TypeInfo)]
 pub struct IcoInit {
-    pub tokens_goal: u128,
     pub token_id: ActorId,
     pub owner: ActorId,
-    pub start_price: u128,
-    pub price_increase_step: u128,
-    pub time_increase_step: u128,
 }
 
 #[derive(Debug, Decode, Encode, TypeInfo)]

@@ -28,8 +28,21 @@ fn not_owner_start_ico() {
     let ico = sys.get_program(2);
 
     let duration = Duration::from_secs(20).as_millis() as u64;
-    let res = ico.send(USER_ID, IcoAction::StartSale(duration));
-    assert!(res.contains(&(USER_ID, IcoEvent::SaleStarted(duration).encode())));
+    let res = ico.send(USER_ID, IcoAction::StartSale { 
+        duration, 
+        start_price: START_PRICE, 
+        tokens_goal: TOKENS_CNT, 
+        price_increase_step: PRICE_INCREASE_STEP, 
+        time_increase_step: TIME_INCREASE_STEP, 
+    });
+
+    assert!(res.contains(&(USER_ID, IcoEvent::SaleStarted { 
+        duration, 
+        start_price: START_PRICE, 
+        tokens_goal: TOKENS_CNT, 
+        price_increase_step: PRICE_INCREASE_STEP, 
+        time_increase_step: TIME_INCREASE_STEP, 
+    }.encode())));
 }
 
 #[test]
@@ -80,16 +93,11 @@ fn not_minting_tokens() {
     let res = ico.send(
         OWNER_ID,
         IcoInit { 
-            tokens_goal: TOKENS_CNT, 
             token_id: TOKEN_ID.into(), 
             owner: OWNER_ID.into(), 
-            start_price: START_PRICE, 
-            price_increase_step: PRICE_INCREASE_STEP, 
-            time_increase_step: TIME_INCREASE_STEP, 
         },
     );
     assert!(res.log().is_empty());
 
     start_sale(&ico, 1);
 }
-

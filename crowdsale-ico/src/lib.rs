@@ -33,23 +33,36 @@ impl IcoContract {
     /// * Only owner can start ICO
     /// * At least `tokens_goal` tokens need to be minted
     /// * ICO can be started only once
-    /// * Duration must be greater than zero
+    /// * All arguments must be greater than zero
     /// 
     /// Arguments:
-    /// * `duration`: Time in milliseconds
+    /// * `config`: Consists of `duration`, `start_price`, `tokens_goal`, `price_increase_step` and time_increase_step 
     /// 
-    async fn start_ico(&mut self, duration: u64) {
-        assert_ne!(duration, 0, "start_ico(): Can't start ICO with zero duration");
+    async fn start_ico(&mut self, config: IcoAction) {
+        check_input(&config);
         assert_owner_message(&self.owner, "start_ico(): Not owner start ICO");
-        if self.ico_state.ico_started { panic!("start_ico(): Second ICO start"); }
-        
-        transfer_tokens(&self.token_id, &self.owner, &exec::program_id(), self.tokens_goal).await;
+        assert!(!self.ico_state.ico_started, "start_ico(): Second ICO start");
 
-        self.ico_state.ico_started = true;
-        self.ico_state.duration = duration;
-        self.ico_state.start_time = exec::block_timestamp();
+        if let IcoAction::StartSale { duration, start_price, tokens_goal, price_increase_step, time_increase_step } = config {
+            self.start_price = start_price;
+            self.tokens_goal = tokens_goal;
+            self.price_increase_step = price_increase_step;
+            self.time_increase_step = time_increase_step;
 
-        msg::reply(IcoEvent::SaleStarted(self.ico_state.duration), 0).unwrap();
+            transfer_tokens(&self.token_id, &self.owner, &exec::program_id(), self.tokens_goal).await;
+
+            self.ico_state.ico_started = true;
+            self.ico_state.duration = duration;
+            self.ico_state.start_time = exec::block_timestamp();
+
+            msg::reply(IcoEvent::SaleStarted {
+                duration,
+                start_price,
+                tokens_goal,
+                price_increase_step,
+                time_increase_step,
+            }, 0).unwrap();
+        }
     }
 
     /// Purchase of tokens
@@ -118,7 +131,6 @@ impl IcoContract {
             ) 
         }
 
-        
         for (id, val) in &self.token_holders {
             transfer_tokens(
                 &self.token_id,
@@ -173,8 +185,8 @@ async unsafe fn main() {
     let ico: &mut IcoContract = unsafe { ICO_CONTRACT.get_or_insert(IcoContract::default()) };
 
     match action {
-        IcoAction::StartSale(duration) => {
-            ico.start_ico(duration).await
+        IcoAction::StartSale { .. } => {
+            ico.start_ico(action).await
         }
         IcoAction::Buy(value) => {
             ico.buy_tokens(value)
@@ -195,11 +207,17 @@ async unsafe fn main() {
     }
 }
 
-fn check_input(config: &IcoInit) {
-    assert!(config.tokens_goal != 0, "Init tokens goal is zero");
-    assert_not_zero_address(&config.token_id, "Init token address");
-    assert_not_zero_address(&config.owner, "Init owner address");
-    assert!(config.start_price != 0, "Init start price is zero");
+fn check_input(config: &IcoAction) {
+    if let IcoAction::StartSale { duration, start_price, tokens_goal, price_increase_step, time_increase_step } = config {
+        assert_ne!(*duration, 0, "start_ico(): Init duration is zero");
+        assert_ne!(*start_price, 0, "start_ico(): Init start price is zero");
+        assert_ne!(*tokens_goal, 0, "start_ico(): Init tokens goal is zero");
+        assert_ne!(*price_increase_step, 0, "start_ico(): Init price increase step is zero");
+        assert_ne!(*time_increase_step, 0, "start_ico(): Init time increase step is zero");
+    }
+    else {
+        panic!("start_ico(): Wrong init type")
+    }
 }
 
 
@@ -207,15 +225,12 @@ fn check_input(config: &IcoInit) {
 pub unsafe extern "C" fn init() {
     let config: IcoInit = msg::load().expect("Unable to decode ICOInit");
 
-    check_input(&config);
+    assert_not_zero_address(&config.token_id, "Init token address");
+    assert_not_zero_address(&config.owner, "Init owner address");
 
     let ico = IcoContract {
-        tokens_goal: config.tokens_goal,
         token_id: config.token_id,
         owner: config.owner,
-        start_price: config.start_price,
-        price_increase_step: config.price_increase_step,
-        time_increase_step: config.time_increase_step,
         ..IcoContract::default()
     };
 
